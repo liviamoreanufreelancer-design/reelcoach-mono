@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
+const path = require("path");
+
 const nextConfig = {
+  // Monorepo: transpile shared TS workspace package + pin tracing root to the
+  // repo root (silences the multi-lockfile warning, keeps Vercel correct).
+  transpilePackages: ["@reelcoach/core"],
+  outputFileTracingRoot: path.join(__dirname, "../../"),
+
   // Allow loading images from Supabase storage and unsplash placeholders.
   images: {
     remotePatterns: [
