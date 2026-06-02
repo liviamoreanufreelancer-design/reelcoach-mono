@@ -1,0 +1,323 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --font-display: "League Spartan", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-editorial: "League Spartan", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 1.25rem;
+
+  /* ══ Champagne & Midnight palette (from Figma) ══ */
+  --background: #0F1419;
+  --foreground: #ffffff;
+  --card: rgba(26, 31, 38, 0.55);
+  --card-foreground: #ffffff;
+  --popover: #1A1F26;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #0F1419;
+  --secondary: rgba(37, 43, 53, 0.5);
+  --secondary-foreground: #ffffff;
+  --muted: rgba(37, 43, 53, 0.6);
+  --muted-foreground: rgba(255,255,255,0.45);
+  --accent: #E8D5B5;
+  --accent-foreground: #0F1419;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #E8D5B5;
+
+  /* Champagne gold scale — Figma values */
+  --gold-100: #F4E4C1;
+  --gold-300: #E8D5B5;
+  --gold:     #E8D5B5;
+  --gold-700: #D4AF37;
+  --gradient-gold: linear-gradient(135deg, #F4E4C1 0%, #E8D5B5 40%, #D4AF37 100%);
+  --gradient-gold-soft: linear-gradient(135deg, rgba(244,228,193,0.12) 0%, rgba(232,213,181,0.08) 100%);
+  --shadow-gold: 0 4px 24px rgba(244,228,193,0.4);
+  --shadow-gold-hover: 0 6px 32px rgba(244,228,193,0.6);
+  --shadow-contact: 0 1px 2px rgba(0,0,0,0.6), 0 12px 30px -18px rgba(0,0,0,0.7);
+  --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Midnight scale */
+  --midnight-deepest: #0A0D11;
+  --midnight-deep: #0F1419;
+  --midnight-main: #1A1F26;
+  --midnight-light: #252B35;
+}
+
+.dark {
+  --background: #0F1419;
+  --foreground: #ffffff;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body, #root {
+    height: 100%;
+    background: var(--midnight-deepest);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  body {
+    overflow: hidden;
+  }
+  ::selection {
+    background-color: rgba(232, 213, 181, 0.3);
+    color: white;
+  }
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+  .font-editorial { font-family: var(--font-editorial); letter-spacing: -0.02em; }
+  .h1-lux { font-family: var(--font-display); letter-spacing: -0.03em; line-height: 0.92; font-weight: 700; }
+
+  /* Dense section header — Prequel-style: heavy weight, tight tracking,
+     for "Explorează" / "Populare" style row labels. League Spartan at
+     700 with negative tracking reads dense and confident. */
+  .section-head {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  /* Subtitle that pairs with section-head — DM Sans, muted, smaller. */
+  .section-sub {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.35;
+  }
+
+  .glass {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .glass-strong {
+    background: rgba(15,20,25,0.55);
+    backdrop-filter: blur(36px) saturate(160%);
+    -webkit-backdrop-filter: blur(36px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* Premium glass card — matches Figma GlassCard */
+  .glass-lux {
+    position: relative;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    box-shadow:
+      var(--shadow-contact),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: transform 220ms var(--ease-lux), box-shadow 220ms var(--ease-lux);
+  }
+  .glass-lux::before {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(232,213,181,0.2), rgba(255,255,255,0.04) 35%, transparent 70%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+  .glass-lux:active {
+    transform: scale(0.98);
+    box-shadow: var(--shadow-contact), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .text-gold       { color: var(--gold); }
+  .text-gold-100   { color: var(--gold-100); }
+  .bg-gold-gradient { background-image: var(--gradient-gold); }
+  .text-gold-gradient {
+    background-image: var(--gradient-gold);
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+  }
+  .ring-gold {
+    box-shadow:
+      0 0 0 1px var(--gold),
+      var(--shadow-gold);
+  }
+  .shadow-gold { box-shadow: var(--shadow-gold); }
+
+  /* Warm vignette */
+  .vignette::after {
+    content: "";
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 28%, rgba(15,20,25,0.55) 75%, rgba(10,13,17,0.85) 100%);
+  }
+  .grain::before {
+    content: "";
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.04; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/></svg>");
+  }
+  .spot-light::after {
+    content: "";
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(600px 480px at 12% 0%, rgba(232,213,181,0.06), transparent 60%),
+      radial-gradient(500px 420px at 90% 100%, rgba(180,120,60,0.04), transparent 65%);
+    mix-blend-mode: screen;
+  }
+
+  .ken-burns {
+    animation: kenburns 18s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes kenburns {
+    0%   { transform: scale(1.08) translate3d(-1.5%, -1%, 0); }
+    100% { transform: scale(1.18) translate3d(2%, 1.5%, 0); }
+  }
+  /* Home Ken Burns — much more subtle, almost imperceptible breathing.
+     For the landing screen where the image is the main subject and we
+     don't want any "video looping" feel. */
+  .home-ken-burns {
+    animation: home-kb 25s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes home-kb {
+    0%   { transform: scale(1.0); }
+    100% { transform: scale(1.06); }
+  }
+  .float-slow { animation: floaty 6s ease-in-out infinite; }
+  @keyframes floaty {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .shimmer {
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 2.4s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .shimmer-gold {
+    background: linear-gradient(110deg, var(--gold-700) 0%, var(--gold) 30%, var(--gold-100) 50%, var(--gold) 70%, var(--gold-700) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2.8s linear infinite;
+  }
+  .progress-fill { animation: fill 4s ease-out forwards; }
+  @keyframes fill { from { width: 0% } to { width: 100% } }
+
+  .pulse-gold { animation: pulseGold 2.4s var(--ease-lux) infinite; }
+  @keyframes pulseGold {
+    0%, 100% { box-shadow: 0 0 0 1px var(--gold), 0 12px 36px -16px rgba(232,213,181,0.4); }
+    50%      { box-shadow: 0 0 0 1px var(--gold-100), 0 22px 60px -14px rgba(232,213,181,0.7); }
+  }
+
+  .stagger-lux > * { animation: fadeUpLux 600ms var(--ease-lux) both; }
+  @keyframes fadeUpLux {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .phone-frame {
+    position: fixed; inset: 0;
+    overflow: hidden;
+    background: var(--midnight-deepest);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes zoomIn {
+    from { opacity: 0; transform: scale(1.18); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes flashOverlay {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes glitchIn {
+    0%   { opacity: 0; transform: translateX(8px) scaleX(1.04); filter: hue-rotate(180deg) saturate(2); }
+    20%  { opacity: 1; transform: translateX(-6px); filter: hue-rotate(-120deg) saturate(2); }
+    50%  { transform: translateX(4px); filter: hue-rotate(60deg) saturate(1.5); }
+    100% { opacity: 1; transform: translateX(0); filter: none; }
+  }
+  @keyframes blurIn {
+    from { opacity: 0; filter: blur(20px); }
+    to   { opacity: 1; filter: blur(0); }
+  }
+  @keyframes slideIn {
+    from { opacity: 1; transform: translateX(100%); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes spinIn {
+    from { opacity: 0; transform: rotate(-180deg) scale(0.4); }
+    to   { opacity: 1; transform: rotate(0) scale(1); }
+  }
+}
+
+html, body { width: 100%; }
+
+/* ───── Hide native video controls on iOS Safari ─────
+   When a <video> is paused on iOS, Safari overlays its own UI (play,
+   fullscreen, mute) with a subtle darkening shim. That shim makes
+   paused scenes look like they have a heavier filter applied. These
+   rules remove that overlay entirely. */
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-overlay-play-button,
+video::-webkit-media-controls-fullscreen-button,
+video::-webkit-media-controls-mute-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+}
+video {
+  -webkit-tap-highlight-color: transparent;
+}

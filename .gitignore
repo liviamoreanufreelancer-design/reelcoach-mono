@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+dist-mobile/
+.next/
+out/
+build/
+
+# capacitor / ios native
+apps/mobile/ios/App/Pods/
+apps/mobile/ios/App/public/
+apps/mobile/ios/App/App/public/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# macOS / editor junk
+.DS_Store
+*.log
+
+# stray
+/0
+*.bak

@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* ============================================================================
+ * ReelCoach Studio — champagne palette
+ * ============================================================================ */
+
+@theme {
+  --color-bg: #0a0c0f;
+  --color-bg-card: rgba(255, 255, 255, 0.04);
+  --color-border: rgba(232, 213, 181, 0.15);
+  --color-champagne: #E8D5B5;
+  --color-champagne-light: #F4E4C1;
+  --color-champagne-gold: #D4AF37;
+  --color-text: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.55);
+  --color-text-dim: rgba(255, 255, 255, 0.35);
+
+  --font-display: "League Spartan", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+}
+
+html, body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(232, 213, 181, 0.06) 0%, transparent 50%),
+    #0a0c0f;
+}
+
+/* Headings use League Spartan, tight tracking */
+.h-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(232, 213, 181, 0.65);
+  font-weight: 600;
+}
+
+/* Champagne CTA button */
+.btn-champagne {
+  background: linear-gradient(90deg, #F4E4C1 0%, #E8D5B5 50%, #D4AF37 100%);
+  color: #0F1419;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 12px;
+  padding: 14px 22px;
+  border-radius: 9999px;
+  box-shadow: 0 6px 24px rgba(232, 213, 181, 0.3);
+  transition: transform 0.15s;
+}
+.btn-champagne:active { transform: scale(0.98); }
+.btn-champagne:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Secondary glass button */
+.btn-glass {
+  background: rgba(15, 20, 25, 0.55);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(232, 213, 181, 0.25);
+  color: var(--color-champagne);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  transition: transform 0.15s;
+}
+.btn-glass:active { transform: scale(0.98); }
+
+/* Card surface */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+
+/* Form input */
+.input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  width: 100%;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-champagne);
+  background: rgba(255, 255, 255, 0.06);
+}
+.input::placeholder { color: var(--color-text-dim); }
+
+/* Label above input */
+.label {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(232, 213, 181, 0.7);
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
