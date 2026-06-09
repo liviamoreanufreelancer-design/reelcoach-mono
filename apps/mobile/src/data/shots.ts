@@ -1,13 +1,15 @@
 import type { TransitionId } from "@reelcoach/core";
 import type { FilterId } from "@reelcoach/core";
+import type { EffectId } from "@reelcoach/core";
 import type { Profession } from "./scenarios";
 
 /**
- * Premium visual effects that overlay the video frame. Auto-assigned
- * per shot pattern (see SHOT_PATTERNS) — never overlapping the action
- * itself, used where they enhance the mood: reveal, reaction, suspense.
+ * Premium visual effects that overlay the video frame. The catalog now lives
+ * in @reelcoach/core (single source of truth, shared with the renderer that
+ * actually draws them). Re-exported here so existing consumers
+ * (db-to-template, etc.) keep importing EffectId from this module.
  */
-export type EffectId = "none" | "sparkle" | "leak" | "bokeh" | "dust";
+export type { EffectId };
 
 export type ShotPatternId =
   | "before"

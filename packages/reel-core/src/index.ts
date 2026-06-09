@@ -16,3 +16,4 @@ export * from "./text-presets";
 export * from "./render-progress";
 export * from "./overlay-renderer";
 export * from "./browser-renderer";
+export * from "./effects";
