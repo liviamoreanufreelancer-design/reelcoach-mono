@@ -1127,3 +1127,55 @@ function drawLensFlare(ctx: CanvasRenderingContext2D, localMs: number, clipMs: n
 
   ctx.restore();
 }
+
+// ─────────────────────────────────────────────────────────────────────
+//  LIVE PREVIEW  (C.0)
+// ─────────────────────────────────────────────────────────────────────
+/**
+ * Draw a SINGLE preview frame onto a canvas, reusing the exact same drawing
+ * code as the export path (drawClipFrame + drawPremiumEffect). This is the
+ * "preview = export" guarantee: Studio's live preview and the final MP4 are
+ * produced by identical pixels, never a CSS approximation.
+ *
+ * Meant to be called every animation frame from a requestAnimationFrame loop
+ * in the UI, with `video` being an uploaded clip that is playing. The UI owns
+ * playback (video.currentTime, loop, speed); this just paints the current
+ * video frame with the chosen filter + effect.
+ */
+export interface PreviewFrameOptions {
+  /** Filter grading to apply (champagne, cinema, etc.). Defaults to none. */
+  filter?: FilterPreset;
+  /** Premium effect overlay id (sparkle/glow/lensFlare/...). "none"/undefined = no overlay. */
+  effectId?: string;
+  /** Normalized position 0..1 within the clip (drives Ken Burns easing). Default 0. */
+  tNorm?: number;
+  /** Elapsed ms within the clip (drives time-based effects). Default 0. */
+  localMs?: number;
+  /** Total clip duration in ms (effect timing reference). Default 4000. */
+  clipMs?: number;
+  /** Ken Burns zoom. Off by default for preview (the video itself moves). */
+  kenBurns?: boolean;
+}
+
+export function renderPreviewFrame(
+  canvas: HTMLCanvasElement,
+  video: HTMLVideoElement,
+  opts: PreviewFrameOptions = {},
+): void {
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) return;
+  const width = canvas.width;
+  const height = canvas.height;
+  const filter = opts.filter ?? FILTERS.none;
+  const tNorm = opts.tNorm ?? 0;
+  const kenBurns = opts.kenBurns ?? false;
+
+  // Same frame-draw as export: grading + tint + vignette + highlight boost.
+  drawClipFrame(ctx, video, width, height, "static", tNorm, kenBurns, filter);
+
+  // Same premium effect overlay as export.
+  const effectId = opts.effectId;
+  if (effectId && effectId !== "none") {
+    drawPremiumEffect(ctx, effectId, opts.localMs ?? 0, opts.clipMs ?? 4000, width, height);
+  }
+}
