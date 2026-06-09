@@ -20,6 +20,7 @@ import CoverUploadCard from "@/components/CoverUploadCard";
 import ScenesEditor from "@/components/ScenesEditor";
 import TemplateActionsCard from "@/components/TemplateActionsCard";
 import PreviewPanel from "@/components/PreviewPanel";
+import LiveScenePreview from "@/components/LiveScenePreview";
 
 export default async function TemplateDetailPage({
   params,
@@ -129,6 +130,7 @@ export default async function TemplateDetailPage({
             disabled={!canEdit}
           />
 
+          <LiveScenePreview />
           <CoverUploadCard
             templateId={template.id}
             coverUrl={template.cover_url}
