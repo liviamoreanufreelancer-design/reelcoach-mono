@@ -312,3 +312,29 @@ export async function updateGlobalFilter(templateId: string, filterId: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/dashboard/templates/${templateId}`);
 }
+
+/**
+ * Upload a scene's sample footage (the partner's own clip) to the `samples`
+ * bucket and save its URL on the shot. Mirrors uploadCover, but for video.
+ */
+export async function uploadShotSample(shotId: string, templateId: string, formData: FormData) {
+  const supabase = await getSupabaseServerClient();
+  const file = formData.get("sample") as File | null;
+  if (!file || file.size === 0) throw new Error("Niciun fișier selectat");
+  if (file.size > 50 * 1024 * 1024) throw new Error("Fișierul depășește 50MB");
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+  const path = `${templateId}/${shotId}-${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from("samples")
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (uploadError) throw new Error(uploadError.message);
+  const { data: publicData } = supabase.storage.from("samples").getPublicUrl(path);
+  const publicUrl = publicData.publicUrl;
+  const { error: updateError } = await supabase
+    .from("shots")
+    .update({ sample_video_url: publicUrl })
+    .eq("id", shotId);
+  if (updateError) throw new Error(updateError.message);
+  revalidatePath(`/dashboard/templates/${templateId}`);
+  return publicUrl;
+}
