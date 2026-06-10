@@ -19,7 +19,6 @@ import TemplateFormCard from "@/components/TemplateFormCard";
 import CoverUploadCard from "@/components/CoverUploadCard";
 import ScenesEditor from "@/components/ScenesEditor";
 import TemplateActionsCard from "@/components/TemplateActionsCard";
-import PreviewPanel from "@/components/PreviewPanel";
 import LiveScenePreview from "@/components/LiveScenePreview";
 
 export default async function TemplateDetailPage({
@@ -124,13 +123,8 @@ export default async function TemplateDetailPage({
           offset matches header height + a comfortable gap.
         */}
         <div className="flex flex-col gap-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:thin]">
-          <PreviewPanel
-            templateId={template.id}
-            shots={shots}
-            disabled={!canEdit}
-          />
 
-          <LiveScenePreview />
+          <LiveScenePreview templateId={template.id} shots={shots} globalFilter={template.global_filter} disabled={!canEdit} />
           <CoverUploadCard
             templateId={template.id}
             coverUrl={template.cover_url}

@@ -298,3 +298,17 @@ function slugify(input: string): string {
 function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 6);
 }
+
+/**
+ * Update the reel-wide global filter (templates.global_filter). One filter for
+ * the whole reel — the partner's decision. Mirrors updateShot's pattern.
+ */
+export async function updateGlobalFilter(templateId: string, filterId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("templates")
+    .update({ global_filter: filterId })
+    .eq("id", templateId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/templates/${templateId}`);
+}
