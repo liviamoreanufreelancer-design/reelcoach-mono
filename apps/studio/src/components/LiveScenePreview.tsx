@@ -1,9 +1,4 @@
 "use client";
-/**
- * LiveScenePreview (Faza 2.2) — live preview + compact editor + persistent
- * footage. Footage uploads to Supabase `samples` and is reloaded per scene
- * from sample_video_url, so it survives refresh. "Preview = export."
- */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { renderPreviewFrame, FILTERS, type FilterId } from "@reelcoach/core";
@@ -31,10 +26,12 @@ export default function LiveScenePreview({
   const videoRef = useRef<HTMLVideoElement>(null);
   const rafRef = useRef<number | null>(null);
   const localUrlRef = useRef<string | null>(null);
+  const trimSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [hasVideo, setHasVideo] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [clipDuration, setClipDuration] = useState(0);
   const [pending, startTransition] = useTransition();
 
   const shot = shots[selectedIdx];
@@ -42,14 +39,18 @@ export default function LiveScenePreview({
   const resolvedEffectId = shot?.effect ?? "none";
   const resolvedSpeed = shot?.playback_speed ?? 1;
 
+  const [trimSec, setTrimSec] = useState<number>(shot?.final_usage_duration ?? 2);
+  useEffect(() => { setTrimSec(shot?.final_usage_duration ?? 2); }, [shot?.id, shot?.final_usage_duration]);
+
   const filterRef = useRef(resolvedFilterId);
   const effectRef = useRef(resolvedEffectId);
   const speedRef = useRef(resolvedSpeed);
+  const trimRef = useRef(trimSec);
   useEffect(() => { filterRef.current = resolvedFilterId; }, [resolvedFilterId]);
   useEffect(() => { effectRef.current = resolvedEffectId; }, [resolvedEffectId]);
   useEffect(() => { speedRef.current = resolvedSpeed; }, [resolvedSpeed]);
+  useEffect(() => { trimRef.current = trimSec; }, [trimSec]);
 
-  // Render loop
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -59,14 +60,21 @@ export default function LiveScenePreview({
       if (!running) return;
       if (video.readyState >= 2) {
         if (video.playbackRate !== speedRef.current) video.playbackRate = speedRef.current;
-        const dur = video.duration || 4;
-        const tNorm = dur > 0 ? (video.currentTime % dur) / dur : 0;
+        const full = video.duration || 4;
+        const win = Math.min(trimRef.current || full, full);
+        const start = Math.max(0, (full - win) / 2);
+        const end = start + win;
+        if (video.currentTime < start || video.currentTime >= end) {
+          try { video.currentTime = start; } catch { /* not ready */ }
+        }
+        const local = Math.max(0, video.currentTime - start);
+        const tNorm = win > 0 ? local / win : 0;
         renderPreviewFrame(canvas, video, {
           filter: FILTERS[filterRef.current] ?? FILTERS.none,
           effectId: effectRef.current,
           tNorm,
-          localMs: video.currentTime * 1000,
-          clipMs: dur * 1000,
+          localMs: local * 1000,
+          clipMs: win * 1000,
         });
       }
       rafRef.current = requestAnimationFrame(loop);
@@ -78,12 +86,14 @@ export default function LiveScenePreview({
     };
   }, []);
 
-  // When the selected scene changes (or its saved footage), load the persisted
-  // sample from Supabase so each scene shows its own clip across refreshes.
+  const onMeta = () => {
+    const video = videoRef.current;
+    if (video && video.duration && isFinite(video.duration)) setClipDuration(video.duration);
+  };
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    // A freshly-picked local file takes priority until the page revalidates.
     if (localUrlRef.current) return;
     const saved = shot?.sample_video_url;
     if (saved) {
@@ -98,11 +108,15 @@ export default function LiveScenePreview({
       video.removeAttribute("src");
       video.load();
       setHasVideo(false);
+      setClipDuration(0);
     }
   }, [shot?.id, shot?.sample_video_url]);
 
   useEffect(() => {
-    return () => { if (localUrlRef.current) URL.revokeObjectURL(localUrlRef.current); };
+    return () => {
+      if (localUrlRef.current) URL.revokeObjectURL(localUrlRef.current);
+      if (trimSaveRef.current) clearTimeout(trimSaveRef.current);
+    };
   }, []);
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,8 +124,6 @@ export default function LiveScenePreview({
     if (!file || !shot) return;
     const video = videoRef.current;
     if (!video) return;
-
-    // 1) Instant local preview (no crossOrigin for blob URLs).
     if (localUrlRef.current) URL.revokeObjectURL(localUrlRef.current);
     const url = URL.createObjectURL(file);
     localUrlRef.current = url;
@@ -123,14 +135,12 @@ export default function LiveScenePreview({
     video.play().catch(() => {});
     setHasVideo(true);
 
-    // 2) Persist to Supabase `samples` in the background.
     const fd = new FormData();
     fd.set("sample", file);
     setUploading(true);
     startTransition(async () => {
       try {
         await uploadShotSample(shot.id, templateId, fd);
-        // After save, drop the local URL so the persisted one is used on refresh.
         if (localUrlRef.current) { URL.revokeObjectURL(localUrlRef.current); localUrlRef.current = null; }
         router.refresh();
       } finally {
@@ -153,6 +163,18 @@ export default function LiveScenePreview({
     });
   };
 
+  const onTrimChange = (value: number) => {
+    setTrimSec(value);
+    if (trimSaveRef.current) clearTimeout(trimSaveRef.current);
+    trimSaveRef.current = setTimeout(() => {
+      if (!shot) return;
+      startTransition(async () => {
+        await updateShot(shot.id, templateId, { final_usage_duration: value });
+        router.refresh();
+      });
+    }, 500);
+  };
+
   if (shots.length === 0) {
     return (
       <div className="card p-4 sm:p-5">
@@ -161,6 +183,8 @@ export default function LiveScenePreview({
       </div>
     );
   }
+
+  const trimMax = clipDuration > 0 ? Math.floor(clipDuration * 10) / 10 : 10;
 
   return (
     <div className="card p-4 sm:p-5">
@@ -172,16 +196,15 @@ export default function LiveScenePreview({
       {shots.length > 1 && (
         <div className="mb-3">
           <label className="label">Scena</label>
-          <select value={selectedIdx} onChange={(e) => { localUrlRef.current && URL.revokeObjectURL(localUrlRef.current); localUrlRef.current = null; setSelectedIdx(Number(e.target.value)); }} className="input">
+          <select value={selectedIdx} onChange={(e) => { if (localUrlRef.current) { URL.revokeObjectURL(localUrlRef.current); localUrlRef.current = null; } setSelectedIdx(Number(e.target.value)); }} className="input">
             {shots.map((s, i) => (<option key={s.id} value={i}>{i + 1}. {s.title || "Fara titlu"}{s.sample_video_url ? " ✓" : ""}</option>))}
           </select>
         </div>
       )}
 
-      {/* Live preview — 9:16 */}
       <div className="relative w-full rounded-xl overflow-hidden bg-black border border-[#E8D5B5]/15 mb-3" style={{ aspectRatio: "9 / 16" }}>
         <canvas ref={canvasRef} width={W} height={H} className="absolute inset-0 w-full h-full object-cover" />
-        <video ref={videoRef} className="hidden" playsInline muted />
+        <video ref={videoRef} className="hidden" playsInline muted onLoadedMetadata={onMeta} />
         {!hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="text-[12px] text-white/40 text-center px-6 leading-relaxed">Incarca un clip pentru aceasta scena.</p>
@@ -193,13 +216,20 @@ export default function LiveScenePreview({
         </div>
       </div>
 
-      {/* Upload */}
       <div className="mb-3">
         <label className="label">Clip pentru aceasta scena</label>
         <input type="file" accept="video/*" onChange={onPickFile} disabled={disabled || uploading} className="input" />
       </div>
 
-      {/* Compact 2-col control grid */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="label mb-0">Durata scena</label>
+          <span className="text-[12px] text-[#E8D5B5] font-semibold tabular-nums">{trimSec.toFixed(1)}s{clipDuration > 0 && <span className="text-white/35 font-normal"> / {clipDuration.toFixed(1)}s clip</span>}</span>
+        </div>
+        <input type="range" min={1} max={trimMax} step={0.1} value={Math.min(trimSec, trimMax)} onChange={(e) => onTrimChange(Number(e.target.value))} disabled={disabled || !hasVideo} className="w-full accent-[#E8D5B5] disabled:opacity-40" />
+        <p className="text-[10px] text-white/40 mt-1 leading-snug">Cat din clip intra in reel (din mijloc).</p>
+      </div>
+
       <fieldset disabled={disabled} className="disabled:opacity-50">
         <div className="grid grid-cols-2 gap-2.5">
           <div>
