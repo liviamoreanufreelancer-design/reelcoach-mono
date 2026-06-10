@@ -1,11 +1,9 @@
 "use client";
 /**
- * LiveScenePreview (Faza 2.1) — live preview + inline scene editor.
- * Top: live canvas preview through the real engine (filter global + effect
- * per-scene applied to uploaded footage). Bottom: controls that SAVE to
- * Supabase — global filter (templates.global_filter), and per-scene effect /
- * transition / speed / motion blur (shots). Replaces the old prerendered-video
- * PreviewPanel. "Preview = export."
+ * LiveScenePreview (Faza 2.1) — live preview + compact inline scene editor.
+ * Live canvas preview through the real engine (filter global + effect/speed
+ * per-scene on uploaded footage). Controls are a compact 2-col grid that SAVE
+ * to Supabase. "Preview = export."
  */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -99,7 +97,6 @@ export default function LiveScenePreview({
     setHasVideo(true);
   };
 
-  // Save helpers ---------------------------------------------------------
   const saveShot = (patch: Parameters<typeof updateShot>[2]) => {
     if (!shot) return;
     startTransition(async () => {
@@ -130,7 +127,6 @@ export default function LiveScenePreview({
         {pending && <span className="text-[9px] tracking-[0.2em] uppercase text-white/45">salvez…</span>}
       </div>
 
-      {/* Scene selector */}
       {shots.length > 1 && (
         <div className="mb-3">
           <label className="label">Scena</label>
@@ -140,7 +136,7 @@ export default function LiveScenePreview({
         </div>
       )}
 
-      {/* Live preview */}
+      {/* Live preview — 9:16 */}
       <div className="relative w-full rounded-xl overflow-hidden bg-black border border-[#E8D5B5]/15 mb-3" style={{ aspectRatio: "9 / 16" }}>
         <canvas ref={canvasRef} width={W} height={H} className="absolute inset-0 w-full h-full object-cover" />
         <video ref={videoRef} className="hidden" playsInline muted />
@@ -156,55 +152,40 @@ export default function LiveScenePreview({
       </div>
 
       {/* Upload */}
-      <div className="mb-4">
+      <div className="mb-3">
         <label className="label">Clip pentru aceasta scena</label>
         <input type="file" accept="video/*" onChange={onPickFile} className="input" />
       </div>
 
-      {/* Editor controls — all visible, save to Supabase */}
-      <fieldset disabled={disabled} className="disabled:opacity-50 flex flex-col gap-4">
-        {/* Global filter (whole reel) */}
-        <div>
-          <label className="label">Filtru (tot reel-ul)</label>
-          <select value={resolvedFilterId} onChange={(e) => saveFilter(e.target.value)} className="input">
-            {FILTER_OPTS.map((f) => (<option key={f.id} value={f.id}>{f.label}</option>))}
-          </select>
-        </div>
-
-        {/* Per-scene effect */}
-        <div>
-          <label className="label">Efect (scena)</label>
-          <select value={shot.effect} onChange={(e) => saveShot({ effect: e.target.value as EffectId })} className="input">
-            {EFFECTS.map((e) => (<option key={e.id} value={e.id}>{e.label}</option>))}
-          </select>
-        </div>
-
-        {/* Per-scene transition */}
-        <div>
-          <label className="label">Tranzitie (scena)</label>
-          <select value={shot.transition_type} onChange={(e) => saveShot({ transition_type: e.target.value as TransitionId })} className="input">
-            {TRANSITIONS.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
-          </select>
-        </div>
-
-        {/* Per-scene speed */}
-        <div>
-          <label className="label">Viteza (scena)</label>
-          <div className="flex gap-1.5 flex-wrap">
-            {SPEED_PRESETS.map((v) => {
-              const active = Math.abs(v - shot.playback_speed) < 0.01;
-              return (
-                <button key={v} type="button" onClick={() => saveShot({ playback_speed: v })}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition tabular-nums ${active ? "bg-[#E8D5B5] text-[#0F1419] border border-[#E8D5B5]" : "bg-white/[0.04] text-white/70 border border-[#E8D5B5]/12 hover:border-[#E8D5B5]/30 hover:text-white"}`}>
-                  {v}×
-                </button>
-              );
-            })}
+      {/* Compact 2-col control grid */}
+      <fieldset disabled={disabled} className="disabled:opacity-50">
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <label className="label">Filtru (reel)</label>
+            <select value={resolvedFilterId} onChange={(e) => saveFilter(e.target.value)} className="input">
+              {FILTER_OPTS.map((f) => (<option key={f.id} value={f.id}>{f.label}</option>))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Efect</label>
+            <select value={shot.effect} onChange={(e) => saveShot({ effect: e.target.value as EffectId })} className="input">
+              {EFFECTS.map((e) => (<option key={e.id} value={e.id}>{e.label}</option>))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Tranzitie</label>
+            <select value={shot.transition_type} onChange={(e) => saveShot({ transition_type: e.target.value as TransitionId })} className="input">
+              {TRANSITIONS.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Viteza</label>
+            <select value={shot.playback_speed} onChange={(e) => saveShot({ playback_speed: Number(e.target.value) })} className="input">
+              {SPEED_PRESETS.map((v) => (<option key={v} value={v}>{v}×</option>))}
+            </select>
           </div>
         </div>
-
-        {/* Per-scene motion blur */}
-        <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+        <label className="flex items-center gap-2.5 cursor-pointer mt-3 pt-3 border-t border-[#E8D5B5]/10">
           <input type="checkbox" checked={shot.motion_blur ?? false} onChange={(e) => saveShot({ motion_blur: e.target.checked })} className="w-4 h-4 accent-[#E8D5B5]" />
           <span className="text-[12px] text-white/85">Motion blur <span className="text-white/45">(scena)</span></span>
         </label>
