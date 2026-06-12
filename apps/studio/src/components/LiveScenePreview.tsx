@@ -12,6 +12,7 @@ import { renderPreviewFrame, FILTERS, type FilterId } from "@reelcoach/core";
 import { updateShot, updateGlobalFilter, uploadShotSample, uploadCover } from "@/lib/template-actions";
 import { TRANSITIONS, FILTERS as FILTER_OPTS, EFFECTS } from "@/lib/options";
 import type { ShotRow, TransitionId, EffectId } from "@/lib/db-types";
+import ReelPlayer from "./ReelPlayer";
 
 const W = 540;
 const H = 960;
@@ -52,6 +53,8 @@ export default function LiveScenePreview({
 
   const [hasVideo, setHasVideo] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [reelMode, setReelMode] = useState(false);
+  const [reelMounted, setReelMounted] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [clipDuration, setClipDuration] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -230,6 +233,7 @@ export default function LiveScenePreview({
   const selectScene = (i: number) => {
     if (localUrlRef.current) { URL.revokeObjectURL(localUrlRef.current); localUrlRef.current = null; }
     setSelectedIdx(i);
+    setReelMode(false);
     setPaused(false);
   };
 
@@ -271,7 +275,7 @@ export default function LiveScenePreview({
       {/* Scene tabs */}
       <div className="flex items-center justify-center gap-1.5 flex-wrap mb-6">
         {shots.map((s, i) => {
-          const active = i === selectedIdx;
+          const active = i === selectedIdx && !reelMode;
           return (
             <button key={s.id} type="button" onClick={() => selectScene(i)}
               className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition tabular-nums ${active ? "bg-[#E8D5B5] text-[#0F1419]" : "text-white/55 hover:text-white/85"}`}>
@@ -279,10 +283,15 @@ export default function LiveScenePreview({
             </button>
           );
         })}
+        <span className="w-px h-5 bg-[#E8D5B5]/20 mx-1" />
+        <button type="button" onClick={() => { setReelMode(true); setReelMounted(true); }}
+          className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition ${reelMode ? "bg-[#E8D5B5] text-[#0F1419]" : "text-white/55 hover:text-white/85"}`}>
+          ▶ Reel
+        </button>
         {(pending || uploading) && <span className="text-[9px] tracking-[0.2em] uppercase text-white/40 ml-2">{uploading ? "urc…" : "salvez…"}</span>}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-7 items-start">
+      <div className={`grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-7 items-start ${reelMode ? "hidden" : ""}`}>
 
         {/* LEFT: preview + clip buttons */}
         <div className="flex flex-col gap-2">
@@ -311,10 +320,7 @@ export default function LiveScenePreview({
             className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
             {hasVideo ? "Schimbă clipul" : "Urcă clip"}
           </button>
-          <button type="button" onClick={() => alert("În curând: randarea reel-ului complet.")}
-            className="btn-glass w-full text-[12px] py-2 border-[#E8D5B5]/30">
-            ▶ Vezi reel-ul complet
-          </button>
+
           <button type="button" onClick={captureCover} disabled={disabled || !hasVideo}
             className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
             📷 Salvează cover
@@ -399,6 +405,9 @@ export default function LiveScenePreview({
             </label>
           </div>
         </fieldset>
+      </div>
+      <div className={reelMode ? "" : "hidden"}>
+        {reelMounted && <ReelPlayer shots={shots} globalFilter={globalFilter} />}
       </div>
     </div>
   );

@@ -332,15 +332,6 @@ export async function renderReelInBrowser(
   const perClipPlaybackSpeeds: (number | undefined)[] = opts.playbackSpeeds ?? [];
   const perClipMotionBlurs: (boolean | undefined)[] = opts.motionBlurs ?? [];
 
-  // DEBUG: log what arrived at the renderer so we can verify the wiring.
-  // eslint-disable-next-line no-console
-  console.log("[renderer] per-clip data received:", {
-    globalFilter: filter.id ?? "?",
-    filters: perClipFilters.map((f) => f?.id ?? "(undef)"),
-    transitions: perClipTransitions,
-    effectIds: opts.effectIds,
-    effectsEnabled: opts.effectsEnabled,
-  });
 
   const introMs = effects.intro && opts.introPng ? (opts.introDuration ?? 0.9) * 1000 : 0;
   const outroMs = opts.outroPng ? (opts.outroDuration ?? 1.4) * 1000 : 0;
