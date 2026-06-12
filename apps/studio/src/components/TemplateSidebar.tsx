@@ -40,6 +40,12 @@ export default function TemplateSidebar({
   const onCoverPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      alert(`Imaginea e prea mare (${(file.size / 1024 / 1024).toFixed(1)}MB). Încarcă una sub ${MAX_MB}MB.`);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+      return;
+    }
     const fd = new FormData();
     fd.set("cover", file);
     setError(null);

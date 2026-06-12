@@ -166,6 +166,12 @@ export default function LiveScenePreview({
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !shot) return;
+    const MAX_MB = 50;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      alert(`Clipul e prea mare (${(file.size / 1024 / 1024).toFixed(0)}MB). Încarcă unul sub ${MAX_MB}MB — pentru un exemplu scurt, un clip de 5-10 secunde la calitate normală e numai bun.`);
+      e.target.value = "";
+      return;
+    }
     const video = videoRef.current;
     if (!video) return;
     if (localUrlRef.current) URL.revokeObjectURL(localUrlRef.current);
