@@ -75,7 +75,7 @@ export default function TemplateActionsCard({
         </p>
       )}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
         {status === "draft" ? (
           <button
             type="button"
@@ -102,7 +102,7 @@ export default function TemplateActionsCard({
           type="button"
           onClick={onDelete}
           disabled={!isAdmin || pending}
-          className="w-full h-11 rounded-full text-[12px] tracking-[0.16em] uppercase font-semibold border border-rose-400/40 text-rose-300 bg-rose-400/[0.06] hover:bg-rose-400/[0.12] active:scale-[0.98] transition disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+          className="h-11 px-6 rounded-full text-[12px] tracking-[0.16em] uppercase font-semibold border border-rose-400/40 text-rose-300 bg-rose-400/[0.06] hover:bg-rose-400/[0.12] active:scale-[0.98] transition disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
         >
           <Trash2 className="w-3.5 h-3.5" />
           Șterge șablonul

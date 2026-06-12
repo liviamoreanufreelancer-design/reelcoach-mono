@@ -20,6 +20,7 @@ import CoverUploadCard from "@/components/CoverUploadCard";
 import ScenesEditor from "@/components/ScenesEditor";
 import TemplateActionsCard from "@/components/TemplateActionsCard";
 import LiveScenePreview from "@/components/LiveScenePreview";
+import TemplateSidebar from "@/components/TemplateSidebar";
 
 export default async function TemplateDetailPage({
   params,
@@ -99,17 +100,19 @@ export default async function TemplateDetailPage({
         </div>
       )}
 
-      {/* Two-column layout: left scrolls, right (preview) stays fixed on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
+      {/* Two zones: main column (scene editor + form) and a per-reel sidebar
+          (cover + status + publish actions). On narrow screens the sidebar
+          stacks below. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-6 items-start">
+
+        {/* ── MAIN: scene editor + form ── */}
         <div className="flex flex-col gap-6 min-w-0">
-          {/* Template metadata form */}
+          <LiveScenePreview templateId={template.id} shots={shots} globalFilter={template.global_filter} disabled={!canEdit} />
           <TemplateFormCard
             template={template}
             categories={categories}
             disabled={!canEdit}
           />
-
-          {/* Scenes editor */}
           <ScenesEditor
             templateId={template.id}
             shots={shots}
@@ -117,26 +120,14 @@ export default async function TemplateDetailPage({
           />
         </div>
 
-        {/*
-          Right side panel — sticky on desktop so the preview stays visible
-          while the editor scrolls through scene fields on the left. Top
-          offset matches header height + a comfortable gap.
-        */}
-        <div className="flex flex-col gap-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:thin]">
-
-          <LiveScenePreview templateId={template.id} shots={shots} globalFilter={template.global_filter} disabled={!canEdit} />
-          <CoverUploadCard
-            templateId={template.id}
-            coverUrl={template.cover_url}
-            disabled={!canEdit}
-          />
-
-          <TemplateActionsCard
-            templateId={template.id}
-            status={template.status}
-            isAdmin={isAdmin}
-          />
-        </div>
+        {/* ── SIDEBAR: cover + actions (per-reel) ── */}
+        <TemplateSidebar
+          templateId={template.id}
+          coverUrl={template.cover_url}
+          status={template.status}
+          isAdmin={isAdmin}
+          canEdit={canEdit}
+        />
       </div>
     </div>
   );

@@ -48,7 +48,7 @@ export default function CoverUploadCard({
 
       <div
         className="relative w-full rounded-xl overflow-hidden bg-white/[0.04] border border-[#E8D5B5]/15 mb-3"
-        style={{ aspectRatio: "16 / 13" }}
+        style={{ aspectRatio: "16 / 10" }}
       >
         {coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
