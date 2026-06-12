@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { renderPreviewFrame, FILTERS, type FilterId } from "@reelcoach/core";
-import { updateShot, updateGlobalFilter, uploadShotSample } from "@/lib/template-actions";
+import { updateShot, updateGlobalFilter, uploadShotSample, uploadCover } from "@/lib/template-actions";
 import { TRANSITIONS, FILTERS as FILTER_OPTS, EFFECTS } from "@/lib/options";
 import type { ShotRow, TransitionId, EffectId } from "@/lib/db-types";
 
@@ -224,6 +224,21 @@ export default function LiveScenePreview({
     setPaused(false);
   };
 
+  const captureCover = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) { alert("Nu am putut captura cadrul."); return; }
+      const file = new File([blob], `cover-${Date.now()}.png`, { type: "image/png" });
+      const fd = new FormData();
+      fd.set("cover", file);
+      startTransition(async () => {
+        await uploadCover(templateId, fd);
+        router.refresh();
+      });
+    }, "image/png");
+  };
+
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video || !hasVideo) return;
@@ -295,6 +310,10 @@ export default function LiveScenePreview({
           <button type="button" onClick={() => alert("În curând: randarea reel-ului complet.")}
             className="btn-glass w-full text-[12px] py-2 border-[#E8D5B5]/30">
             ▶ Vezi reel-ul complet
+          </button>
+          <button type="button" onClick={captureCover} disabled={disabled || !hasVideo}
+            className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
+            📷 Salvează cover
           </button>
         </div>
 
