@@ -64,20 +64,28 @@ export default function LiveScenePreview({
 
   const [trimSec, setTrimSec] = useState<number>(shot?.final_usage_duration ?? 2);
   const [textValue, setTextValue] = useState<string>(shot?.overlay_text ?? "");
-  const [textPos, setTextPos] = useState<string>("bottom");
-  const [textStyle, setTextStyle] = useState<string>("hookBold");
+  const [textPos, setTextPos] = useState<string>(shot?.caption_position ?? "bottom");
+  const [textStyle, setTextStyle] = useState<string>(shot?.caption_preset ?? "hookBold");
+  useEffect(() => { setTextPos(shot?.caption_position ?? "bottom"); }, [shot?.id, shot?.caption_position]);
+  useEffect(() => { setTextStyle(shot?.caption_preset ?? "hookBold"); }, [shot?.id, shot?.caption_preset]);
 
   useEffect(() => { setTrimSec(shot?.final_usage_duration ?? 2); }, [shot?.id, shot?.final_usage_duration]);
-  useEffect(() => { setTextValue(shot?.overlay_text ?? ""); }, [shot?.id, shot?.overlay_text]);
+  useEffect(() => { setTextValue(shot?.overlay_text ?? ""); }, [shot?.id]); // doar la schimbare scena, nu in timp ce tastezi
 
   const filterRef = useRef(resolvedFilterId);
   const effectRef = useRef(resolvedEffectId);
   const speedRef = useRef(resolvedSpeed);
   const trimRef = useRef(trimSec);
+  const textRef = useRef(textValue);
+  const posRef = useRef(textPos);
+  const styleRef = useRef(textStyle);
   useEffect(() => { filterRef.current = resolvedFilterId; }, [resolvedFilterId]);
   useEffect(() => { effectRef.current = resolvedEffectId; }, [resolvedEffectId]);
   useEffect(() => { speedRef.current = resolvedSpeed; }, [resolvedSpeed]);
   useEffect(() => { trimRef.current = trimSec; }, [trimSec]);
+  useEffect(() => { textRef.current = textValue; }, [textValue]);
+  useEffect(() => { posRef.current = textPos; }, [textPos]);
+  useEffect(() => { styleRef.current = textStyle; }, [textStyle]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -103,6 +111,9 @@ export default function LiveScenePreview({
           tNorm,
           localMs: local * 1000,
           clipMs: win * 1000,
+          caption: textRef.current.trim()
+            ? { text: textRef.current, position: posRef.current as "top" | "center" | "bottom", presetId: styleRef.current }
+            : undefined,
         });
       }
       rafRef.current = requestAnimationFrame(loop);
@@ -211,10 +222,8 @@ export default function LiveScenePreview({
     if (textSaveRef.current) clearTimeout(textSaveRef.current);
     textSaveRef.current = setTimeout(() => {
       if (!shot) return;
-      startTransition(async () => {
-        await updateShot(shot.id, templateId, { overlay_text: value || null });
-        router.refresh();
-      });
+      // Save quietly — NO router.refresh() (it re-renders mid-typing and wipes input).
+      updateShot(shot.id, templateId, { overlay_text: value || null }).catch(() => {});
     }, 600);
   };
 
@@ -285,11 +294,6 @@ export default function LiveScenePreview({
                 <span className="text-[12px]">Niciun clip</span>
               </div>
             )}
-            {textValue && hasVideo && (
-              <div className={`absolute left-0 right-0 px-3 text-center pointer-events-none ${textPos === "top" ? "top-4" : textPos === "center" ? "top-1/2 -translate-y-1/2" : "bottom-4"}`}>
-                <span className="text-white text-[13px] font-bold leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}>{textValue}</span>
-              </div>
-            )}
             {hasVideo && (
               <button type="button" onClick={togglePlay}
                 className="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-black/55 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 transition">
@@ -337,7 +341,7 @@ export default function LiveScenePreview({
                 <label className="label">Poziție</label>
                 <div className="flex gap-1">
                   {TEXT_POSITIONS.map((p) => (
-                    <button key={p.id} type="button" onClick={() => setTextPos(p.id)}
+                    <button key={p.id} type="button" onClick={() => { setTextPos(p.id); saveShot({ caption_position: p.id as "top" | "center" | "bottom" }); }}
                       className={`flex-1 py-1.5 rounded-lg text-[11px] transition ${textPos === p.id ? "bg-[#E8D5B5] text-[#0F1419] font-medium" : "bg-white/[0.04] text-white/55 hover:text-white/80"}`}>
                       {p.label}
                     </button>
@@ -346,12 +350,11 @@ export default function LiveScenePreview({
               </div>
               <div>
                 <label className="label">Stil</label>
-                <select value={textStyle} onChange={(e) => setTextStyle(e.target.value)} className="input">
+                <select value={textStyle} onChange={(e) => { setTextStyle(e.target.value); saveShot({ caption_preset: e.target.value }); }} className="input">
                   {TEXT_STYLES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
                 </select>
               </div>
             </div>
-            <p className="text-[9px] text-white/30 mt-2 leading-snug">Poziția și stilul devin active în curând.</p>
           </div>
 
           {/* Aspect */}

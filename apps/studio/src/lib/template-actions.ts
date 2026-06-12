@@ -197,6 +197,8 @@ export async function updateShot(
     how_shoot?: HowShootItem[];
     playback_speed?: number;
     motion_blur?: boolean;
+    caption_position?: 'top' | 'center' | 'bottom';
+    caption_preset?: string;
   },
 ) {
   const supabase = await getSupabaseServerClient();

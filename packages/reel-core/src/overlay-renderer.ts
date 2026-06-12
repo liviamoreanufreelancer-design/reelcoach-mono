@@ -3,7 +3,7 @@ import type { TextPreset, TextPosition } from "./text-presets";
 const BASE_W = 1080;
 const BASE_H = 1920;
 
-interface RenderSurface {
+export interface RenderSurface {
   width: number;
   height: number;
   scale: number;
@@ -32,7 +32,7 @@ export interface OverlayInputs {
   height?: number;
 }
 
-function makeSurface(width = BASE_W, height = BASE_H): RenderSurface {
+export function makeSurface(width = BASE_W, height = BASE_H): RenderSurface {
   return {
     width,
     height,
@@ -95,7 +95,7 @@ function setFont(
   ctx.textBaseline = "middle";
 }
 
-function drawCaption(
+export function drawCaption(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   caption: Caption,
   preset: TextPreset,
@@ -123,9 +123,9 @@ function drawCaption(
   const cx = surface.width / 2;
   let cy: number;
   switch (caption.position) {
-    case "top":    cy = 240 * surface.scaleY + totalH / 2; break;
+    case "top":    cy = 300 * surface.scaleY + totalH / 2; break;
     case "center": cy = surface.height / 2; break;
-    case "bottom": cy = surface.height - 320 * surface.scaleY - totalH / 2; break;
+    case "bottom": cy = surface.height - 380 * surface.scaleY - totalH / 2; break;
   }
 
   // Background pill (drawn behind ALL lines as a single rounded rect)

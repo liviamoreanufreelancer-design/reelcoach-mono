@@ -2,6 +2,8 @@ import type { ConcatProgress } from "./render-progress";
 import type { FilterPreset } from "./filters";
 import { FILTERS } from "./filters";
 import type { TransitionId } from "./transitions";
+import { drawCaption, makeSurface, type Caption } from "./overlay-renderer";
+import { TEXT_PRESETS } from "./text-presets";
 
 /**
  * App-agnostic clip input contract for the renderer. Any source — the mobile
@@ -1155,6 +1157,8 @@ export interface PreviewFrameOptions {
   clipMs?: number;
   /** Ken Burns zoom. Off by default for preview (the video itself moves). */
   kenBurns?: boolean;
+  /** Optional caption overlay (text + position + preset id). Drawn last, same as export. */
+  caption?: Caption;
 }
 
 export function renderPreviewFrame(
@@ -1177,5 +1181,12 @@ export function renderPreviewFrame(
   const effectId = opts.effectId;
   if (effectId && effectId !== "none") {
     drawPremiumEffect(ctx, effectId, opts.localMs ?? 0, opts.clipMs ?? 4000, width, height);
+  }
+  // Caption overlay — same drawCaption + presets as export, so preview = export.
+  const caption = opts.caption;
+  if (caption && caption.text.trim()) {
+    const preset = TEXT_PRESETS[caption.presetId] ?? TEXT_PRESETS.hookBold;
+    const surface = makeSurface(width, height);
+    drawCaption(ctx, caption, preset, surface);
   }
 }

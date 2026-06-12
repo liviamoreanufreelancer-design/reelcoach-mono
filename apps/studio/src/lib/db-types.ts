@@ -101,6 +101,8 @@ export interface ShotRow {
   sample_video_url: string | null;
   /** Migration 004: which pool slot fills this scene's on-screen text. */
   text_slot_role: SlotRole | null;
+  caption_position: 'top' | 'center' | 'bottom';
+  caption_preset: string;
   /** Playback speed for this scene's clip (1.0 = normal, 0.5 = slow motion). */
   playback_speed: number;
   /** Apply motion blur across the entire scene clip (cinematic effect). */
