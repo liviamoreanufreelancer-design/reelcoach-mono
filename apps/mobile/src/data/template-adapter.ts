@@ -35,7 +35,8 @@ export function templateToScenario(t: ReelTemplate): Scenario {
       : undefined;
 
     return {
-      bg: t.cover,
+      // Imaginea de exemplu specifică scenei; fallback la cover dacă lipsește.
+      bg: shot.exampleImageUrl ?? t.cover,
       hook: shot.title,
       // The legacy Scene timer drives the in-app recording. Use the
       // shot's recording duration, NOT the final-usage duration.

@@ -86,6 +86,7 @@ function dbShotToShot(row: DbShotRow): Shot {
     howShoot: row.how_shoot ?? undefined,
     playbackSpeed: row.playback_speed ?? undefined,
     motionBlur: row.motion_blur ?? undefined,
+    exampleImageUrl: row.example_image_url ?? undefined,
   };
 }
 

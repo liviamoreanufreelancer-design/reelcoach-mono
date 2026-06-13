@@ -121,6 +121,10 @@ export default function ScenesEditor({
                     )}
                   </button>
 
+                  {shot.example_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={shot.example_image_url} alt="" className="w-8 h-11 rounded-md object-cover border border-[#E8D5B5]/20 shrink-0" />
+                  )}
                   {/* Move + delete */}
                   <div className="flex items-center gap-1 shrink-0">
                     <button

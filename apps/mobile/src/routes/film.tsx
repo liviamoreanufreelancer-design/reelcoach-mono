@@ -1016,7 +1016,7 @@ function PreShotScreen({
             </p>
             <div
               className="relative w-full rounded-2xl overflow-hidden"
-              style={{ aspectRatio: "4 / 5" }}
+              style={{ aspectRatio: "9 / 16" }}
             >
               <div
                 className="absolute inset-0 bg-cover bg-center"

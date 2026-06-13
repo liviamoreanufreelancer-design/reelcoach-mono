@@ -125,6 +125,8 @@ export interface Shot {
   playbackSpeed?: number;
   /** Per-scenă: motion blur. */
   motionBlur?: boolean;
+  /** Imaginea de exemplu pentru această scenă (cum trebuie să arate cadrul). */
+  exampleImageUrl?: string;
   /**
    * Optional override for the premium effect on this specific shot.
    * If omitted, the pattern's defaultEffect is used.
@@ -145,7 +147,7 @@ export interface Shot {
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur">> {
+  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -155,6 +157,7 @@ export interface ResolvedShot
   howShoot: { icon: string; label: string; detail: string }[];
   playbackSpeed?: number;
   motionBlur?: boolean;
+  exampleImageUrl?: string;
 }
 
 /**
@@ -204,6 +207,7 @@ export function resolveShot(shot: Shot): ResolvedShot {
     // they were silently dropped here and never applied to the export).
     playbackSpeed: shot.playbackSpeed,
     motionBlur: shot.motionBlur,
+    exampleImageUrl: shot.exampleImageUrl,
   };
 }
 

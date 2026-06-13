@@ -283,6 +283,29 @@ export async function uploadCover(templateId: string, formData: FormData) {
   return publicUrl;
 }
 
+
+export async function uploadExampleImage(shotId: string, templateId: string, formData: FormData) {
+  const supabase = await getSupabaseServerClient();
+  const file = formData.get("example") as File | null;
+  if (!file || file.size === 0) throw new Error("Niciun fișier selectat");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Fișierul depășește 5MB");
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+  const path = `${templateId}/${shotId}-${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from("examples")
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (uploadError) throw new Error(uploadError.message);
+  const { data: publicData } = supabase.storage.from("examples").getPublicUrl(path);
+  const publicUrl = publicData.publicUrl;
+  const { error: updateError } = await supabase
+    .from("shots")
+    .update({ example_image_url: publicUrl })
+    .eq("id", shotId);
+  if (updateError) throw new Error(updateError.message);
+  revalidatePath(`/dashboard/templates/${templateId}`);
+  return publicUrl;
+}
+
 // ============================================================================
 // Helpers
 // ============================================================================

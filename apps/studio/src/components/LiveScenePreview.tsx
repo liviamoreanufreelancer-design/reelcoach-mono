@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { renderPreviewFrame, FILTERS, type FilterId } from "@reelcoach/core";
-import { updateShot, updateGlobalFilter, uploadShotSample, uploadCover } from "@/lib/template-actions";
+import { updateShot, updateGlobalFilter, uploadShotSample, uploadCover, uploadExampleImage } from "@/lib/template-actions";
 import { TRANSITIONS, FILTERS as FILTER_OPTS, EFFECTS } from "@/lib/options";
 import type { ShotRow, TransitionId, EffectId } from "@/lib/db-types";
 import ReelPlayer from "./ReelPlayer";
@@ -243,10 +243,26 @@ export default function LiveScenePreview({
     setPaused(false);
   };
 
+  // Render the CURRENT frame at full 1080x1920 (preview canvas is 540x960 for
+  // smooth playback; captures need full resolution so covers/examples are sharp).
+  const captureHiRes = (cb: (blob: Blob | null) => void) => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2) { cb(null); return; }
+    const hi = document.createElement("canvas");
+    hi.width = 1080;
+    hi.height = 1920;
+    renderPreviewFrame(hi, video, {
+      filter: FILTERS[filterRef.current] ?? FILTERS.none,
+      effectId: effectRef.current,
+      caption: textRef.current.trim()
+        ? { text: textRef.current, position: posRef.current as "top" | "center" | "bottom", presetId: styleRef.current }
+        : undefined,
+    });
+    hi.toBlob(cb, "image/png");
+  };
+
   const captureCover = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.toBlob((blob) => {
+    captureHiRes((blob) => {
       if (!blob) { alert("Nu am putut captura cadrul."); return; }
       const file = new File([blob], `cover-${Date.now()}.png`, { type: "image/png" });
       const fd = new FormData();
@@ -255,7 +271,21 @@ export default function LiveScenePreview({
         await uploadCover(templateId, fd);
         router.refresh();
       });
-    }, "image/png");
+    });
+  };
+
+  const captureExample = () => {
+    if (!shot) return;
+    captureHiRes((blob) => {
+      if (!blob) { alert("Nu am putut captura cadrul."); return; }
+      const file = new File([blob], `example-${Date.now()}.png`, { type: "image/png" });
+      const fd = new FormData();
+      fd.set("example", file);
+      startTransition(async () => {
+        await uploadExampleImage(shot.id, templateId, fd);
+        router.refresh();
+      });
+    });
   };
 
   const togglePlay = () => {
@@ -330,6 +360,10 @@ export default function LiveScenePreview({
           <button type="button" onClick={captureCover} disabled={disabled || !hasVideo}
             className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
             📷 Salvează cover
+          </button>
+          <button type="button" onClick={captureExample} disabled={disabled || !hasVideo}
+            className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
+            🖼 Salvează cadru ca exemplu scenă
           </button>
         </div>
 
