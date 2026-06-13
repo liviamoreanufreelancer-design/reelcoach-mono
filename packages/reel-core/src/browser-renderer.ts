@@ -1159,6 +1159,10 @@ export function renderPreviewFrame(
 ): void {
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) return;
+  // High-quality scaling — without this a 4K source drawn onto the canvas
+  // looks soft (browser defaults to fast/medium scaling). Matches the reel renderer.
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   const width = canvas.width;
   const height = canvas.height;
   const filter = opts.filter ?? FILTERS.none;
