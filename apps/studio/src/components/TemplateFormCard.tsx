@@ -24,6 +24,8 @@ export default function TemplateFormCard({
   const [pending, startTransition] = useTransition();
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const PROMISE_MAX = 140;
+  const [promiseLen, setPromiseLen] = useState((template.promise ?? "").length);
 
   const save = () => {
     if (!formRef.current) return;
@@ -70,10 +72,15 @@ export default function TemplateFormCard({
               id="promise"
               name="promise"
               rows={2}
+              maxLength={PROMISE_MAX}
               defaultValue={template.promise ?? ""}
+              onChange={(e) => setPromiseLen(e.target.value.length)}
               placeholder="Ex: Un reel cu efect WOW prin contrast puternic before/after."
               className="input resize-none"
             />
+            <div className="mt-1 text-right text-[11px] tabular-nums" style={{ color: promiseLen >= PROMISE_MAX ? "#E5484D" : promiseLen >= PROMISE_MAX - 20 ? "#F5B228" : "rgba(255,255,255,0.4)" }}>
+              {promiseLen}/{PROMISE_MAX}
+            </div>
           </div>
 
           <div>

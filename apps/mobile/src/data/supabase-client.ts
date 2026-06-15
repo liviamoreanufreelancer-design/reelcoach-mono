@@ -85,6 +85,9 @@ export interface DbShotRow {
   must_see: string[] | null;
   how_shoot: { icon: string; label: string; detail: string }[] | null;
   example_image_url: string | null;
+  diagram_id: string | null;
+  /** Join cu diagrams pe diagram_id — diagrama de filmare (refolosibila). */
+  diagram: { image_url: string } | null;
   playback_speed: number;
   motion_blur: boolean;
 }

@@ -55,6 +55,7 @@ export function dbToReelTemplate(
     title: template.title,
     promise: template.promise ?? "",
     emotionalPitch: template.emotional_pitch ?? undefined,
+    difficulty: template.difficulty ?? "easy",
     cover,
     // Studio uses category_id to mean the leaf category (Subcategory in mobile
     // terms). The mobile catalog binds templates by subcategoryId.
@@ -87,6 +88,7 @@ function dbShotToShot(row: DbShotRow): Shot {
     playbackSpeed: row.playback_speed ?? undefined,
     motionBlur: row.motion_blur ?? undefined,
     exampleImageUrl: row.example_image_url ?? undefined,
+    diagramUrl: row.diagram?.image_url ?? undefined,
   };
 }
 

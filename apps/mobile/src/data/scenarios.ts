@@ -122,6 +122,8 @@ export const getProfession = (id: Profession) =>
 
 export interface Scene {
   bg: string;
+  /** Diagrama de filmare (din biblioteca, refolosibila). Optional. */
+  diagramUrl?: string;
   hook: string;
   duration: number;
   what: string;
@@ -191,7 +193,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyMeta> = {
     desc: "Ai nevoie de o clientă cooperantă și 1–2 cadre planificate.",
   },
   hard: {
-    id: "hard", label: "Greu", short: "Greu",
+    id: "hard", label: "Avansat", short: "Avansat",
     desc: "Cere timing, reacție autentică sau o a doua persoană la telefon.",
   },
 };

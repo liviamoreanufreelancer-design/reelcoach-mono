@@ -1031,6 +1031,25 @@ function PreShotScreen({
               </div>
             </div>
           </div>
+
+          {/* Diagrama de filmare — cum sa pozitionezi telefonul/lumina/miscarea */}
+          {scene.diagramUrl && (
+            <div className="mb-3">
+              <p className="section-head text-[18px] text-white mb-3">
+                Cum să filmezi
+              </p>
+              <div
+                className="relative w-full rounded-2xl overflow-hidden bg-white"
+                style={{ aspectRatio: "9 / 16" }}
+              >
+                <img
+                  src={scene.diagramUrl}
+                  alt="Diagramă de filmare"
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sticky bottom — Sunt gata + Următorul shot link */}

@@ -76,6 +76,46 @@ export interface HowShootItem {
   detail: string;
 }
 
+/** Migration 007: valori fixe pentru etichetele diagramelor. */
+export const DIAGRAM_CATEGORIES = ["machiaj", "par", "unghii", "gene", "sprancene", "general"] as const;
+export type DiagramCategory = (typeof DIAGRAM_CATEGORIES)[number];
+
+export const DIAGRAM_POSITIONS = ["frontal", "de sus", "lateral", "deasupra zonei de lucru"] as const;
+export type DiagramPosition = (typeof DIAGRAM_POSITIONS)[number];
+
+export const DIAGRAM_LIGHTING = ["naturala din fata", "ring light", "doua LED-uri", "laterala"] as const;
+export type DiagramLighting = (typeof DIAGRAM_LIGHTING)[number];
+
+export const DIAGRAM_DISTANCES = ["foarte aproape", "la un brat", "la doi pasi"] as const;
+export type DiagramDistance = (typeof DIAGRAM_DISTANCES)[number];
+
+/** Migration 007: biblioteca GLOBALA de diagrame vizuale de filmare.
+ * Diagrama = imagine generata + etichete pentru filtrare. Refolosibila cross-reel. */
+export interface DiagramRow {
+  id: string;
+  name: string;
+  image_url: string;
+  category: string;           // DiagramCategory
+  position: string | null;    // DiagramPosition
+  lighting: string[];         // DiagramLighting[] (poate fi multipla)
+  distance: string | null;    // DiagramDistance
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Migration 006: biblioteca de demo-uri VIDEO de tehnica de filmare.
+ * Refolosibile intre scene/retete (filmezi ~20 o data, folosesti in sute de scene). */
+export interface TechniqueDemoRow {
+  id: string;
+  name: string;
+  description: string | null;
+  video_url: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ShotRow {
   id: string;
   template_id: string;
@@ -107,6 +147,12 @@ export interface ShotRow {
   playback_speed: number;
   /** Apply motion blur across the entire scene clip (cinematic effect). */
   motion_blur: boolean;
+  /** Migration 006: video demo de tehnica din biblioteca (cum se filmeaza). */
+  technique_demo_id: string | null;
+  /** Migration 006: slot pentru diagrama vizuala (designul vine separat). */
+  diagram_url: string | null;
+  /** Migration 007: referinta la o diagrama din biblioteca globala (refolosibila). */
+  diagram_id: string | null;
   created_at: string;
   updated_at: string;
 }

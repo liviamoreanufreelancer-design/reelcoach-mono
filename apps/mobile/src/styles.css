@@ -4,14 +4,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ════════════════════════════════════════════════════════════════
+   ReelCoach Design System — Purple / Light
+   Premium filming-direction app. Inspired by Linear / Arc / Apple.
+   ════════════════════════════════════════════════════════════════ */
+
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: calc(var(--radius) - 2px);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 10px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -31,58 +37,64 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-gold: var(--gold);
+
+  /* Brand tokens */
+  --color-purple: var(--purple);
+  --color-purple-light: var(--purple-light);
+  --color-yellow: var(--yellow);
+
   --font-display: "League Spartan", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-editorial: "League Spartan", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 :root {
-  --radius: 1.25rem;
+  --radius: 1rem;
 
-  /* ══ Champagne & Midnight palette (from Figma) ══ */
-  --background: #0F1419;
-  --foreground: #ffffff;
-  --card: rgba(26, 31, 38, 0.55);
-  --card-foreground: #ffffff;
-  --popover: #1A1F26;
-  --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #0F1419;
-  --secondary: rgba(37, 43, 53, 0.5);
-  --secondary-foreground: #ffffff;
-  --muted: rgba(37, 43, 53, 0.6);
-  --muted-foreground: rgba(255,255,255,0.45);
-  --accent: #E8D5B5;
-  --accent-foreground: #0F1419;
-  --destructive: #d4183d;
-  --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #E8D5B5;
+  /* ══ ReelCoach Purple / Light palette ══ */
+  --purple:        #5B34FF;   /* primary action / brand */
+  --purple-hover:  #4A28E0;
+  --purple-light:  #EDE8FF;   /* tinted backgrounds, selected states */
+  --yellow:        #F5B228;   /* accent — difficulty, highlights */
 
-  /* Champagne gold scale — Figma values */
-  --gold-100: #F4E4C1;
-  --gold-300: #E8D5B5;
-  --gold:     #E8D5B5;
-  --gold-700: #D4AF37;
-  --gradient-gold: linear-gradient(135deg, #F4E4C1 0%, #E8D5B5 40%, #D4AF37 100%);
-  --gradient-gold-soft: linear-gradient(135deg, rgba(244,228,193,0.12) 0%, rgba(232,213,181,0.08) 100%);
-  --shadow-gold: 0 4px 24px rgba(244,228,193,0.4);
-  --shadow-gold-hover: 0 6px 32px rgba(244,228,193,0.6);
-  --shadow-contact: 0 1px 2px rgba(0,0,0,0.6), 0 12px 30px -18px rgba(0,0,0,0.7);
+  --background:    #F8F8FA;   /* app background */
+  --foreground:    #1F1F1F;   /* primary text */
+
+  --card:               #FFFFFF;
+  --card-foreground:    #1F1F1F;
+  --popover:            #FFFFFF;
+  --popover-foreground: #1F1F1F;
+
+  --primary:            #5B34FF;
+  --primary-foreground: #FFFFFF;
+  --secondary:          #EDE8FF;
+  --secondary-foreground: #5B34FF;
+
+  --muted:            #F1F1F4;
+  --muted-foreground: #6B6B6B;   /* secondary text */
+  --accent:           #F5B228;
+  --accent-foreground:#1F1F1F;
+
+  --destructive:            #E5484D;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #E6E6EA;
+  --input:  #E6E6EA;
+  --ring:   #5B34FF;
+
+  /* Purple scale */
+  --purple-50:  #F5F2FF;
+  --purple-100: #EDE8FF;
+  --purple-200: #D9CEFF;
+  --purple-500: #5B34FF;
+  --purple-600: #4A28E0;
+  --purple-700: #3A1FB8;
+
+  --gradient-purple: linear-gradient(135deg, #6B47FF 0%, #5B34FF 50%, #4A28E0 100%);
+  --shadow-card:    0 1px 2px rgba(31,31,31,0.04), 0 8px 24px -12px rgba(31,31,31,0.10);
+  --shadow-card-lg: 0 2px 4px rgba(31,31,31,0.05), 0 16px 40px -16px rgba(31,31,31,0.14);
+  --shadow-purple:  0 8px 24px -8px rgba(91,52,255,0.40);
   --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
-
-  /* Midnight scale */
-  --midnight-deepest: #0A0D11;
-  --midnight-deep: #0F1419;
-  --midnight-main: #1A1F26;
-  --midnight-light: #252B35;
-}
-
-.dark {
-  --background: #0F1419;
-  --foreground: #ffffff;
 }
 
 @layer base {
@@ -91,8 +103,8 @@
   }
   html, body, #root {
     height: 100%;
-    background: var(--midnight-deepest);
-    color: var(--color-foreground);
+    background: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
@@ -101,158 +113,139 @@
     overflow: hidden;
   }
   ::selection {
-    background-color: rgba(232, 213, 181, 0.3);
-    color: white;
+    background-color: rgba(91, 52, 255, 0.18);
+    color: #1F1F1F;
   }
 }
 
 @layer utilities {
+  /* ── Typography ── */
   .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
   .font-editorial { font-family: var(--font-editorial); letter-spacing: -0.02em; }
-  .h1-lux { font-family: var(--font-display); letter-spacing: -0.03em; line-height: 0.92; font-weight: 700; }
+  .h1-lux { font-family: var(--font-display); letter-spacing: -0.03em; line-height: 0.95; font-weight: 700; }
 
-  /* Dense section header — Prequel-style: heavy weight, tight tracking,
-     for "Explorează" / "Populare" style row labels. League Spartan at
-     700 with negative tracking reads dense and confident. */
+  /* Section header — display face, tight, confident */
   .section-head {
     font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: var(--foreground);
   }
-  /* Subtitle that pairs with section-head — DM Sans, muted, smaller. */
   .section-sub {
     font-family: var(--font-sans);
     letter-spacing: 0;
-    color: rgba(255,255,255,0.5);
-    line-height: 1.35;
+    color: var(--muted-foreground);
+    line-height: 1.4;
+  }
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--purple);
   }
 
-  .glass {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(24px) saturate(140%);
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+  /* ── Cards ── */
+  .card-lux {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-card);
   }
-  .glass-strong {
-    background: rgba(15,20,25,0.55);
-    backdrop-filter: blur(36px) saturate(160%);
-    -webkit-backdrop-filter: blur(36px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.1);
+  .card-flat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
   }
-
-  /* Premium glass card — matches Figma GlassCard */
-  .glass-lux {
-    position: relative;
-    background: rgba(255,255,255,0.04);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border: 0.5px solid rgba(255,255,255,0.08);
-    border-radius: 1rem;
-    box-shadow:
-      var(--shadow-contact),
-      inset 0 1px 0 rgba(255,255,255,0.06);
-    transition: transform 220ms var(--ease-lux), box-shadow 220ms var(--ease-lux);
-  }
-  .glass-lux::before {
-    content: "";
-    position: absolute; inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(232,213,181,0.2), rgba(255,255,255,0.04) 35%, transparent 70%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-    pointer-events: none;
-  }
-  .glass-lux:active {
-    transform: scale(0.98);
-    box-shadow: var(--shadow-contact), inset 0 1px 0 rgba(255,255,255,0.04);
+  .card-tinted {
+    background: var(--purple-light);
+    border: 1px solid transparent;
+    border-radius: var(--radius-xl);
   }
 
-  .text-gold       { color: var(--gold); }
-  .text-gold-100   { color: var(--gold-100); }
-  .bg-gold-gradient { background-image: var(--gradient-gold); }
-  .text-gold-gradient {
-    background-image: var(--gradient-gold);
+  /* ── Buttons ── */
+  .btn-primary {
+    background: var(--purple);
+    color: #FFFFFF;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    box-shadow: var(--shadow-purple);
+    transition: background 180ms var(--ease-lux), transform 180ms var(--ease-lux);
+  }
+  .btn-primary:active { transform: scale(0.98); background: var(--purple-hover); }
+
+  .btn-secondary {
+    background: var(--purple-light);
+    color: var(--purple);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    transition: background 180ms var(--ease-lux), transform 180ms var(--ease-lux);
+  }
+  .btn-secondary:active { transform: scale(0.98); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    transition: background 180ms var(--ease-lux);
+  }
+  .btn-ghost:active { background: var(--muted); }
+
+  /* ── Pills / badges ── */
+  .pill {
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .pill-purple { background: var(--purple-light); color: var(--purple); }
+  .pill-yellow { background: rgba(245,178,40,0.16); color: #B07A0E; }
+  .pill-muted  { background: var(--muted); color: var(--muted-foreground); }
+
+  /* ── Brand color helpers ── */
+  .text-purple { color: var(--purple); }
+  .text-yellow { color: var(--yellow); }
+  .bg-purple { background: var(--purple); }
+  .bg-purple-light { background: var(--purple-light); }
+  .text-purple-gradient {
+    background-image: var(--gradient-purple);
     -webkit-background-clip: text;
             background-clip: text;
     color: transparent;
   }
-  .ring-gold {
-    box-shadow:
-      0 0 0 1px var(--gold),
-      var(--shadow-gold);
-  }
-  .shadow-gold { box-shadow: var(--shadow-gold); }
 
-  /* Warm vignette */
-  .vignette::after {
-    content: "";
-    position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(ellipse at center, transparent 28%, rgba(15,20,25,0.55) 75%, rgba(10,13,17,0.85) 100%);
-  }
-  .grain::before {
-    content: "";
-    position: absolute; inset: 0; pointer-events: none; opacity: 0.04; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/></svg>");
-  }
-  .spot-light::after {
-    content: "";
-    position: absolute; inset: 0; pointer-events: none;
-    background:
-      radial-gradient(600px 480px at 12% 0%, rgba(232,213,181,0.06), transparent 60%),
-      radial-gradient(500px 420px at 90% 100%, rgba(180,120,60,0.04), transparent 65%);
-    mix-blend-mode: screen;
+  /* ── Layout shell ── */
+  .phone-frame {
+    position: fixed; inset: 0;
+    overflow: hidden;
+    background: var(--background);
   }
 
-  .ken-burns {
-    animation: kenburns 18s ease-in-out infinite alternate;
-    will-change: transform;
-  }
+  /* ── Motion (kept from before, still useful) ── */
+  .ken-burns { animation: kenburns 18s ease-in-out infinite alternate; will-change: transform; }
   @keyframes kenburns {
     0%   { transform: scale(1.08) translate3d(-1.5%, -1%, 0); }
     100% { transform: scale(1.18) translate3d(2%, 1.5%, 0); }
   }
-  /* Home Ken Burns — much more subtle, almost imperceptible breathing.
-     For the landing screen where the image is the main subject and we
-     don't want any "video looping" feel. */
-  .home-ken-burns {
-    animation: home-kb 25s ease-in-out infinite alternate;
-    will-change: transform;
-  }
+  .home-ken-burns { animation: home-kb 25s ease-in-out infinite alternate; will-change: transform; }
   @keyframes home-kb {
     0%   { transform: scale(1.0); }
     100% { transform: scale(1.06); }
   }
   .float-slow { animation: floaty 6s ease-in-out infinite; }
-  @keyframes floaty {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-  }
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
   .shimmer {
-    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+    background: linear-gradient(110deg, transparent 30%, rgba(91,52,255,0.10) 50%, transparent 70%);
     background-size: 200% 100%;
     animation: shimmer 2.4s linear infinite;
   }
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  .shimmer-gold {
-    background: linear-gradient(110deg, var(--gold-700) 0%, var(--gold) 30%, var(--gold-100) 50%, var(--gold) 70%, var(--gold-700) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2.8s linear infinite;
-  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
   .progress-fill { animation: fill 4s ease-out forwards; }
   @keyframes fill { from { width: 0% } to { width: 100% } }
-
-  .pulse-gold { animation: pulseGold 2.4s var(--ease-lux) infinite; }
-  @keyframes pulseGold {
-    0%, 100% { box-shadow: 0 0 0 1px var(--gold), 0 12px 36px -16px rgba(232,213,181,0.4); }
-    50%      { box-shadow: 0 0 0 1px var(--gold-100), 0 22px 60px -14px rgba(232,213,181,0.7); }
-  }
 
   .stagger-lux > * { animation: fadeUpLux 600ms var(--ease-lux) both; }
   @keyframes fadeUpLux {
@@ -260,52 +253,16 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .phone-frame {
-    position: fixed; inset: 0;
-    overflow: hidden;
-    background: var(--midnight-deepest);
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes zoomIn {
-    from { opacity: 0; transform: scale(1.18); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-  @keyframes flashOverlay {
-    0%   { opacity: 0; }
-    20%  { opacity: 1; }
-    100% { opacity: 0; }
-  }
-  @keyframes glitchIn {
-    0%   { opacity: 0; transform: translateX(8px) scaleX(1.04); filter: hue-rotate(180deg) saturate(2); }
-    20%  { opacity: 1; transform: translateX(-6px); filter: hue-rotate(-120deg) saturate(2); }
-    50%  { transform: translateX(4px); filter: hue-rotate(60deg) saturate(1.5); }
-    100% { opacity: 1; transform: translateX(0); filter: none; }
-  }
-  @keyframes blurIn {
-    from { opacity: 0; filter: blur(20px); }
-    to   { opacity: 1; filter: blur(0); }
-  }
-  @keyframes slideIn {
-    from { opacity: 1; transform: translateX(100%); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes spinIn {
-    from { opacity: 0; transform: rotate(-180deg) scale(0.4); }
-    to   { opacity: 1; transform: rotate(0) scale(1); }
-  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes zoomIn { from { opacity: 0; transform: scale(1.18); } to { opacity: 1; transform: scale(1); } }
+  @keyframes flashOverlay { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes blurIn { from { opacity: 0; filter: blur(20px); } to { opacity: 1; filter: blur(0); } }
+  @keyframes slideIn { from { opacity: 1; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
 }
 
 html, body { width: 100%; }
 
-/* ───── Hide native video controls on iOS Safari ─────
-   When a <video> is paused on iOS, Safari overlays its own UI (play,
-   fullscreen, mute) with a subtle darkening shim. That shim makes
-   paused scenes look like they have a heavier filter applied. These
-   rules remove that overlay entirely. */
+/* ───── Hide native video controls on iOS Safari ───── */
 video::-webkit-media-controls,
 video::-webkit-media-controls-enclosure,
 video::-webkit-media-controls-panel,
@@ -318,6 +275,4 @@ video::-webkit-media-controls-mute-button {
   -webkit-appearance: none !important;
   opacity: 0 !important;
 }
-video {
-  -webkit-tap-highlight-color: transparent;
-}
+video { -webkit-tap-highlight-color: transparent; }

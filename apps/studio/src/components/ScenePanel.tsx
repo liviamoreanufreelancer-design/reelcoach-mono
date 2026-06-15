@@ -29,6 +29,7 @@ import { updateShot } from "@/lib/template-actions";
 import { PATTERNS, HOW_SHOOT_ICONS } from "@/lib/options";
 import type { ShotRow, HowShootItem } from "@/lib/db-types";
 import Combobox from "./Combobox";
+import DiagramPicker from "./DiagramPicker";
 
 export default function ScenePanel({
   shot,
@@ -220,6 +221,14 @@ export default function ScenePanel({
         <label className="label">
           Cum filmezi <span className="text-white/35 normal-case tracking-normal">(bullets compacte)</span>
         </label>
+        <div className="mb-4">
+          <DiagramPicker
+            shotId={shot.id}
+            templateId={templateId}
+            currentDiagramId={shot.diagram_id}
+            disabled={disabled}
+          />
+        </div>
         <HowShootListEditor
           value={howShoot}
           onChange={(next) => {

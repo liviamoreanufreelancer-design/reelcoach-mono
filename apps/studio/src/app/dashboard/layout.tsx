@@ -2,6 +2,7 @@
  * Dashboard layout — wraps all authenticated pages with a header
  * showing the user email + role and a logout button.
  */
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import LogoutButton from "@/components/LogoutButton";
@@ -34,6 +35,14 @@ export default async function DashboardLayout({
           <p className="eyebrow text-[9px] sm:text-[10px] hidden sm:block">ReelCoach</p>
           <span className="text-white/30 text-xs hidden sm:inline">·</span>
           <span className="h-display text-[16px] sm:text-[18px] text-white">Studio</span>
+          <nav className="flex items-center gap-1 ml-2 sm:ml-4">
+            <Link href="/dashboard" className="text-[12px] text-white/70 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
+              Șabloane
+            </Link>
+            <Link href="/dashboard/diagrams" className="text-[12px] text-white/70 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
+              Diagrame
+            </Link>
+          </nav>
         </div>
 
         {/* Right side — role badge + logout. Email shown only on desktop. */}

@@ -127,6 +127,8 @@ export interface Shot {
   motionBlur?: boolean;
   /** Imaginea de exemplu pentru această scenă (cum trebuie să arate cadrul). */
   exampleImageUrl?: string;
+  /** Diagrama de filmare (din biblioteca globală, refolosibilă). */
+  diagramUrl?: string;
   /**
    * Optional override for the premium effect on this specific shot.
    * If omitted, the pattern's defaultEffect is used.
@@ -147,7 +149,7 @@ export interface Shot {
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl">> {
+  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -158,6 +160,7 @@ export interface ResolvedShot
   playbackSpeed?: number;
   motionBlur?: boolean;
   exampleImageUrl?: string;
+  diagramUrl?: string;
 }
 
 /**
@@ -208,6 +211,7 @@ export function resolveShot(shot: Shot): ResolvedShot {
     playbackSpeed: shot.playbackSpeed,
     motionBlur: shot.motionBlur,
     exampleImageUrl: shot.exampleImageUrl,
+    diagramUrl: shot.diagramUrl,
   };
 }
 
@@ -233,6 +237,8 @@ export interface ReelTemplate {
    */
   emotionalPitch?: string;
   cover: string;
+  /** Filming difficulty — easy/medium/hard (label: Ușor/Mediu/Avansat). */
+  difficulty?: "easy" | "medium" | "hard";
   professions: Profession[];
   sections: Section[];
 }

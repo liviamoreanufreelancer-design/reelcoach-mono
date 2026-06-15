@@ -199,6 +199,7 @@ export async function updateShot(
     motion_blur?: boolean;
     caption_position?: 'top' | 'center' | 'bottom';
     caption_preset?: string;
+    diagram_id?: string | null;
   },
 ) {
   const supabase = await getSupabaseServerClient();
