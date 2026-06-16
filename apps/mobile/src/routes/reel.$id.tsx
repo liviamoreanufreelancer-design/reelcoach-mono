@@ -1,26 +1,19 @@
 /**
- * Reel preview screen — shows example video of the reel + title + description
- * + stats, with a sticky "Filmează" CTA at the bottom.
+ * Reel Details — pre-filming screen. Purple/light design.
+ * Cover + stats + description + scene list + sticky "Începe filmarea".
  *
- * Route: /reel/$id  where $id is the template id (e.g. "wow-transformation").
- * Reached from category list (tap a reel card).
- *
- * The video is a placeholder for now — when real example videos are added,
- * replace the placeholder div with an actual <video> element.
- *
- * Tap "Filmează" → /film (skips storyboard, goes directly to filming).
+ * Route: /reel/$id (template id). Reached from Home / Explore.
+ * Tap "Începe filmarea" → /film.
  */
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Play } from "lucide-react";
+import { ArrowLeft, Bookmark, Play, Eye, Heart, Clock, BarChart3, ChevronRight } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
-import { BackButton } from "@/components/BackButton";
 import { useTemplate } from "@/data/templates-context";
 import {
   shotCount,
-  totalRecordingSeconds,
   totalFinalSeconds,
+  type ReelTemplate,
 } from "@/data/shots";
 import { setSelectedIdeaId, markStoryboardSeen } from "@/lib/selected-idea";
 import { playSelect, playTap } from "@/lib/ui-sound";
@@ -30,27 +23,34 @@ export const Route = createFileRoute("/reel/$id")({
   component: ReelPreview,
 });
 
+const DIFF_LABEL: Record<string, string> = { easy: "Ușor", medium: "Mediu", hard: "Avansat" };
+
+function fmtMMSS(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 function ReelPreview() {
   const { id } = Route.useParams();
   const nav = useNavigate();
   const [ready, setReady] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    setReady(true);
-  }, []);
-
+  useEffect(() => { setReady(true); }, []);
   if (!ready) return <PhoneShell><div /></PhoneShell>;
 
   const template = useTemplate(id);
-
   if (!template) {
     return (
       <PhoneShell>
-        <div className="absolute inset-0 bg-[#0a0c0f]" />
-        <div className="relative z-10 flex flex-col h-full px-5 pt-12 pb-6">
-          <BackButton to="/" />
-          <div className="flex-1 flex items-center justify-center text-center">
-            <p className="text-white/60">Reel inexistent.</p>
+        <div className="absolute inset-0 flex flex-col bg-[#F8F8FA]">
+          <div style={{ height: "max(env(safe-area-inset-top, 56px), 56px)" }} />
+          <button onClick={() => nav({ to: "/" })} className="m-4 w-[40px] h-[40px] grid place-items-center rounded-full bg-white border border-[#E6E6EA] text-[#1F1F1F]">
+            <ArrowLeft className="w-[20px] h-[20px]" />
+          </button>
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-[#6B6B6B]">Reel inexistent.</p>
           </div>
         </div>
       </PhoneShell>
@@ -61,136 +61,123 @@ function ReelPreview() {
     light();
     playSelect();
     setSelectedIdeaId(template.id);
-    // Mark storyboard as seen — the preview screen replaces it, the user
-    // doesn't need to see the carousel storyboard after this.
     markStoryboardSeen(template.id);
     nav({ to: "/film" });
   };
 
+  // Flatten scenes from sections.
+  const scenes = template.sections.flatMap((sec) => sec.shots);
+  const totalSec = Math.round(totalFinalSeconds(template));
+  const diff = template.difficulty ?? "easy";
+  const description = template.emotionalPitch || template.promise || "";
+
+  // Demo stats (small, believable numbers).
+  const stats = [
+    { Icon: Eye, value: "24", label: "Vizualizări" },
+    { Icon: Heart, value: "8", label: "Aprecieri" },
+    { Icon: Clock, value: fmtMMSS(totalSec), label: "Durată" },
+    { Icon: BarChart3, value: DIFF_LABEL[diff], label: "Dificultate" },
+  ];
+
   return (
     <PhoneShell>
-      {/* Flat midnight background */}
-      <div className="absolute inset-0 z-0 bg-[#0a0c0f]" />
-      <div
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 8%, rgba(232,213,181,0.08) 0%, transparent 45%)",
-        }}
-      />
+      <div className="absolute inset-0 flex flex-col bg-[#F8F8FA]">
+        {/* Safe-area spacer — cover starts below iOS status bar */}
+        <div style={{ height: "max(env(safe-area-inset-top, 56px), 56px)" }} className="shrink-0 bg-[#F8F8FA]" />
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-[104px]" style={{ scrollbarWidth: "none" }}>
+          {/* Cover with overlaid controls */}
+          <div className="relative w-full aspect-[4/5] bg-[#EDE8FF]">
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${template.cover})` }} />
+            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/35 to-transparent" />
 
-      <div className="relative z-10 flex flex-col h-full pt-12 pb-[92px]">
-        {/* Header — back top-left */}
-        <div className="px-5">
-          <BackButton />
-        </div>
-
-        {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto px-5 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {/* Video placeholder — 4:5 portrait. Title + stats sit overlaid
-              on the lower part of the image with a gradient, so the user
-              sees the most important info without scrolling. Description
-              and emotional pitch sit BELOW the video, accessible by scroll. */}
-          <div
-            className="relative w-full rounded-2xl overflow-hidden"
-            style={{ aspectRatio: "4 / 5" }}
-          >
-            {/* Cover image as the "still" of the video */}
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${template.cover})` }}
-            />
-            {/* Dark overlay so the play button stands out and the bottom
-                gradient blends naturally */}
-            <div className="absolute inset-0 bg-black/30" />
-            {/* Bottom gradient — for title + stats legibility */}
-            <div
-              className="absolute inset-x-0 bottom-0 h-[55%] pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(180deg, transparent 0%, rgba(10,12,15,0.55) 45%, rgba(10,12,15,0.95) 100%)",
-              }}
-            />
-
-            {/* Play button — tappable, centered in upper portion of image
-                (offset up because bottom is taken by title block) */}
             <button
-              onClick={() => {
-                light();
-                playTap();
-                // TODO: Play example video when real videos exist.
-              }}
-              className="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-[#E8D5B5] flex items-center justify-center shadow-[0_8px_32px_rgba(232,213,181,0.4)] active:scale-95 transition"
-              aria-label="Redă exemplul"
+              onClick={() => nav({ to: "/" })}
+              aria-label="Înapoi"
+              className="absolute left-[18px] top-[14px] grid place-items-center w-[40px] h-[40px] rounded-full bg-white/90 backdrop-blur text-[#1F1F1F] shadow-[0_3px_12px_rgba(0,0,0,.18)] transition active:scale-90"
             >
-              <Play className="w-6 h-6 fill-[#0F1419] text-[#0F1419] translate-x-[2px]" />
+              <ArrowLeft className="w-[20px] h-[20px]" />
+            </button>
+            <button
+              onClick={() => setSaved((s) => !s)}
+              aria-label="Salvează"
+              className="absolute right-[18px] top-[14px] grid place-items-center w-[40px] h-[40px] rounded-full bg-white/90 backdrop-blur shadow-[0_3px_12px_rgba(0,0,0,.18)] transition active:scale-90"
+              style={{ color: saved ? "#5B34FF" : "#1F1F1F" }}
+            >
+              <Bookmark className="w-[19px] h-[19px]" fill={saved ? "currentColor" : "none"} />
             </button>
 
-            {/* "Exemplu" badge — top left */}
-            <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md text-[9px] tracking-[0.25em] uppercase font-bold text-[#E8D5B5]">
-                Exemplu
-              </span>
-            </div>
-
-            {/* Title + stats — overlaid on bottom of video */}
-            <div className="absolute left-4 right-4 bottom-4">
-              <h1 className="section-head text-[22px] text-white leading-[1.1] mb-2">
-                {template.title}
-              </h1>
-              <div className="flex items-center gap-2.5 text-[10px] tracking-[0.16em] uppercase text-white/70">
-                <span>
-                  <b className="text-[#E8D5B5] font-bold tabular-nums">
-                    {shotCount(template)}
-                  </b>{" "}
-                  cadre
-                </span>
-                <span className="text-[#E8D5B5]/40">·</span>
-                <span>
-                  <b className="text-[#E8D5B5] font-bold tabular-nums">
-                    {Math.round(totalRecordingSeconds(template))}s
-                  </b>{" "}
-                  filmare
-                </span>
-                <span className="text-[#E8D5B5]/40">·</span>
-                <span>
-                  <b className="text-[#E8D5B5] font-bold tabular-nums">
-                    ~{Math.round(totalFinalSeconds(template))}s
-                  </b>{" "}
-                  reel
-                </span>
-              </div>
-            </div>
+            <button
+              aria-label="Redă"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[68px] h-[68px] grid place-items-center rounded-full bg-white/95 text-[#5B34FF] shadow-[0_10px_30px_-6px_rgba(40,24,110,.5)] transition active:scale-95"
+            >
+              <Play className="w-[26px] h-[26px] ml-[3px]" fill="currentColor" />
+            </button>
           </div>
 
-          {/* Description + emotional pitch — below the video, scrollable */}
-          <div className="mt-6">
-            <p className="text-[14px] text-white/75 leading-relaxed">
-              {template.promise}
-            </p>
+          {/* Body */}
+          <div className="px-[22px]">
+            <h1 className="font-display font-bold text-[26px] leading-[1.12] text-[#1F1F1F] mt-[18px]">{template.title}</h1>
 
-            {/* Emotional pitch — if the template has one */}
-            {template.emotionalPitch && (
-              <div className="mt-6 pt-6 border-t border-[#E8D5B5]/10">
-                <p className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5]/55 mb-2.5 font-medium">
-                  Senzația
-                </p>
-                <p className="font-editorial italic font-light text-[15px] leading-[1.5] text-white/80">
-                  {template.emotionalPitch}
-                </p>
-              </div>
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-2 mt-[18px]">
+              {stats.map(({ Icon, value, label }) => (
+                <div key={label} className="flex flex-col items-center text-center gap-[6px] rounded-[14px] bg-white border border-[#E6E6EA] py-[12px] px-1 shadow-[0_4px_14px_-12px_rgba(40,24,110,.3)]">
+                  <span className="h-[17px] flex items-center justify-center">
+                    <Icon className="w-[16px] h-[16px] text-[#5B34FF]" strokeWidth={1.9} />
+                  </span>
+                  <span className="font-display font-bold text-[15px] leading-none text-[#1F1F1F]">{value}</span>
+                  <span className="text-[10.5px] text-[#6B6B6B] leading-none">{label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Description */}
+            {description && (
+              <p className="text-[14px] leading-[1.55] text-[#1F1F1F]/90 mt-[16px]" style={{ textWrap: "pretty" }}>
+                {description}
+              </p>
             )}
+
+            {/* Scenele */}
+            <div className="flex items-baseline justify-between mt-[28px]">
+              <h2 className="font-display font-bold text-[18px] text-[#1F1F1F]">Scenele</h2>
+              <span className="text-[12.5px] font-medium text-[#6B6B6B]">{shotCount(template)} scene · ~{totalSec} sec</span>
+            </div>
+
+            <div className="flex flex-col gap-[10px] mt-[14px]">
+              {scenes.map((s, i) => {
+                const dur = s.finalUsageDuration ?? s.recordingDuration ?? 0;
+                const bg = s.exampleImageUrl || template.cover;
+                return (
+                  <article key={s.id ?? i} className="flex items-center gap-[13px] rounded-[16px] bg-white border border-[#E6E6EA] p-[10px] shadow-[0_4px_14px_-12px_rgba(40,24,110,.3)] transition active:scale-[.99]">
+                    <div className="relative shrink-0">
+                      <div className="w-[46px] h-[66px] rounded-[11px] bg-cover bg-center bg-[#EDE8FF]" style={{ backgroundImage: `url(${bg})` }} />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[22px] h-[22px] grid place-items-center rounded-full bg-white/90 backdrop-blur font-display font-bold text-[12px] text-[#5B34FF] shadow-[0_2px_6px_rgba(0,0,0,.15)]">{i + 1}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-display font-bold text-[14.5px] leading-[1.15] text-[#1F1F1F] truncate">{s.title}</h4>
+                      {dur > 0 && (
+                        <span className="flex items-center gap-1 mt-[5px] text-[12px] text-[#6B6B6B] font-medium">
+                          <Clock className="w-[12px] h-[12px]" />{dur} sec
+                        </span>
+                      )}
+                    </div>
+                    <ChevronRight className="w-[18px] h-[18px] text-[#6B6B6B]/60 shrink-0" />
+                  </article>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Sticky CTA at the bottom — always visible, big champagne button */}
-        <div className="absolute bottom-0 inset-x-0 px-5 pb-5 pt-3 bg-gradient-to-t from-[#0a0c0f] via-[#0a0c0f]/95 to-transparent">
+        {/* Sticky CTA */}
+        <div className="shrink-0 px-[22px] pt-3 pb-[26px] bg-[#F8F8FA]/95 backdrop-blur border-t border-[#E6E6EA]">
           <button
             onClick={startFilming}
-            className="w-full h-14 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-[#0F1419] font-bold uppercase tracking-[0.16em] text-[13px] shadow-[0_6px_24px_rgba(232,213,181,0.35)] active:scale-[0.98] transition flex items-center justify-center gap-2"
+            className="w-full h-[54px] rounded-[16px] bg-[#5B34FF] text-white font-bold text-[16px] tracking-[.2px] shadow-[0_12px_26px_-10px_rgba(91,52,255,.7)] transition active:scale-[.98]"
           >
-            <Play className="w-4 h-4 fill-current" />
-            Filmează
+            Începe filmarea
           </button>
         </div>
       </div>
