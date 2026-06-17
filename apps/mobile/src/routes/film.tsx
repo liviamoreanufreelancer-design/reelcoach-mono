@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Smartphone, ChevronLeft, ChevronRight, ArrowRight, Check, RefreshCw, Square, Upload, AlertCircle, Sparkles, Package, Play, ListChecks } from "lucide-react";
+import { Camera, Smartphone, ChevronLeft, ChevronRight, ArrowRight, Check, RefreshCw, Square, Upload, AlertCircle, Sparkles, Package, Play, ListChecks, Sun, MoveRight, Clock, Info, Ruler } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BackButton } from "@/components/BackButton";
 import { CinematicBg } from "@/components/CinematicBg";
@@ -77,9 +77,17 @@ function Film() {
 
   // Initial load: which scenes already have clips?
   useEffect(() => {
-    listClips(scenarioId).then((cs) =>
-      setCaptured(new Set(cs.map((c) => c.sceneIdx))),
-    );
+    listClips(scenarioId).then((cs) => {
+      const done = new Set(cs.map((c) => c.sceneIdx));
+      setCaptured(done);
+      // Reia de la prima scena nefilmata, nu mereu de la scena 1.
+      // Daca toate au clip, ramane pe ultima (refilmare/editare).
+      if (done.size > 0) {
+        let first = scenes.findIndex((_, i) => !done.has(i));
+        if (first < 0) first = scenes.length - 1;
+        setIdx(first);
+      }
+    });
   }, [scenarioId]);
 
   // Stop camera on unmount. We do NOT auto-start: getUserMedia must be
@@ -883,18 +891,19 @@ function prettyPattern(p?: string): string {
 }
 
 /* ============================================================================
- * PreShotScreen — Shot-first card shown BEFORE each scene is filmed.
+ * PreShotScreen — Card purple-light "cum filmezi scena" (model 5).
  *
- * Layout matches the "shot-first experience" pattern:
- *   - Progress bar at top (Shot N of M)
- *   - Eyebrow badge: pattern name in champagne filled pill
- *   - "Ce trebuie să se vadă" — checklist with icons
- *   - "Cum filmezi" — compact bullet cards
- *   - "Exemplu vizual" — image placeholder
- *   - "SUNT GATA" champagne CTA + "Afișează următorul shot" link
+ * Aratat INAINTE de filmarea fiecarei scene. Layout:
+ *   - Safe-area sus + header (inapoi · "Scena N din M" · Info)
+ *   - Bara de progres pe pasi
+ *   - Titlu scena + durata de filmare
+ *   - DIAGRAMA mare de filmare (scene.diagramUrl) — piesa centrala
+ *   - Lista de instructiuni din scene.howShoot ({icon,label,detail})
+ *   - CTA sticky "Incepe filmarea" (acelasi ecran cu diagrama)
  *
- * Tap "Sunt gata" → transitions to phase "film" (camera live + countdown).
- * Tap "Afișează următorul shot" → opens preview sheet for next scene.
+ * Tap "Incepe filmarea" -> onReady() -> faza "film" (camera live + auto 3-2-1).
+ * Butonul Info deschide un sheet cu "Ce trebuie sa se vada" (scene.mustSee)
+ * + un preview al shot-ului urmator. Logica de inregistrare ramane in <Film>.
  * ========================================================================== */
 function PreShotScreen({
   scenario,
@@ -911,173 +920,156 @@ function PreShotScreen({
   const scene = scenes[sceneIdx];
   const total = scenes.length;
   const isLast = sceneIdx === total - 1;
-  const [showNextPreview, setShowNextPreview] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
-  // Pattern label for the eyebrow badge. If the scene has a pattern,
-  // show that (free-form text the editor wrote). Otherwise show the
-  // scene position in the sequence.
   const rawPattern = scene.tag ?? scene.patternId;
-  const patternLabel = rawPattern
-    ? prettyPattern(rawPattern)
-    : `Scena ${sceneIdx + 1} din ${total}`;
+  const patternLabel = rawPattern ? prettyPattern(rawPattern) : "";
+  const sceneTitle =
+    scene.what?.trim() || scene.hook?.trim() || `Scena ${sceneIdx + 1}`;
+
+  const hasInfo = (scene.mustSee && scene.mustSee.length > 0) || !isLast;
 
   return (
     <PhoneShell>
-      {/* Flat midnight background — content does the talking. */}
-      <div className="absolute inset-0 z-0 bg-[#0a0c0f]" />
-      <div
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 8%, rgba(232,213,181,0.08) 0%, transparent 45%)",
-        }}
-      />
+      <div className="flex flex-col h-full bg-[#F8F8FA]">
+        {/* Safe-area sus — bara de status iOS (lectie: min 56px sau headerul se suprapune) */}
+        <div
+          className="shrink-0"
+          style={{ height: "max(env(safe-area-inset-top, 56px), 56px)" }}
+        />
 
-      <div className="relative z-10 flex flex-col h-full pt-12 pb-[110px]">
-        {/* Top bar — back left, progress center, "Shot N of M" right */}
-        <div className="px-5 flex items-center gap-3">
-          <button
-            onClick={onBack}
-            aria-label="Înapoi"
-            className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center active:scale-95 transition shrink-0"
-          >
-            <ChevronLeft className="w-[18px] h-[18px] text-[#E8D5B5]" />
-          </button>
+        {/* Header */}
+        <header className="shrink-0 px-5 pb-3.5">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onBack}
+              aria-label="Inapoi"
+              className="w-[38px] h-[38px] grid place-items-center rounded-full bg-white border border-[#E6E6EA] text-[#1F1F1F] shadow-[0_2px_8px_-4px_rgba(40,24,110,0.25)] active:scale-90 transition"
+            >
+              <ChevronLeft className="w-[22px] h-[22px]" strokeWidth={2} />
+            </button>
 
-          {/* Progress bar — slim, champagne fill showing current scene */}
-          <div className="flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
-            <div
-              className="h-full bg-[#E8D5B5] rounded-full transition-all duration-300"
-              style={{ width: `${((sceneIdx + 1) / total) * 100}%` }}
-            />
+            <span className="font-display font-bold text-[15.5px] tracking-[0.2px] text-[#1F1F1F] leading-none whitespace-nowrap">
+              Scena {sceneIdx + 1} din {total}
+            </span>
+
+            {hasInfo ? (
+              <button
+                onClick={() => setShowInfo(true)}
+                aria-label="Detalii scena"
+                className="w-[38px] h-[38px] grid place-items-center rounded-full bg-white border border-[#E6E6EA] text-[#6B6B6B] shadow-[0_2px_8px_-4px_rgba(40,24,110,0.25)] active:scale-90 transition"
+              >
+                <Info className="w-[20px] h-[20px]" strokeWidth={2} />
+              </button>
+            ) : (
+              <span className="w-[38px] h-[38px] shrink-0" />
+            )}
           </div>
 
-          <span className="text-[10px] tracking-[0.18em] uppercase text-white/60 font-medium tabular-nums shrink-0">
-            Shot {sceneIdx + 1} din {total}
-          </span>
-        </div>
+          {/* Progres pe pasi */}
+          <div className="flex items-center gap-1.5 mt-3.5">
+            {scenes.map((_, i) => (
+              <span
+                key={i}
+                className={`flex-1 h-[5px] rounded-full ${
+                  i <= sceneIdx ? "bg-[#5B34FF]" : "bg-[#EDE8FF]"
+                }`}
+              />
+            ))}
+          </div>
+        </header>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {/* Eyebrow — champagne filled pill, black text */}
-          <div className="flex justify-center mb-5">
-            <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#E8D5B5] text-[#0F1419] text-[10px] tracking-[0.2em] uppercase font-bold">
+        {/* Continut scrollabil */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 pt-1 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {patternLabel && (
+            <p className="text-[10px] tracking-[0.2em] uppercase text-[#5B34FF] font-bold mb-1.5">
               {patternLabel}
+            </p>
+          )}
+          <h1 className="font-display font-bold text-[24px] leading-[1.08] tracking-[0.2px] text-[#1F1F1F]">
+            {sceneTitle}
+          </h1>
+          <div className="flex items-center gap-1.5 mt-[7px] text-[13px] font-medium text-[#6B6B6B]">
+            <Clock className="w-[15px] h-[15px]" strokeWidth={2} />
+            <span>Durata: ~{Math.round(scene.duration)} sec</span>
+          </div>
+
+          {/* Diagrama — piesa centrala */}
+          <div className="mt-3 w-full aspect-[3/2] rounded-[18px] overflow-hidden border border-[#E6E6EA] bg-white shadow-[0_10px_30px_-16px_rgba(40,24,110,0.32)]">
+            {scene.diagramUrl ? (
+              <img
+                src={scene.diagramUrl}
+                alt="Diagrama de filmare"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="w-full h-full grid place-items-center text-[#6B6B6B]">
+                <span className="text-[12.5px] font-semibold tracking-[0.3px]">
+                  Diagrama filmare
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Caption exemplu */}
+          <div className="flex items-center justify-center gap-[7px] mt-2.5">
+            <span className="w-[5px] h-[5px] rounded-full bg-[#6B6B6B]/40" />
+            <span className="text-[12.5px] font-semibold tracking-[0.3px] text-[#6B6B6B]">
+              Exemplu
             </span>
           </div>
 
-          {/* Ce trebuie să se vadă */}
-          {scene.mustSee && scene.mustSee.length > 0 && (
-            <div className="mb-6">
-              <p className="section-head text-[18px] text-white mb-3">
-                Ce trebuie să se vadă
-              </p>
-              <div className="bg-white/[0.04] border border-[#E8D5B5]/15 rounded-2xl divide-y divide-white/[0.06]">
-                {scene.mustSee.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-6 h-6 rounded-full bg-[#E8D5B5]/15 border border-[#E8D5B5]/35 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5 text-[#E8D5B5]" strokeWidth={3} />
-                    </div>
-                    <span className="flex-1 text-[14px] text-white font-medium">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Cum filmezi */}
+          {/* Instructiuni — scene.howShoot */}
           {scene.howShoot && scene.howShoot.length > 0 && (
-            <div className="mb-6">
-              <p className="section-head text-[18px] text-white mb-3">
-                Cum filmezi
-              </p>
-              <div className="flex flex-col gap-2">
-                {scene.howShoot.map((item, i) => (
-                  <div key={i} className="bg-white/[0.04] border border-[#E8D5B5]/15 rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-[#E8D5B5]/15 flex items-center justify-center shrink-0 text-[#E8D5B5]">
-                      <HowShootIcon icon={item.icon} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-white font-semibold leading-tight">
-                        {item.label}
+            <div className="mt-3.5 bg-white border border-[#E6E6EA] rounded-[18px] overflow-hidden shadow-[0_8px_22px_-14px_rgba(40,24,110,0.28)] divide-y divide-[#E6E6EA]">
+              {scene.howShoot.map((item, i) => (
+                <div key={i} className="flex items-center gap-3.5 px-4 py-[11px]">
+                  <span className="shrink-0 w-[40px] h-[40px] grid place-items-center rounded-full bg-[#EDE8FF] text-[#5B34FF]">
+                    <HowShootIcon icon={item.icon} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[14.5px] font-medium leading-[1.3] text-[#1F1F1F]">
+                      {item.label}
+                    </p>
+                    {item.detail && (
+                      <p className="text-[12.5px] text-[#6B6B6B] mt-0.5 leading-snug">
+                        {item.detail}
                       </p>
-                      <p className="text-[11px] text-white/55 mt-0.5">{item.detail}</p>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Exemplu vizual — placeholder image, user replaces later */}
-          <div className="mb-3">
-            <p className="section-head text-[18px] text-white mb-3">
-              Exemplu vizual
-            </p>
-            <div
-              className="relative w-full rounded-2xl overflow-hidden"
-              style={{ aspectRatio: "9 / 16" }}
-            >
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${scene.bg})` }}
-              />
-              <div className="absolute inset-0 bg-black/15" />
-              {/* "Exemplu" badge corner */}
-              <div className="absolute top-3 left-3">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md text-[9px] tracking-[0.25em] uppercase font-bold text-[#E8D5B5]">
-                  Exemplu
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Diagrama de filmare — cum sa pozitionezi telefonul/lumina/miscarea */}
-          {scene.diagramUrl && (
-            <div className="mb-3">
-              <p className="section-head text-[18px] text-white mb-3">
-                Cum să filmezi
-              </p>
-              <div
-                className="relative w-full rounded-2xl overflow-hidden bg-white"
-                style={{ aspectRatio: "9 / 16" }}
-              >
-                <img
-                  src={scene.diagramUrl}
-                  alt="Diagramă de filmare"
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-              </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Sticky bottom — Sunt gata + Următorul shot link */}
-        <div className="absolute bottom-0 inset-x-0 px-5 pb-5 pt-3 bg-gradient-to-t from-[#0a0c0f] via-[#0a0c0f]/95 to-transparent">
+        {/* CTA sticky de filmare */}
+        <div
+          className="shrink-0 px-5 pt-3 bg-gradient-to-t from-[#F8F8FA] via-[#F8F8FA] to-[#F8F8FA]/85 backdrop-blur border-t border-[#E6E6EA]"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 24px), 24px)" }}
+        >
           <button
             onClick={onReady}
-            className="w-full h-14 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-[#0F1419] font-bold uppercase tracking-[0.16em] text-[13px] shadow-[0_6px_24px_rgba(232,213,181,0.35)] active:scale-[0.98] transition flex items-center justify-center gap-2"
+            className="w-full h-[58px] flex items-center justify-center gap-3 rounded-[18px] bg-[#5B34FF] text-white shadow-[0_14px_30px_-10px_rgba(91,52,255,0.75)] active:scale-[0.98] transition"
           >
-            Sunt gata
+            <span className="w-[26px] h-[26px] grid place-items-center rounded-full bg-white/95">
+              <span className="w-[13px] h-[13px] rounded-full bg-[#FF3B30]" />
+            </span>
+            <span className="font-bold text-[16.5px] tracking-[0.2px]">
+              Incepe filmarea
+            </span>
           </button>
-          {!isLast && (
-            <button
-              onClick={() => setShowNextPreview(true)}
-              className="w-full mt-2.5 text-[11px] tracking-[0.18em] uppercase text-[#E8D5B5]/65 active:opacity-60 transition py-1"
-            >
-              Afișează următorul shot
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Next-shot preview sheet — modal overlay, dismissable */}
-      {showNextPreview && !isLast && (
-        <NextShotPreviewSheet
-          scene={scenes[sceneIdx + 1]}
-          sceneNum={sceneIdx + 2}
+      {/* Info sheet — mustSee + preview shot urmator */}
+      {showInfo && (
+        <InfoSheet
+          scene={scene}
+          nextScene={isLast ? null : scenes[sceneIdx + 1]}
+          nextSceneNum={sceneIdx + 2}
           total={total}
-          onClose={() => setShowNextPreview(false)}
+          onClose={() => setShowInfo(false)}
         />
       )}
     </PhoneShell>
@@ -1085,110 +1077,122 @@ function PreShotScreen({
 }
 
 /**
- * Icon for a "Cum filmezi" item — maps known icon ids to Lucide icons.
- * Falls back to a generic dot for unknown ids.
+ * Iconita pentru un item "Cum filmezi" — mapeaza id-uri cunoscute la Lucide.
+ * Cade pe un punct generic pentru id-uri necunoscute.
  */
 function HowShootIcon({ icon }: { icon: string }) {
   switch (icon) {
+    case "light":
+    case "sun":
+      return <Sun className="w-[21px] h-[21px]" strokeWidth={1.9} />;
+    // "eye" = "Pozitionare telefon" in Studio -> simbol de telefon
+    case "eye":
     case "phone-vertical":
-      return <Smartphone className="w-4 h-4" strokeWidth={1.5} />;
+    case "phone":
+      return <Smartphone className="w-[21px] h-[21px]" strokeWidth={1.9} />;
     case "distance":
-      return <ArrowRight className="w-4 h-4" strokeWidth={1.5} />;
-    case "duration":
-      return <span className="text-[12px] font-bold">⏱</span>;
+      return <Ruler className="w-[21px] h-[21px]" strokeWidth={1.9} />;
     case "movement":
-      return <RefreshCw className="w-4 h-4" strokeWidth={1.5} />;
+    case "move":
+    case "pan":
+      return <MoveRight className="w-[21px] h-[21px]" strokeWidth={1.9} />;
     default:
       return <span className="w-1.5 h-1.5 rounded-full bg-current" />;
   }
 }
 
 /**
- * Modal sheet showing a preview of the NEXT shot — accessed via the
- * "Afișează următorul shot" link on the current preshot screen.
- * Dismisses on tap outside or close button.
+ * InfoSheet — bottom sheet purple-light deschis din butonul ⓘ.
+ * Arata "Ce trebuie sa se vada" (mustSee) pentru scena curenta + un preview
+ * al shot-ului urmator (pattern + titlu + mustSee). Inlocuieste vechiul
+ * NextShotPreviewSheet, pastrand datele mustSee in afara ecranului principal.
  */
-function NextShotPreviewSheet({
+function InfoSheet({
   scene,
-  sceneNum,
+  nextScene,
+  nextSceneNum,
   total,
   onClose,
 }: {
   scene: Scene;
-  sceneNum: number;
+  nextScene: Scene | null;
+  nextSceneNum: number;
   total: number;
   onClose: () => void;
 }) {
-  const rawPattern = scene.tag ?? scene.patternId;
-  const patternLabel = rawPattern
-    ? prettyPattern(rawPattern)
-    : `Scena ${sceneNum} din ${total}`;
+  const nextPattern = nextScene
+    ? prettyPattern(nextScene.tag ?? nextScene.patternId)
+    : "";
 
   return (
-    <div
-      className="absolute inset-0 z-50 flex items-end"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-
-      {/* Sheet */}
+    <div className="absolute inset-0 z-50 flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
-        className="relative w-full bg-[#0a0c0f] border-t border-[#E8D5B5]/15 rounded-t-3xl p-6 pb-8 max-h-[80%] overflow-y-auto"
+        className="relative w-full bg-white rounded-t-[28px] px-6 pt-6 max-h-[80%] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom, 28px), 28px)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/20" />
+        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-[#E6E6EA]" />
 
-        <div className="mt-3 mb-4 flex items-center justify-between">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium tabular-nums">
-            Următorul · Shot {sceneNum} din {total}
-          </span>
-          <button onClick={onClose} aria-label="Închide" className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center active:scale-95 transition">
-            <ChevronLeft className="w-4 h-4 text-white/60 rotate-90" />
-          </button>
-        </div>
-
-        {/* Eyebrow */}
-        <div className="flex justify-center mb-4">
-          <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#E8D5B5] text-[#0F1419] text-[10px] tracking-[0.2em] uppercase font-bold">
-            {patternLabel}
-          </span>
-        </div>
-
-        {/* What to see — compact */}
         {scene.mustSee && scene.mustSee.length > 0 && (
-          <div className="mb-4">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-[#E8D5B5]/65 font-semibold mb-2">
-              Ce trebuie să se vadă
+          <div className="mt-3">
+            <p className="font-display font-bold text-[16px] text-[#1F1F1F] mb-3">
+              Ce trebuie sa se vada
             </p>
-            <ul className="space-y-1.5">
+            <div className="bg-[#F8F8FA] border border-[#E6E6EA] rounded-[16px] divide-y divide-[#E6E6EA]">
               {scene.mustSee.map((item, i) => (
-                <li key={i} className="flex items-center gap-2 text-[13px] text-white/85">
-                  <Check className="w-3.5 h-3.5 text-[#E8D5B5] shrink-0" strokeWidth={3} />
-                  {item}
-                </li>
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <span className="w-6 h-6 rounded-full bg-[#EDE8FF] grid place-items-center shrink-0">
+                    <Check className="w-3.5 h-3.5 text-[#5B34FF]" strokeWidth={3} />
+                  </span>
+                  <span className="flex-1 text-[14px] text-[#1F1F1F] font-medium">
+                    {item}
+                  </span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
-        {/* How to shoot — compact */}
-        {scene.howShoot && scene.howShoot.length > 0 && (
-          <div>
-            <p className="text-[10px] tracking-[0.3em] uppercase text-[#E8D5B5]/65 font-semibold mb-2">
-              Cum filmezi
-            </p>
-            <ul className="space-y-1.5">
-              {scene.howShoot.map((item, i) => (
-                <li key={i} className="flex items-baseline gap-2 text-[13px] text-white/85">
-                  <span className="text-[#E8D5B5] font-semibold">{item.label}</span>
-                  <span className="text-white/55">· {item.detail}</span>
-                </li>
-              ))}
-            </ul>
+        {nextScene && (
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="font-display font-bold text-[16px] text-[#1F1F1F]">
+                Urmatorul shot
+              </p>
+              <span className="text-[10px] tracking-[0.18em] uppercase text-[#6B6B6B] font-semibold tabular-nums">
+                Shot {nextSceneNum} din {total}
+              </span>
+            </div>
+            <div className="bg-[#F8F8FA] border border-[#E6E6EA] rounded-[16px] px-4 py-3.5">
+              {nextPattern && (
+                <p className="text-[10px] tracking-[0.2em] uppercase text-[#5B34FF] font-bold mb-1">
+                  {nextPattern}
+                </p>
+              )}
+              <p className="text-[14px] font-semibold text-[#1F1F1F]">
+                {nextScene.what?.trim() || nextScene.hook?.trim() || `Scena ${nextSceneNum}`}
+              </p>
+              {nextScene.mustSee && nextScene.mustSee.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {nextScene.mustSee.map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-[13px] text-[#6B6B6B]">
+                      <Check className="w-3.5 h-3.5 text-[#5B34FF] shrink-0" strokeWidth={3} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
+
+        <button
+          onClick={onClose}
+          className="mt-6 w-full h-12 rounded-[16px] bg-[#EDE8FF] text-[#5B34FF] font-bold text-[14px] active:scale-[0.98] transition"
+        >
+          Inchide
+        </button>
       </div>
     </div>
   );

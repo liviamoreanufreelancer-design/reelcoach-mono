@@ -48,10 +48,10 @@ export const FILTERS: { id: string; label: string; category: string }[] =
 
 // How-shoot icon picker — known icon ids the mobile app supports.
 export const HOW_SHOOT_ICONS: { id: string; label: string }[] = [
-  { id: "phone-vertical", label: "Telefon" },
-  { id: "distance",       label: "Distanță" },
-  { id: "duration",       label: "Durată" },
-  { id: "movement",       label: "Mișcare" },
+  { id: "light",    label: "Lumină" },
+  { id: "eye",      label: "Poziționare telefon" },
+  { id: "distance", label: "Distanță" },
+  { id: "movement", label: "Mișcare" },
 ];
 
 export const DIFFICULTIES = [

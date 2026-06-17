@@ -14,6 +14,7 @@ import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProfessionRouteImport } from './routes/profession'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as MyReelsRouteImport } from './routes/my-reels'
 import { Route as FilmRouteImport } from './routes/film'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditingRouteImport } from './routes/editing'
@@ -47,6 +48,11 @@ const ProfessionRoute = ProfessionRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyReelsRoute = MyReelsRouteImport.update({
+  id: '/my-reels',
+  path: '/my-reels',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FilmRoute = FilmRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/editing': typeof EditingRoute
   '/explore': typeof ExploreRoute
   '/film': typeof FilmRoute
+  '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/profession': typeof ProfessionRoute
   '/profile': typeof ProfileRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/editing': typeof EditingRoute
   '/explore': typeof ExploreRoute
   '/film': typeof FilmRoute
+  '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/profession': typeof ProfessionRoute
   '/profile': typeof ProfileRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/editing': typeof EditingRoute
   '/explore': typeof ExploreRoute
   '/film': typeof FilmRoute
+  '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/profession': typeof ProfessionRoute
   '/profile': typeof ProfileRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/editing'
     | '/explore'
     | '/film'
+    | '/my-reels'
     | '/onboarding'
     | '/profession'
     | '/profile'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/editing'
     | '/explore'
     | '/film'
+    | '/my-reels'
     | '/onboarding'
     | '/profession'
     | '/profile'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/editing'
     | '/explore'
     | '/film'
+    | '/my-reels'
     | '/onboarding'
     | '/profession'
     | '/profile'
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   EditingRoute: typeof EditingRoute
   ExploreRoute: typeof ExploreRoute
   FilmRoute: typeof FilmRoute
+  MyReelsRoute: typeof MyReelsRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfessionRoute: typeof ProfessionRoute
   ProfileRoute: typeof ProfileRoute
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-reels': {
+      id: '/my-reels'
+      path: '/my-reels'
+      fullPath: '/my-reels'
+      preLoaderRoute: typeof MyReelsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/film': {
@@ -321,6 +341,7 @@ const rootRouteChildren: RootRouteChildren = {
   EditingRoute: EditingRoute,
   ExploreRoute: ExploreRoute,
   FilmRoute: FilmRoute,
+  MyReelsRoute: MyReelsRoute,
   OnboardingRoute: OnboardingRoute,
   ProfessionRoute: ProfessionRoute,
   ProfileRoute: ProfileRoute,

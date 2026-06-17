@@ -3,10 +3,10 @@
  *   Acasă / Explorează / Salvate / Profil
  */
 import { Link } from "@tanstack/react-router";
-import { Home, Search, Heart, User } from "lucide-react";
+import { Home, Search, Film, User } from "lucide-react";
 import { playTap } from "@/lib/ui-sound";
 
-export type TabId = "home" | "explore" | "saved" | "profile";
+export type TabId = "home" | "explore" | "reels" | "saved" | "profile";
 
 interface TabBarProps {
   active: TabId;
@@ -15,7 +15,7 @@ interface TabBarProps {
 const TABS: { id: TabId; label: string; icon: typeof Home; href: string }[] = [
   { id: "home", label: "Acasă", icon: Home, href: "/" },
   { id: "explore", label: "Explorează", icon: Search, href: "/explore" },
-  { id: "saved", label: "Salvate", icon: Heart, href: "/saved" },
+  { id: "reels", label: "Reelurile mele", icon: Film, href: "/my-reels" },
   { id: "profile", label: "Profil", icon: User, href: "/profile" },
 ];
 

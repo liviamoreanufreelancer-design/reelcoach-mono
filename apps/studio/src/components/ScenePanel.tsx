@@ -364,6 +364,13 @@ function StringListEditor({
   );
 }
 
+const HOW_SHOOT_HINTS: Record<string, string> = {
+  light:    "Ex: ring în față, fereastră lateral",
+  eye:      "Ex: nivelul ochilor, deasupra",
+  distance: "Ex: 2 pași, aproape, braț întins",
+  movement: "Ex: stânga-dreapta, lent înainte",
+};
+
 function HowShootListEditor({
   value,
   onChange,
@@ -427,14 +434,14 @@ function HowShootListEditor({
           type="text"
           value={draftLabel}
           onChange={(e) => setDraftLabel(e.target.value)}
-          placeholder="Ex: Telefon vertical"
+          placeholder="Titlu scurt (ex: Lumină)"
           className="input"
         />
         <input
           type="text"
           value={draftDetail}
           onChange={(e) => setDraftDetail(e.target.value)}
-          placeholder="Ex: Sprijinit sau pe trepied"
+          placeholder={HOW_SHOOT_HINTS[draftIcon] ?? "Detaliu concret"}
           className="input"
         />
         <button
