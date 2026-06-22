@@ -34,6 +34,9 @@ import { TRANSITIONS, TRANSITION_LIST, type TransitionId } from "@reelcoach/core
 import type { Vibe } from "@/lib/brand-store";
 import { renderOverlay, renderOutro, renderIntro, logoToBitmap } from "@reelcoach/core";
 import { renderReelInBrowser } from "@reelcoach/core";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import { LivePreview } from "@/components/editor/LivePreview";
 import { toast } from "sonner";
 
@@ -289,12 +292,45 @@ const blob = await renderReelInBrowser(
     }
   }
 
-  const download = () => {
+  // Converteste blob -> base64 (fara prefixul data:) pentru Filesystem.
+  const blobToBase64 = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve((r.result as string).split(",")[1] ?? "");
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+
+  const download = async () => {
     if (!blobRef.current) return;
+    const fileName = `${scenario.title.replace(/\s+/g, "-").toLowerCase()}.mp4`;
+
+    // iOS/Android nativ: scrie pe disc -> share sheet nativ (Save Video / TikTok / IG).
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const base64 = await blobToBase64(blobRef.current);
+        const written = await Filesystem.writeFile({
+          path: fileName,
+          data: base64,
+          directory: Directory.Cache,
+        });
+        await Share.share({
+          title: scenario.title,
+          text: "Salvează în Galerie sau trimite pe TikTok/Instagram.",
+          url: written.uri,
+        });
+        return;
+      } catch (err) {
+        console.error("[edit] export nativ esuat:", err);
+        // cade pe varianta web mai jos
+      }
+    }
+
+    // Web (browser desktop): download clasic.
     const url = URL.createObjectURL(blobRef.current);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${scenario.title.replace(/\s+/g, "-").toLowerCase()}.mp4`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -340,8 +376,13 @@ const blob = await renderReelInBrowser(
     const platformLabel = platform ? APP_LINKS[platform].label : "";
     const title = platformLabel ? `${scenario.title} · pentru ${platformLabel}` : scenario.title;
 
-    // 1. Try the native share sheet first — on iOS/Android this is the most
-    //    native experience (user picks the app from their installed list).
+    // Pe nativ (iOS/Android) folosim direct exportul Capacitor (Filesystem +
+    // Share sheet nativ). navigator.share din WebView e nesigur.
+    if (Capacitor.isNativePlatform()) {
+      await download();
+      return;
+    }
+    // 1. Web: incearca Web Share API (cand exista).
     if (navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({
