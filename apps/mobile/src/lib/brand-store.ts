@@ -48,6 +48,15 @@ export function markOnboardingSkipped(): void {
   try { localStorage.setItem(SKIP_KEY, "1"); } catch { /* ignore */ }
 }
 
+/** Marcheaza onboarding-ul terminat fara a depinde de salvarea brandului.
+ *  Folosit de noul onboarding (welcome/specialitate/echipament/gata). */
+export function markOnboardingDone(): void {
+  try {
+    localStorage.setItem(DONE_KEY, "1");
+    localStorage.removeItem(SKIP_KEY);
+  } catch { /* ignore */ }
+}
+
 export const DEFAULT_BRAND: BrandProfile = {
   name: "",
   handle: "",

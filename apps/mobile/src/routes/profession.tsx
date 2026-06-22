@@ -1,86 +1,99 @@
-/**
- * Profession picker — pick what you're filming today.
- *
- * Editorial minimal layout:
- *   - "ASTĂZI FILMEZI" small label + clean title
- *   - 5 typographic rows, one per profession (no icons, no scroll)
- *   - Each row: label + tag, divided by a thin line
- *   - Tap a row to set the active profession and go Home
- *
- * Returning to Home after pick — Home is the always-on landing.
- */
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { BackButton } from "@/components/BackButton";
-import { CinematicBg } from "@/components/CinematicBg";
+import { useState } from "react";
+import { ChevronLeft, Check } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
-import { StatusBar } from "@/components/StatusBar";
 import { PROFESSIONS, type Profession } from "@/data/scenarios";
-import { setProfession } from "@/lib/profession";
+import { setProfession, getProfessionId } from "@/lib/profession";
 import { light, success } from "@/lib/haptic";
-import intro from "@/assets/salon-intro.jpg";
+import { playTap } from "@/lib/ui-sound";
 
 export const Route = createFileRoute("/profession")({
   component: ProfessionPicker,
 });
 
+// Imagini placeholder (Unsplash) — se inlocuiesc cu asset-uri locale.
+const U = (id: string) => `https://images.unsplash.com/photo-${id}?w=900&q=80&auto=format&fit=crop`;
+const PROF_IMG: Record<Profession, string> = {
+  par: U("1492106087820-71f1a00d2b11"),
+  machiaj: U("1596462502278-27bfdc403348"),
+  gene: U("1531746020798-e6953c6e8e04"),
+  sprancene: U("1614283233556-f35b0c801ef1"),
+  unghii: U("1522337660859-02fbefca4702"),
+};
+// Pe care le aratam late (par primul, lat).
+const WIDE: Partial<Record<Profession, boolean>> = { par: true };
+
 function ProfessionPicker() {
   const nav = useNavigate();
+  const [sel, setSel] = useState<Profession>(() => getProfessionId() ?? "par");
 
-  const pick = (p: Profession) => {
+  const save = () => {
     success();
-    setProfession(p);
+    setProfession(sel);
     nav({ to: "/" });
   };
 
   return (
     <PhoneShell>
-      <CinematicBg src={intro} blur overlay={0.85} kenBurns={false} />
+      <div className="flex flex-col h-full bg-[#F8F8FA] text-[#1F1F1F]">
+        <div className="shrink-0" style={{ height: "max(env(safe-area-inset-top, 56px), 56px)" }} />
 
-      <div className="relative z-10 flex flex-col h-full px-6 pt-12 pb-7">
-        <div className="px-1"><StatusBar /></div>
+        <header className="shrink-0 flex items-center gap-3.5 px-[22px] pb-3">
+          <button
+            onClick={() => nav({ to: "/" })}
+            aria-label="Înapoi"
+            className="w-10 h-10 grid place-items-center rounded-full bg-white border border-[#E6E6EA] shadow-[0_4px_14px_-10px_rgba(40,24,110,0.3)] active:scale-95 transition"
+          >
+            <ChevronLeft className="w-[22px] h-[22px]" strokeWidth={2} />
+          </button>
+          <span className="font-bold text-[12px] tracking-[1.5px] uppercase text-[#5B34FF]">Astăzi filmezi</span>
+        </header>
 
-        <div className="flex items-center justify-between">
-          <BackButton to="/" />
-          <span className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5] font-semibold">
-            Profesia
-          </span>
-          <span className="w-10" />
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-[22px] pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <h2 className="font-display font-bold text-[30px] leading-[1.05] mt-1">Alege profesia</h2>
+
+          <div className="grid grid-cols-2 gap-3.5 mt-5">
+            {PROFESSIONS.map((p) => {
+              const selected = sel === p.id;
+              const wide = WIDE[p.id];
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => { light(); playTap(); setSel(p.id); }}
+                  className={`relative text-left rounded-[18px] overflow-hidden bg-white transition active:scale-[0.98] ${
+                    wide ? "col-span-2" : ""
+                  } ${selected ? "ring-2 ring-[#5B34FF]" : "ring-1 ring-[#E6E6EA]"}`}
+                >
+                  <div className={`relative w-full ${wide ? "aspect-[12/5]" : "aspect-[5/4]"}`}>
+                    <img src={PROF_IMG[p.id]} alt={p.label} className="absolute inset-0 w-full h-full object-cover" />
+                    {selected && (
+                      <span className="absolute top-2.5 right-2.5 z-10 w-[26px] h-[26px] rounded-full bg-[#5B34FF] text-white grid place-items-center shadow-[0_4px_10px_-3px_rgba(91,52,255,0.8)]">
+                        <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                      </span>
+                    )}
+                  </div>
+                  <div className={`px-3.5 py-3 ${selected ? "bg-[#EDE8FF]" : "bg-white"}`}>
+                    <span className="font-display font-bold text-[16px]">{p.label}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-[13px] text-[#6B6B6B] text-center mt-5">Poți schimba oricând.</p>
         </div>
 
-        {/* Editorial label + clean title — no italic, no flourish. */}
-        <div className="mt-12">
-          <p className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5]/75 font-medium">
-            Astăzi filmezi
-          </p>
-          <h1 className="font-editorial mt-2 text-[40px] text-white leading-[1.0] tracking-[-0.01em]">
-            Alege profesia.
-          </h1>
+        <div
+          className="shrink-0 px-[22px] pt-3 bg-[#F8F8FA] border-t border-[#E6E6EA]/70"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 28px), 28px)" }}
+        >
+          <button
+            onClick={save}
+            className="w-full h-[58px] rounded-[16px] bg-[#5B34FF] text-white font-bold text-[16px] shadow-[0_12px_26px_-12px_rgba(91,52,255,0.8)] active:scale-[0.98] transition"
+          >
+            Salvează
+          </button>
         </div>
-
-        {/* Typographic list — 5 rows, no scroll, no icons. */}
-        <ul className="mt-12 flex flex-col">
-          {PROFESSIONS.map((p, i) => (
-            <li key={p.id}>
-              <button
-                onClick={() => { light(); pick(p.id); }}
-                className="group w-full text-left flex items-baseline py-5 active:opacity-60 transition border-t border-white/[0.08]"
-                style={i === PROFESSIONS.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.08)" } : undefined}
-              >
-                <span className="font-editorial text-[28px] text-white tracking-[-0.01em] leading-none">
-                  {p.label}
-                </span>
-                <span className="ml-auto text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/55 font-medium">
-                  {p.tag}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-auto text-center text-[10px] tracking-[0.4em] uppercase text-white/35">
-          Poți schimba mai târziu
-        </p>
       </div>
     </PhoneShell>
   );

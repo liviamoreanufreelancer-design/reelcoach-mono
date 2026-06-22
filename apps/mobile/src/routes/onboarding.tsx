@@ -1,375 +1,325 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Upload, Check, Sparkles, X } from "lucide-react";
+import { useState, useCallback } from "react";
 import { PhoneShell } from "@/components/PhoneShell";
-import { CinematicBg } from "@/components/CinematicBg";
-import { useBrand } from "@/hooks/useBrand";
-import { rasterizeLogo, markOnboardingSkipped, PROFESSION_PALETTE, type Vibe } from "@/lib/brand-store";
-import { getProfessionId } from "@/lib/profession";
-import { STYLE_PACKS } from "@/data/style-packs";
+import { PROFESSIONS, type Profession } from "@/data/scenarios";
+import { setProfession } from "@/lib/profession";
+import { setEquipment, type EquipmentId } from "@/lib/equipment";
+import { markOnboardingDone } from "@/lib/brand-store";
 import { light, success } from "@/lib/haptic";
-import intro from "@/assets/salon-intro.jpg";
+import {
+  ChevronLeft, ArrowRight, Check, Sparkles, Users, Film as FilmIcon,
+  Sun, Lightbulb, Aperture, Camera,
+} from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
+/* ---------- date ---------- */
+
+// Mapare specialitate -> Profession real. Imaginile sunt placeholder
+// (Unsplash) — se inlocuiesc cu asset-uri locale ulterior.
+const U = (id: string) =>
+  `https://images.unsplash.com/photo-${id}?w=900&q=80&auto=format&fit=crop`;
+
+const SPECIALTIES: { id: Profession; label: string; img: string; wide?: boolean }[] = [
+  { id: "par",       label: "Păr",       img: U("1492106087820-71f1a00d2b11") },
+  { id: "machiaj",   label: "Machiaj",   img: U("1596462502278-27bfdc403348") },
+  { id: "gene",      label: "Gene",      img: U("1531746020798-e6953c6e8e04") },
+  { id: "sprancene", label: "Sprâncene", img: U("1614283233556-f35b0c801ef1") },
+  { id: "unghii",    label: "Unghii",    img: U("1522337660859-02fbefca4702"), wide: true },
+];
+
+const WELCOME_IMG = U("1562322140-8baeececf3df"); // placeholder pana la video
+
+const SETUPS: { id: EquipmentId; label: string; note: string; Icon: typeof Sun }[] = [
+  { id: "window", label: "Lumină naturală", note: "Lumină de la fereastră", Icon: Sun },
+  { id: "ring",   label: "Ring light",      note: "Perfect pentru close-up", Icon: Aperture },
+  { id: "led",    label: "Becuri LED",      note: "Lumină controlată",       Icon: Lightbulb },
+  { id: "studio", label: "Setup studio",    note: "Setup profesional",       Icon: Camera },
+];
+
+const PERKS = [
+  "Ghidaj pas cu pas la filmare",
+  "Poziții de lumină și cameră",
+  "Montaj de reel profesional",
+  "Postezi cu încredere",
+];
+
 const TOTAL = 4;
+
+/* ---------- ecran principal ---------- */
 
 function Onboarding() {
   const nav = useNavigate();
-  const { brand, logoUrl, loading, update } = useBrand();
   const [step, setStep] = useState(0);
-  const [logoBlob, setLogoBlob] = useState<Blob | undefined>(undefined);
-  const [localLogoUrl, setLocalLogoUrl] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [handle, setHandle] = useState("");
-  const [primary, setPrimary] = useState("#D4AF37");
-  const [accent, setAccent] = useState("#F4E2B8");
-  const [vibe, setVibe] = useState<Vibe>("luxury");
-  const [phone, setPhone] = useState("");
-  const [location, setLocation] = useState("");
-  const [saving, setSaving] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [anim, setAnim] = useState(0);
+  const [specialty, setSpecialty] = useState<Profession>("par");
+  const [setups, setSetups] = useState<EquipmentId[]>(["window"]);
 
-  // Hydrate from existing brand on first mount.
-  useEffect(() => {
-    if (!brand) return;
-    setName(brand.name);
-    setHandle(brand.handle);
-    setPrimary(brand.primary);
-    setAccent(brand.accent);
-    setVibe(brand.vibe);
-    setPhone(brand.phone ?? "");
-    setLocation(brand.location ?? "");
-    if (logoUrl) setLocalLogoUrl(logoUrl);
-  }, [brand, logoUrl]);
+  const toggleSetup = (id: EquipmentId) =>
+    setSetups((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
-  const profId = useMemo(() => getProfessionId(), []);
-
-  const onPickLogo = async (f?: File | null) => {
-    if (!f) return;
+  const go = useCallback((n: number) => {
     light();
-    try {
-      const blob = await rasterizeLogo(f, 512);
-      setLogoBlob(blob);
-      if (localLogoUrl?.startsWith("blob:") && localLogoUrl !== logoUrl) URL.revokeObjectURL(localLogoUrl);
-      setLocalLogoUrl(URL.createObjectURL(blob));
-    } catch {
-      // ignore
-    }
+    setAnim((a) => a + 1);
+    setStep(n);
+  }, []);
+  const next = () => go(Math.min(step + 1, TOTAL - 1));
+  const back = () => {
+    if (step === 0) return;
+    go(Math.max(step - 1, 0));
   };
 
-  const onRemoveLogo = () => {
-    light();
-    // Revoke the blob URL if we created one in this session
-    if (localLogoUrl?.startsWith("blob:")) URL.revokeObjectURL(localLogoUrl);
-    setLogoBlob(undefined);
-    setLocalLogoUrl(null);
-    // Reset the file input so the user can pick the same file again later
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  const suggestPalette = () => {
-    const p = profId ? PROFESSION_PALETTE[profId] : null;
-    if (!p) return;
-    light();
-    setPrimary(p.primary);
-    setAccent(p.accent);
-  };
-
-  const finish = async () => {
-    setSaving(true);
+  const finish = () => {
     success();
-    await update({
-      name: name.trim(),
-      handle: handle.replace(/^@/, "").trim(),
-      primary,
-      accent,
-      vibe,
-      phone: phone.trim() || undefined,
-      location: location.trim() || undefined,
-      logoBlob,
-    });
-    setSaving(false);
-    nav({ to: "/profession" });
+    setProfession(specialty);
+    setEquipment(setups);
+    markOnboardingDone();
+    nav({ to: "/" });
   };
 
-  const skip = () => {
-    light();
-    markOnboardingSkipped();
-    nav({ to: "/profession" });
-  };
-
-  const next = () => {
-    light();
-    if (step >= TOTAL - 1) void finish();
-    else setStep((s) => s + 1);
-  };
-
-  const prev = () => {
-    light();
-    if (step === 0) nav({ to: "/profession" });
-    else setStep((s) => s - 1);
-  };
-
-  if (loading) return <PhoneShell><div /></PhoneShell>;
+  const onCta = step === TOTAL - 1 ? finish : next;
+  const ctaLabel = step === TOTAL - 1 ? "Începe" : "Continuă";
 
   return (
     <PhoneShell>
-      <CinematicBg src={intro} blur overlay={0.85} kenBurns={false} />
-      <div className="relative z-10 flex flex-col h-full px-6 pt-4 pb-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <button onClick={prev} className="w-10 h-10 rounded-full glass flex items-center justify-center" aria-label="Înapoi">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5] font-semibold">
-            Brand · {step + 1} / {TOTAL}
-          </span>
-          <button onClick={skip} className="w-10 h-10 rounded-full flex items-center justify-center text-white/55" aria-label="Sari peste">
-            <X className="w-4 h-4" />
-          </button>
+      <div className="flex flex-col h-full bg-white">
+        <div key={anim} className="flex-1 min-h-0 flex flex-col animate-fade-in">
+          {step === 0 ? (
+            <ScreenWelcome />
+          ) : (
+            <>
+              <div
+                className="shrink-0"
+                style={{ height: "max(env(safe-area-inset-top, 56px), 56px)" }}
+              />
+              <NavBar step={step} onBack={back} />
+              {step === 1 && <ScreenSpecialty value={specialty} onChange={setSpecialty} />}
+              {step === 2 && <ScreenSetup value={setups} onToggle={toggleSetup} />}
+              {step === 3 && <ScreenDone />}
+            </>
+          )}
         </div>
-
-        {/* Progress dots */}
-        <div className="flex gap-1.5 mt-4 px-1">
-          {Array.from({ length: TOTAL }).map((_, i) => (
-            <span key={i} className={`h-[3px] flex-1 rounded-full transition-all ${i <= step ? "bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37]" : "bg-white/10"}`} />
-          ))}
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 flex flex-col mt-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {step === 0 && <StepLogo logoUrl={localLogoUrl} onPick={onPickLogo} onRemove={onRemoveLogo} fileRef={fileRef} />}
-          {step === 1 && <StepIdentity name={name} handle={handle} setName={setName} setHandle={setHandle} />}
-          {step === 2 && <StepColors primary={primary} accent={accent} setPrimary={setPrimary} setAccent={setAccent} onSuggest={profId ? suggestPalette : undefined} />}
-          {step === 3 && <StepVibe vibe={vibe} setVibe={setVibe} phone={phone} setPhone={setPhone} location={location} setLocation={setLocation} />}
-        </div>
-
-        {/* CTA */}
-        <button
-          onClick={next}
-          disabled={saving}
-          className="mt-4 h-14 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(244,228,193,0.4)] active:scale-[0.98] transition-transform disabled:opacity-60"
-        >
-          {step === TOTAL - 1 ? <>Salvează brand-ul <Check className="w-4 h-4" /></> : <>Continuă <ChevronRight className="w-4 h-4" /></>}
-        </button>
-        {step < TOTAL - 1 && (
-          <button onClick={skip} className="mt-2 h-10 text-[11px] tracking-widest uppercase text-white/45">
-            Sari peste — completez mai târziu
-          </button>
-        )}
+        <CTA label={ctaLabel} onCta={onCta} />
       </div>
     </PhoneShell>
   );
 }
 
-function StepLogo({
-  logoUrl,
-  onPick,
-  onRemove,
-  fileRef,
-}: {
-  logoUrl: string | null;
-  onPick: (f?: File | null) => void;
-  onRemove: () => void;
-  fileRef: React.RefObject<HTMLInputElement | null>;
-}) {
+/* ---------- componente comune ---------- */
+
+function NavBar({ step, onBack }: { step: number; onBack: () => void }) {
   return (
-    <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Logo-ul tău <em className="italic text-[#E8D5B5]">·</em>
-      </h1>
-      <p className="text-white/60 text-sm mt-2 max-w-[22rem]">
-        Apare discret în colț pe fiecare reel + pe ecranul final. PNG sau SVG, ideal cu fundal transparent.
-      </p>
-      <div className="mt-8 grid grid-cols-2 gap-3">
-        <LogoPreview url={logoUrl} bg="#FFFFFF" label="Pe fundal alb" />
-        <LogoPreview url={logoUrl} bg="#0a0a0a" label="Pe fundal negru" />
-      </div>
+    <div className="shrink-0 px-5 flex items-center justify-between">
       <button
-        onClick={() => fileRef.current?.click()}
-        className="mt-6 w-full h-14 rounded-2xl glass-lux flex items-center justify-center gap-2 text-white"
+        onClick={onBack}
+        className="grid place-items-center w-10 h-10 -ml-2 rounded-full text-[#1F1F1F] active:bg-black/5 transition"
+        aria-label="Înapoi"
       >
-        <Upload className="w-4 h-4 text-[#E8D5B5]" />
-        <span className="text-sm font-medium">{logoUrl ? "Schimbă logo-ul" : "Încarcă logo (PNG/SVG)"}</span>
+        <ChevronLeft className="w-6 h-6" strokeWidth={2} />
       </button>
-      {logoUrl && (
-        <button
-          onClick={onRemove}
-          className="mt-2 w-full h-12 rounded-2xl border border-white/10 flex items-center justify-center gap-2 text-white/70 active:scale-[0.99] transition"
-        >
-          <span className="text-sm font-medium">Renunță la logo</span>
-        </button>
-      )}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/png,image/jpeg,image/svg+xml,image/webp"
-        className="hidden"
-        onChange={(e) => onPick(e.target.files?.[0])}
-      />
+      <span className="text-[#6B6B6B] text-[15px] font-semibold tabular-nums tracking-wide">
+        {step + 1} / {TOTAL}
+      </span>
     </div>
   );
 }
 
-function LogoPreview({ url, bg, label }: { url: string | null; bg: string; label: string }) {
+function CTA({ label, onCta }: { label: string; onCta: () => void }) {
   return (
-    <div>
-      <div className="aspect-square rounded-2xl border border-white/10 flex items-center justify-center overflow-hidden" style={{ background: bg }}>
-        {url ? (
-          <img src={url} alt="" className="max-w-[80%] max-h-[80%] object-contain" />
-        ) : (
-          <span className="text-xs" style={{ color: bg === "#FFFFFF" ? "#9999aa" : "#555" }}>fără logo</span>
+    <div
+      className="shrink-0 px-[22px] pt-3.5"
+      style={{ paddingBottom: "max(env(safe-area-inset-bottom, 22px), 22px)" }}
+    >
+      <button
+        onClick={onCta}
+        className="w-full h-[58px] rounded-[16px] bg-[#5B34FF] text-white font-semibold text-[16px] tracking-tight flex items-center justify-center relative shadow-[0_12px_26px_-10px_rgba(91,52,255,0.7)] active:scale-[0.985] transition"
+      >
+        <span>{label}</span>
+        <span className="absolute right-5">
+          <ArrowRight className="w-5 h-5" strokeWidth={2} />
+        </span>
+      </button>
+    </div>
+  );
+}
+
+function Heading({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <h1 className={`font-display font-bold text-[#1F1F1F] text-[29px] leading-[1.1] tracking-[-0.01em] ${className}`}>
+      {children}
+    </h1>
+  );
+}
+
+function Para({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <p className={`text-[#6B6B6B] text-[15px] leading-[1.45] mt-2 ${className}`}>{children}</p>;
+}
+
+/* ---------- ecran 1: Welcome ---------- */
+
+function ScreenWelcome() {
+  return (
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* TODO: aici vine VIDEO-ul de intro. Acum = poster placeholder. */}
+      <div className="relative w-full flex-1 min-h-[320px]">
+        <img src={WELCOME_IMG} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/45 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
+        <div
+          className="absolute left-5 flex items-center gap-2 text-white"
+          style={{ top: "max(env(safe-area-inset-top, 56px), 56px)" }}
+        >
+          <span className="text-[#5B34FF]"><Sparkles className="w-[22px] h-[22px]" /></span>
+          <div className="font-display font-extrabold leading-[0.84] text-[20px] tracking-tight">
+            <div>REEL</div>
+            <div className="text-[#5B34FF]">COACH</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="shrink-0 flex flex-col bg-white -mt-6 rounded-t-[28px] relative z-10 px-6 pt-7 pb-1">
+        <Heading className="text-[31px]">
+          Creează conținut<br />beauty <span className="text-[#5B34FF]">mai bun.</span>
+        </Heading>
+        <Para>Învață exact cum filmează top creatorii beauty reels-urile lor.</Para>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <StatCard Icon={Users} number="256" label="Creatori" />
+          <StatCard Icon={FilmIcon} number="600+" label="Reeluri create" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ Icon, number, label }: { Icon: typeof Users; number: string; label: string }) {
+  return (
+    <div className="rounded-[16px] bg-[#F8F8FA] border border-[#E6E6EA] px-4 py-3.5">
+      <span className="text-[#5B34FF]"><Icon className="w-5 h-5" /></span>
+      <div className="mt-2 font-display font-extrabold text-[#1F1F1F] text-[22px] leading-none tabular-nums">{number}</div>
+      <div className="text-[#6B6B6B] text-[12.5px] mt-1">{label}</div>
+    </div>
+  );
+}
+
+/* ---------- ecran 2: Specialitate ---------- */
+
+function ScreenSpecialty({ value, onChange }: { value: Profession; onChange: (p: Profession) => void }) {
+  return (
+    <div className="flex-1 min-h-0 flex flex-col px-6 pt-3">
+      <Heading>
+        Alege-ți<br /><span className="text-[#5B34FF]">specialitatea</span>
+      </Heading>
+      <Para>Personalizăm conținutul pentru munca ta.</Para>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        {SPECIALTIES.map((s) => (
+          <SpecialtyCard
+            key={s.id}
+            label={s.label}
+            img={s.img}
+            wide={s.wide}
+            on={value === s.id}
+            onClick={() => { light(); onChange(s.id); }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SpecialtyCard({
+  label, img, wide, on, onClick,
+}: { label: string; img: string; wide?: boolean; on: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`relative rounded-[18px] overflow-hidden border-2 bg-white flex flex-col transition active:scale-[0.98] ${
+        on ? "border-[#5B34FF]" : "border-[#E6E6EA]"
+      } ${wide ? "col-span-2" : ""}`}
+    >
+      <div className="relative w-full" style={{ aspectRatio: wide ? "16 / 7" : "5 / 4" }}>
+        <img src={img} alt={label} className="absolute inset-0 w-full h-full object-cover" />
+        {on && (
+          <span className="absolute top-2.5 right-2.5 grid place-items-center w-6 h-6 rounded-full bg-[#5B34FF] text-white shadow-md">
+            <Check className="w-3.5 h-3.5" strokeWidth={3} />
+          </span>
         )}
       </div>
-      <p className="mt-1.5 text-center text-[10px] tracking-widest uppercase text-white/40">{label}</p>
-    </div>
+      <div className={`py-2.5 text-center font-display font-semibold text-[16px] ${on ? "text-[#5B34FF]" : "text-[#1F1F1F]"}`}>
+        {label}
+      </div>
+    </button>
   );
 }
 
-function StepIdentity({ name, handle, setName, setHandle }: { name: string; handle: string; setName: (s: string) => void; setHandle: (s: string) => void }) {
-  return (
-    <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Cum te <em className="italic text-[#E8D5B5]">cheamă</em>?
-      </h1>
-      <p className="text-white/60 text-sm mt-2">Numele apare pe outro și sub video.</p>
-      <div className="mt-8 space-y-4">
-        <Field label="Nume brand sau salon">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value.slice(0, 40))}
-            placeholder="Salon Elena"
-            className="w-full bg-transparent outline-none text-white text-[18px] placeholder:text-white/30"
-          />
-        </Field>
-        <Field label="Handle Instagram / TikTok">
-          <div className="flex items-center gap-2">
-            <span className="text-[#E8D5B5] text-[18px]">@</span>
-            <input
-              value={handle}
-              onChange={(e) => setHandle(e.target.value.replace(/^@/, "").replace(/\s+/g, "").slice(0, 30))}
-              placeholder="salonelena"
-              autoCapitalize="none"
-              className="w-full bg-transparent outline-none text-white text-[18px] placeholder:text-white/30"
-            />
-          </div>
-        </Field>
-      </div>
-    </div>
-  );
-}
+/* ---------- ecran 3: Echipament ---------- */
 
-function StepColors({ primary, accent, setPrimary, setAccent, onSuggest }: { primary: string; accent: string; setPrimary: (s: string) => void; setAccent: (s: string) => void; onSuggest?: () => void }) {
+function ScreenSetup({ value, onToggle }: { value: EquipmentId[]; onToggle: (id: EquipmentId) => void }) {
   return (
-    <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Culorile <em className="italic text-[#E8D5B5]">brandului</em>
-      </h1>
-      <p className="text-white/60 text-sm mt-2">Folosite la text și outro. Sari peste = champagne gold default.</p>
-      <div className="mt-8 grid grid-cols-2 gap-4">
-        <ColorField label="Primary" value={primary} onChange={setPrimary} />
-        <ColorField label="Accent" value={accent} onChange={setAccent} />
-      </div>
-      {onSuggest && (
-        <button onClick={onSuggest} className="mt-5 w-full h-12 rounded-2xl glass flex items-center justify-center gap-2 text-white text-sm">
-          <Sparkles className="w-4 h-4 text-[#E8D5B5]" />
-          Sugerează după meserie
-        </button>
-      )}
-      {/* Preview swatch */}
-      <div className="mt-6 rounded-2xl p-5 border border-white/10" style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }}>
-        <p className="text-[10px] tracking-[0.4em] uppercase text-black/70 font-semibold">Preview</p>
-        <p className="font-display italic text-3xl text-black mt-2">Salonul tău</p>
-      </div>
-    </div>
-  );
-}
-
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (s: string) => void }) {
-  return (
-    <label className="block">
-      <span className="block text-[10px] tracking-widest uppercase text-white/45 mb-2">{label}</span>
-      <div className="flex items-center gap-3 rounded-2xl border border-white/10 p-2 bg-white/[0.03]">
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-12 h-12 rounded-xl border-0 bg-transparent cursor-pointer"
-          style={{ padding: 0 }}
-        />
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1 bg-transparent outline-none text-white text-sm uppercase tracking-wider"
-        />
-      </div>
-    </label>
-  );
-}
-
-function StepVibe({ vibe, setVibe, phone, setPhone, location, setLocation }: {
-  vibe: Vibe; setVibe: (v: Vibe) => void;
-  phone: string; setPhone: (s: string) => void;
-  location: string; setLocation: (s: string) => void;
-}) {
-  return (
-    <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Stil + <em className="italic text-[#E8D5B5]">contact</em>
-      </h1>
-      <p className="text-white/60 text-sm mt-2">Stilul setează default-ul pentru text și tranziții. Contactul apare la final.</p>
-
-      <div className="mt-6 space-y-2">
-        {(["luxury", "soft", "bold"] as Vibe[]).map((v) => {
-          const sp = STYLE_PACKS[v];
-          const active = vibe === v;
+    <div className="flex-1 min-h-0 flex flex-col px-6 pt-3">
+      <Heading>
+        Ce <span className="text-[#5B34FF]">echipament</span> ai?
+      </Heading>
+      <Para>Bifează tot ce ai — adaptăm ghidul la echipamentul tău.</Para>
+      <div className="mt-5 mb-1 flex-1 min-h-0 flex flex-col gap-3">
+        {SETUPS.map(({ id, label, note, Icon }) => {
+          const on = value.includes(id);
           return (
             <button
-              key={v}
-              onClick={() => setVibe(v)}
-              className={`w-full text-left rounded-2xl p-4 border transition ${active ? "border-[#E8D5B5] bg-white/[0.06]" : "border-white/10 bg-white/[0.02]"}`}
+              key={id}
+              onClick={() => { light(); onToggle(id); }}
+              className={`relative flex-1 min-h-[70px] flex items-center gap-4 rounded-[18px] px-4 border-2 transition active:scale-[0.99] ${
+                on ? "border-[#5B34FF] bg-[#EDE8FF]" : "border-[#E6E6EA] bg-white"
+              }`}
             >
-              <div className="flex items-center justify-between">
-                <span className={`font-display text-2xl ${active ? "text-[#E8D5B5]" : "text-white"}`}>{sp.label}</span>
-                {active && <Check className="w-4 h-4 text-[#E8D5B5]" />}
+              <span className="grid place-items-center w-9 h-9 shrink-0 text-[#5B34FF]">
+                <Icon className="w-7 h-7" strokeWidth={1.7} />
+              </span>
+              <div className="flex-1 text-left">
+                <div className="font-display font-semibold text-[17px] text-[#1F1F1F] leading-tight">{label}</div>
+                <div className="text-[#6B6B6B] text-[13.5px] mt-0.5">{note}</div>
               </div>
-              <p className="text-white/55 text-xs mt-1">{sp.desc}</p>
+              <span
+                className={`grid place-items-center w-6 h-6 rounded-[7px] shrink-0 transition-colors ${
+                  on ? "bg-[#5B34FF] text-white" : "border-2 border-[#E6E6EA] text-transparent"
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" strokeWidth={3} />
+              </span>
             </button>
           );
         })}
       </div>
-
-      <div className="mt-6 space-y-3">
-        <Field label="Telefon (opțional)">
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value.slice(0, 24))}
-            placeholder="0722 000 000"
-            inputMode="tel"
-            className="w-full bg-transparent outline-none text-white text-[16px] placeholder:text-white/30"
-          />
-        </Field>
-        <Field label="Locație (opțional)">
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value.slice(0, 60))}
-            placeholder="București, Sector 1"
-            className="w-full bg-transparent outline-none text-white text-[16px] placeholder:text-white/30"
-          />
-        </Field>
-      </div>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/* ---------- ecran 4: Gata ---------- */
+
+function ScreenDone() {
   return (
-    <label className="block rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <span className="block text-[10px] tracking-widest uppercase text-white/45 mb-1.5">{label}</span>
-      {children}
-    </label>
+    <div className="flex-1 min-h-0 flex flex-col items-center px-6 pt-3 text-center">
+      <div className="grid place-items-center w-[76px] h-[76px] rounded-full bg-[#EDE8FF] text-[#5B34FF]">
+        <Sparkles className="w-[34px] h-[34px]" />
+      </div>
+      <Heading className="mt-4">
+        Ești <span className="text-[#5B34FF]">gata!</span>
+      </Heading>
+      <Para className="max-w-[17rem]">Hai să creăm conținut care aduce mai mulți clienți.</Para>
+
+      <div className="flex-1" />
+
+      <div className="w-full flex flex-col gap-3.5 pb-2">
+        {PERKS.map((p) => (
+          <div key={p} className="flex items-center gap-3 text-left">
+            <span className="grid place-items-center w-[22px] h-[22px] rounded-full bg-[#5B34FF] text-white shrink-0">
+              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+            </span>
+            <span className="text-[#1F1F1F] text-[15px] font-medium">{p}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

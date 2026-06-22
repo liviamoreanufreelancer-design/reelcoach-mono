@@ -19,9 +19,9 @@ function BrandSettings() {
         </div>
         <div className="mt-6 flex-1 flex items-center justify-center text-center">
           <div>
-            <p className="text-white/70 text-sm">Pentru a actualiza brand-ul, deschide din nou onboarding-ul.</p>
+            <p className="text-white/70 text-sm">Editează logo, nume, culori și stilul brandului tău.</p>
             <Link
-              to="/onboarding"
+              to="/settings/brand-edit"
               className="mt-5 inline-flex h-12 px-6 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black text-sm font-semibold items-center"
             >
               Editează brand
