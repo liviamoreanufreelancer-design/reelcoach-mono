@@ -10,8 +10,9 @@ import { PhoneShell } from "@/components/PhoneShell";
 import { StatusBar } from "@/components/StatusBar";
 import { TabBar } from "@/components/TabBar";
 import { useTemplates } from "@/data/templates-context";
-import { getTemplatesForCategory } from "@/data/catalog";
-import type { ReelTemplate } from "@/data/catalog";
+import { getTemplatesForCategory, getCategoriesForProfession } from "@/data/catalog";
+import { type ReelTemplate } from "@/data/shots";
+import { getProfessionId } from "@/lib/profession";
 import { getFavorites, toggleFavorite } from "@/lib/favorites";
 
 export const Route = createFileRoute("/saved")({
@@ -20,12 +21,14 @@ export const Route = createFileRoute("/saved")({
 
 function SavedScreen() {
   const nav = useNavigate();
-  const { categories, allTemplates } = useTemplates();
+  const allTemplates = useTemplates();
+  const professionId = getProfessionId();
 
-  // Toate template-urile cunoscute (din categorii + fallback).
+  // Toate template-urile cunoscute (din categoriile profesiei + lista completa).
   const everyTemplate = useMemo(() => {
     const ids = new Set<string>();
     const out: ReelTemplate[] = [];
+    const categories = professionId ? getCategoriesForProfession(professionId) : [];
     for (const c of categories) {
       for (const t of getTemplatesForCategory(c.id)) {
         if (!ids.has(t.id)) { ids.add(t.id); out.push(t); }
@@ -35,7 +38,7 @@ function SavedScreen() {
       if (!ids.has(t.id)) { ids.add(t.id); out.push(t); }
     }
     return out;
-  }, [categories, allTemplates]);
+  }, [allTemplates, professionId]);
 
   const [favIds, setFavIds] = useState<string[]>(() => getFavorites());
 

@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { TabBar } from "@/components/TabBar";
 import { playTap } from "@/lib/ui-sound";
+import { getFavorites, toggleFavorite } from "@/lib/favorites";
 import { light } from "@/lib/haptic";
 import { getProfessionId } from "@/lib/profession";
 import { isOnboardingDone } from "@/lib/brand-store";
@@ -41,7 +42,9 @@ function Home() {
     sceneCount: number;
   } | null>(null);
   const [recommended, setRecommended] = useState<ReelTemplate[]>([]);
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(getFavorites().map((id) => [id, true])),
+  );
 
   const professionId = getProfessionId();
   const allTemplates = useTemplates();
@@ -111,8 +114,10 @@ function Home() {
     nav({ to: "/reel/$id", params: { id: t.id } });
   };
 
-  const toggleSave = (id: string) =>
-    setSaved((s) => ({ ...s, [id]: !s[id] }));
+  const toggleSave = (id: string) => {
+    const now = toggleFavorite(id);
+    setSaved((s) => ({ ...s, [id]: now }));
+  };
 
   // Hero = first recommended (shown big when no in-progress reel).
   const hero = !inProgress ? recommended[0] : null;
