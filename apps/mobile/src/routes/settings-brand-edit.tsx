@@ -1,14 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Upload, Check, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Upload, Check, Sparkles } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
-import { CinematicBg } from "@/components/CinematicBg";
 import { useBrand } from "@/hooks/useBrand";
 import { rasterizeLogo, PROFESSION_PALETTE, type Vibe } from "@/lib/brand-store";
 import { getProfessionId } from "@/lib/profession";
 import { STYLE_PACKS } from "@/data/style-packs";
 import { light, success } from "@/lib/haptic";
-import intro from "@/assets/salon-intro.jpg";
 
 export const Route = createFileRoute("/settings-brand-edit")({
   component: Onboarding,
@@ -24,8 +22,8 @@ function Onboarding() {
   const [localLogoUrl, setLocalLogoUrl] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
-  const [primary, setPrimary] = useState("#D4AF37");
-  const [accent, setAccent] = useState("#F4E2B8");
+  const [primary, setPrimary] = useState("#5B34FF");
+  const [accent, setAccent] = useState("#F5B228");
   const [vibe, setVibe] = useState<Vibe>("luxury");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
@@ -116,30 +114,27 @@ function Onboarding() {
 
   return (
     <PhoneShell>
-      <CinematicBg src={intro} blur overlay={0.85} kenBurns={false} />
-      <div className="relative z-10 flex flex-col h-full px-6 pt-4 pb-6">
+      <div className="flex flex-col h-full bg-[#F8F8FA] text-[#1F1F1F]">
+        <div className="shrink-0" style={{ height: "max(env(safe-area-inset-top, 56px), 56px)" }} />
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <button onClick={prev} className="w-10 h-10 rounded-full glass flex items-center justify-center" aria-label="Înapoi">
-            <ChevronLeft className="w-5 h-5" />
+        <div className="shrink-0 flex items-center justify-between px-[22px] pb-1">
+          <button onClick={prev} className="w-10 h-10 rounded-full bg-white border border-[#E6E6EA] shadow-[0_4px_14px_-10px_rgba(40,24,110,0.3)] grid place-items-center active:scale-95 transition" aria-label="Înapoi">
+            <ChevronLeft className="w-[22px] h-[22px]" strokeWidth={2} />
           </button>
-          <span className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5] font-semibold">
-            Brand · {step + 1} / {TOTAL}
-          </span>
-          <button onClick={skip} className="w-10 h-10 rounded-full flex items-center justify-center text-white/55" aria-label="Sari peste">
-            <X className="w-4 h-4" />
-          </button>
+          {step < TOTAL - 1 ? (
+            <button onClick={skip} className="font-semibold text-[14px] text-[#6B6B6B] active:opacity-60 transition">Sari peste</button>
+          ) : <span className="w-10" />}
         </div>
 
-        {/* Progress dots */}
-        <div className="flex gap-1.5 mt-4 px-1">
+        {/* Progress bar */}
+        <div className="shrink-0 flex items-center gap-1.5 mt-3.5 px-[22px]">
           {Array.from({ length: TOTAL }).map((_, i) => (
-            <span key={i} className={`h-[3px] flex-1 rounded-full transition-all ${i <= step ? "bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37]" : "bg-white/10"}`} />
+            <span key={i} className={`h-[5px] rounded-full transition-all duration-300 ${i <= step ? "bg-[#5B34FF] flex-[1.4]" : "bg-[#E6E6EA] flex-1"}`} />
           ))}
         </div>
 
         {/* Body */}
-        <div className="flex-1 flex flex-col mt-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 flex flex-col mt-6 px-[22px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {step === 0 && <StepLogo logoUrl={localLogoUrl} onPick={onPickLogo} onRemove={onRemoveLogo} fileRef={fileRef} />}
           {step === 1 && <StepIdentity name={name} handle={handle} setName={setName} setHandle={setHandle} />}
           {step === 2 && <StepColors primary={primary} accent={accent} setPrimary={setPrimary} setAccent={setAccent} onSuggest={profId ? suggestPalette : undefined} />}
@@ -147,18 +142,15 @@ function Onboarding() {
         </div>
 
         {/* CTA */}
-        <button
-          onClick={next}
-          disabled={saving}
-          className="mt-4 h-14 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(244,228,193,0.4)] active:scale-[0.98] transition-transform disabled:opacity-60"
-        >
-          {step === TOTAL - 1 ? <>Salvează brand-ul <Check className="w-4 h-4" /></> : <>Continuă <ChevronRight className="w-4 h-4" /></>}
-        </button>
-        {step < TOTAL - 1 && (
-          <button onClick={skip} className="mt-2 h-10 text-[11px] tracking-widest uppercase text-white/45">
-            Sari peste — completez mai târziu
+        <div className="shrink-0 px-[22px] pt-3" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 28px), 28px)" }}>
+          <button
+            onClick={next}
+            disabled={saving}
+            className="w-full h-[58px] rounded-[16px] bg-[#5B34FF] text-white font-bold text-[16px] shadow-[0_12px_26px_-12px_rgba(91,52,255,0.8)] flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60"
+          >
+            {step === TOTAL - 1 ? <>Salvează <Check className="w-4 h-4" /></> : <>Continuă <ChevronRight className="w-4 h-4" /></>}
           </button>
-        )}
+        </div>
       </div>
     </PhoneShell>
   );
@@ -177,29 +169,25 @@ function StepLogo({
 }) {
   return (
     <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Logo-ul tău <em className="italic text-[#E8D5B5]">·</em>
-      </h1>
-      <p className="text-white/60 text-sm mt-2 max-w-[22rem]">
-        Apare discret în colț pe fiecare reel + pe ecranul final. PNG sau SVG, ideal cu fundal transparent.
-      </p>
-      <div className="mt-8 grid grid-cols-2 gap-3">
-        <LogoPreview url={logoUrl} bg="#FFFFFF" label="Pe fundal alb" />
-        <LogoPreview url={logoUrl} bg="#0a0a0a" label="Pe fundal negru" />
+      <h2 className="font-display font-bold text-[28px] leading-[1.05] text-[#1F1F1F]">Logo-ul tău</h2>
+      <p className="text-[15px] text-[#6B6B6B] mt-1">Apare discret pe fiecare reel. PNG sau SVG, ideal transparent.</p>
+      <div className="grid grid-cols-2 gap-3.5 mt-5">
+        <LogoPreview url={logoUrl} bg="#FFFFFF" label="pe fundal alb" />
+        <LogoPreview url={logoUrl} bg="#1F1F1F" label="pe fundal negru" />
       </div>
       <button
         onClick={() => fileRef.current?.click()}
-        className="mt-6 w-full h-14 rounded-2xl glass-lux flex items-center justify-center gap-2 text-white"
+        className="flex items-center justify-center gap-2 w-full h-[52px] rounded-[14px] mt-4 bg-[#EDE8FF] text-[#5B34FF] font-bold text-[15px] border-[1.5px] border-dashed border-[#5B34FF]/40 active:scale-[0.98] transition"
       >
-        <Upload className="w-4 h-4 text-[#E8D5B5]" />
-        <span className="text-sm font-medium">{logoUrl ? "Schimbă logo-ul" : "Încarcă logo (PNG/SVG)"}</span>
+        <Upload className="w-[18px] h-[18px]" />
+        {logoUrl ? "Schimbă logo-ul" : "Încarcă logo (PNG/SVG)"}
       </button>
       {logoUrl && (
         <button
           onClick={onRemove}
-          className="mt-2 w-full h-12 rounded-2xl border border-white/10 flex items-center justify-center gap-2 text-white/70 active:scale-[0.99] transition"
+          className="mt-2 w-full h-12 rounded-[14px] border border-[#E6E6EA] bg-white flex items-center justify-center text-[#6B6B6B] text-sm font-medium active:scale-[0.99] transition"
         >
-          <span className="text-sm font-medium">Renunță la logo</span>
+          Renunță la logo
         </button>
       )}
       <input
@@ -215,15 +203,15 @@ function StepLogo({
 
 function LogoPreview({ url, bg, label }: { url: string | null; bg: string; label: string }) {
   return (
-    <div>
-      <div className="aspect-square rounded-2xl border border-white/10 flex items-center justify-center overflow-hidden" style={{ background: bg }}>
+    <div className="flex flex-col items-center gap-2">
+      <div className="w-full aspect-square rounded-[18px] border border-[#E6E6EA] flex items-center justify-center overflow-hidden" style={{ background: bg }}>
         {url ? (
           <img src={url} alt="" className="max-w-[80%] max-h-[80%] object-contain" />
         ) : (
-          <span className="text-xs" style={{ color: bg === "#FFFFFF" ? "#9999aa" : "#555" }}>fără logo</span>
+          <span className="text-[11px]" style={{ color: bg === "#FFFFFF" ? "#9999aa" : "#888" }}>fără logo</span>
         )}
       </div>
-      <p className="mt-1.5 text-center text-[10px] tracking-widest uppercase text-white/40">{label}</p>
+      <span className="text-[11px] text-[#6B6B6B]">{label}</span>
     </div>
   );
 }
@@ -231,28 +219,26 @@ function LogoPreview({ url, bg, label }: { url: string | null; bg: string; label
 function StepIdentity({ name, handle, setName, setHandle }: { name: string; handle: string; setName: (s: string) => void; setHandle: (s: string) => void }) {
   return (
     <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Cum te <em className="italic text-[#E8D5B5]">cheamă</em>?
-      </h1>
-      <p className="text-white/60 text-sm mt-2">Numele apare pe outro și sub video.</p>
-      <div className="mt-8 space-y-4">
+      <h2 className="font-display font-bold text-[28px] leading-[1.05] text-[#1F1F1F]">Cum te cheamă?</h2>
+      <p className="text-[15px] text-[#6B6B6B] mt-1">Numele tău public pe reeluri.</p>
+      <div className="flex flex-col gap-3.5 mt-5">
         <Field label="Nume brand sau salon">
           <input
             value={name}
             onChange={(e) => setName(e.target.value.slice(0, 40))}
-            placeholder="Salon Elena"
-            className="w-full bg-transparent outline-none text-white text-[18px] placeholder:text-white/30"
+            placeholder="ex. Salon Elena"
+            className="w-full bg-transparent outline-none text-[16px] text-[#1F1F1F] placeholder:text-[#6B6B6B]/60"
           />
         </Field>
         <Field label="Handle Instagram / TikTok">
-          <div className="flex items-center gap-2">
-            <span className="text-[#E8D5B5] text-[18px]">@</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[16px] text-[#6B6B6B]">@</span>
             <input
               value={handle}
               onChange={(e) => setHandle(e.target.value.replace(/^@/, "").replace(/\s+/g, "").slice(0, 30))}
               placeholder="salonelena"
               autoCapitalize="none"
-              className="w-full bg-transparent outline-none text-white text-[18px] placeholder:text-white/30"
+              className="w-full bg-transparent outline-none text-[16px] text-[#1F1F1F] placeholder:text-[#6B6B6B]/60"
             />
           </div>
         </Field>
@@ -264,24 +250,23 @@ function StepIdentity({ name, handle, setName, setHandle }: { name: string; hand
 function StepColors({ primary, accent, setPrimary, setAccent, onSuggest }: { primary: string; accent: string; setPrimary: (s: string) => void; setAccent: (s: string) => void; onSuggest?: () => void }) {
   return (
     <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Culorile <em className="italic text-[#E8D5B5]">brandului</em>
-      </h1>
-      <p className="text-white/60 text-sm mt-2">Folosite la text și outro. Sari peste = champagne gold default.</p>
-      <div className="mt-8 grid grid-cols-2 gap-4">
+      <h2 className="font-display font-bold text-[28px] leading-[1.05] text-[#1F1F1F]">Culorile brandului</h2>
+      <p className="text-[15px] text-[#6B6B6B] mt-1">Folosite pe titluri și accente.</p>
+      <div className="grid grid-cols-2 gap-3.5 mt-5">
         <ColorField label="Primary" value={primary} onChange={setPrimary} />
         <ColorField label="Accent" value={accent} onChange={setAccent} />
       </div>
       {onSuggest && (
-        <button onClick={onSuggest} className="mt-5 w-full h-12 rounded-2xl glass flex items-center justify-center gap-2 text-white text-sm">
-          <Sparkles className="w-4 h-4 text-[#E8D5B5]" />
+        <button onClick={onSuggest} className="flex items-center justify-center gap-2 w-full h-[48px] rounded-[14px] mt-4 bg-white text-[#5B34FF] font-bold text-[14px] border-[1.5px] border-[#5B34FF] active:scale-[0.98] transition">
+          <Sparkles className="w-[17px] h-[17px]" />
           Sugerează după meserie
         </button>
       )}
-      {/* Preview swatch */}
-      <div className="mt-6 rounded-2xl p-5 border border-white/10" style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }}>
-        <p className="text-[10px] tracking-[0.4em] uppercase text-black/70 font-semibold">Preview</p>
-        <p className="font-display italic text-3xl text-black mt-2">Salonul tău</p>
+      <div className="mt-5">
+        <span className="block font-bold text-[11px] tracking-[1px] uppercase text-[#6B6B6B] mb-2">Previzualizare</span>
+        <div className="h-[88px] rounded-[18px] border border-[#E6E6EA] flex items-center px-5" style={{ background: `linear-gradient(120deg, ${primary}, ${accent})` }}>
+          <span className="font-display font-bold text-[22px] text-white drop-shadow-sm">Salonul tău</span>
+        </div>
       </div>
     </div>
   );
@@ -289,20 +274,20 @@ function StepColors({ primary, accent, setPrimary, setAccent, onSuggest }: { pri
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (s: string) => void }) {
   return (
-    <label className="block">
-      <span className="block text-[10px] tracking-widest uppercase text-white/45 mb-2">{label}</span>
-      <div className="flex items-center gap-3 rounded-2xl border border-white/10 p-2 bg-white/[0.03]">
+    <label className="block bg-white rounded-[16px] border border-[#E6E6EA] px-4 py-3 shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)]">
+      <span className="block font-bold text-[11px] tracking-[1px] uppercase text-[#6B6B6B] mb-2">{label}</span>
+      <div className="flex items-center gap-2.5">
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-12 h-12 rounded-xl border-0 bg-transparent cursor-pointer"
+          className="w-9 h-9 rounded-[10px] border-0 bg-transparent cursor-pointer shrink-0"
           style={{ padding: 0 }}
         />
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 bg-transparent outline-none text-white text-sm uppercase tracking-wider"
+          className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-[#1F1F1F] uppercase tracking-wider"
         />
       </div>
     </label>
@@ -316,12 +301,10 @@ function StepVibe({ vibe, setVibe, phone, setPhone, location, setLocation }: {
 }) {
   return (
     <div>
-      <h1 className="font-display text-[36px] leading-tight text-white">
-        Stil + <em className="italic text-[#E8D5B5]">contact</em>
-      </h1>
-      <p className="text-white/60 text-sm mt-2">Stilul setează default-ul pentru text și tranziții. Contactul apare la final.</p>
+      <h2 className="font-display font-bold text-[28px] leading-[1.05] text-[#1F1F1F]">Stil + contact</h2>
+      <p className="text-[15px] text-[#6B6B6B] mt-1">Cum arată și unde te găsesc.</p>
 
-      <div className="mt-6 space-y-2">
+      <div className="flex flex-col gap-2.5 mt-5">
         {(["luxury", "soft", "bold"] as Vibe[]).map((v) => {
           const sp = STYLE_PACKS[v];
           const active = vibe === v;
@@ -329,26 +312,28 @@ function StepVibe({ vibe, setVibe, phone, setPhone, location, setLocation }: {
             <button
               key={v}
               onClick={() => setVibe(v)}
-              className={`w-full text-left rounded-2xl p-4 border transition ${active ? "border-[#E8D5B5] bg-white/[0.06]" : "border-white/10 bg-white/[0.02]"}`}
+              className={`flex items-center justify-between text-left rounded-[16px] px-4 py-3.5 transition active:scale-[0.99] ${active ? "bg-[#EDE8FF] border-2 border-[#5B34FF]" : "bg-white border border-[#E6E6EA]"}`}
             >
-              <div className="flex items-center justify-between">
-                <span className={`font-display text-2xl ${active ? "text-[#E8D5B5]" : "text-white"}`}>{sp.label}</span>
-                {active && <Check className="w-4 h-4 text-[#E8D5B5]" />}
-              </div>
-              <p className="text-white/55 text-xs mt-1">{sp.desc}</p>
+              <span>
+                <span className="block font-display font-bold text-[16px] text-[#1F1F1F]">{sp.label}</span>
+                <span className="block text-[12.5px] text-[#6B6B6B] mt-0.5">{sp.desc}</span>
+              </span>
+              <span className={`w-[22px] h-[22px] rounded-full shrink-0 grid place-items-center border-2 ${active ? "border-[#5B34FF] bg-[#5B34FF]" : "border-[#E6E6EA] bg-white"}`}>
+                {active && <span className="w-2 h-2 rounded-full bg-white" />}
+              </span>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-6 space-y-3">
+      <div className="flex flex-col gap-3.5 mt-5">
         <Field label="Telefon (opțional)">
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value.slice(0, 24))}
             placeholder="0722 000 000"
             inputMode="tel"
-            className="w-full bg-transparent outline-none text-white text-[16px] placeholder:text-white/30"
+            className="w-full bg-transparent outline-none text-[16px] text-[#1F1F1F] placeholder:text-[#6B6B6B]/60"
           />
         </Field>
         <Field label="Locație (opțional)">
@@ -356,7 +341,7 @@ function StepVibe({ vibe, setVibe, phone, setPhone, location, setLocation }: {
             value={location}
             onChange={(e) => setLocation(e.target.value.slice(0, 60))}
             placeholder="București, Sector 1"
-            className="w-full bg-transparent outline-none text-white text-[16px] placeholder:text-white/30"
+            className="w-full bg-transparent outline-none text-[16px] text-[#1F1F1F] placeholder:text-[#6B6B6B]/60"
           />
         </Field>
       </div>
@@ -366,8 +351,8 @@ function StepVibe({ vibe, setVibe, phone, setPhone, location, setLocation }: {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <span className="block text-[10px] tracking-widest uppercase text-white/45 mb-1.5">{label}</span>
+    <label className="block bg-white rounded-[16px] border border-[#E6E6EA] px-4 py-3 shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)]">
+      <span className="block font-bold text-[11px] tracking-[1px] uppercase text-[#6B6B6B] mb-1.5">{label}</span>
       {children}
     </label>
   );
