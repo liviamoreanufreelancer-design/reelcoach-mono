@@ -7,7 +7,7 @@ import { toast } from "sonner";
  *  Editor & onboarding state is auto-saved continuously to IndexedDB, so we
  *  only confirm on routes where the user might lose unsaved input. */
 const HIDE_ON = ["/", "/onboarding"];
-const CONFIRM_ON = ["/film", "/edit", "/onboarding", "/settings/brand"];
+const CONFIRM_ON = ["/film", "/edit", "/onboarding", "/settings-brand-edit"];
 
 export function HomeButton() {
   const { pathname } = useLocation();

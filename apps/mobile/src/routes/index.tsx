@@ -126,7 +126,11 @@ function Home() {
 
         {/* Header */}
         <header className="flex items-center justify-between px-[22px] pt-1 pb-3.5 shrink-0">
-          <button className="grid place-items-center w-[30px] h-[30px] rounded-[10px] text-[#1F1F1F] active:bg-[#F1F1F4] transition" aria-label="Meniu">
+          <button
+            onClick={() => nav({ to: "/settings" })}
+            className="grid place-items-center w-[30px] h-[30px] rounded-[10px] text-[#1F1F1F] active:bg-[#F1F1F4] transition"
+            aria-label="Profil și setări"
+          >
             <Menu className="w-[22px] h-[22px]" />
           </button>
           <span className="font-display font-bold text-[17px] text-[#1F1F1F] whitespace-nowrap">

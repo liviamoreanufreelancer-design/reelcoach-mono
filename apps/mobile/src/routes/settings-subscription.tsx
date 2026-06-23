@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Check } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 
-export const Route = createFileRoute("/settings/subscription")({
+export const Route = createFileRoute("/settings-subscription")({
   component: SubscriptionScreen,
 });
 

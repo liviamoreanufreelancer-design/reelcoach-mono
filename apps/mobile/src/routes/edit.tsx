@@ -442,7 +442,7 @@ const blob = await renderReelInBrowser(
             <p className="text-white text-xs mt-0.5 truncate max-w-[200px]">{scenario.title}</p>
           </div>
           <Link
-            to="/settings/brand"
+            to="/settings-brand-edit"
             className="w-10 h-10 rounded-full glass flex items-center justify-center"
             aria-label="Brand"
           >

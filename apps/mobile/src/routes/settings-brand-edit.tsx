@@ -10,7 +10,7 @@ import { STYLE_PACKS } from "@/data/style-packs";
 import { light, success } from "@/lib/haptic";
 import intro from "@/assets/salon-intro.jpg";
 
-export const Route = createFileRoute("/settings/brand-edit")({
+export const Route = createFileRoute("/settings-brand-edit")({
   component: Onboarding,
 });
 
@@ -92,12 +92,12 @@ function Onboarding() {
       logoBlob,
     });
     setSaving(false);
-    nav({ to: "/settings/brand" });
+    nav({ to: "/settings" });
   };
 
   const skip = () => {
     light();
-    nav({ to: "/settings/brand" });
+    nav({ to: "/settings" });
   };
 
   const next = () => {
@@ -108,7 +108,7 @@ function Onboarding() {
 
   const prev = () => {
     light();
-    if (step === 0) nav({ to: "/settings/brand" });
+    if (step === 0) nav({ to: "/settings" });
     else setStep((s) => s - 1);
   };
 

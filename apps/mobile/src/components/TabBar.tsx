@@ -1,12 +1,12 @@
 /**
  * TabBar — bottom navigation. Purple/light design system.
- *   Acasă / Explorează / Salvate / Profil
+ *   Acasă / Explorează / Favorite / Reelurile mele
  */
 import { Link } from "@tanstack/react-router";
-import { Home, Search, Film, User } from "lucide-react";
+import { Home, Search, Film, Heart } from "lucide-react";
 import { playTap } from "@/lib/ui-sound";
 
-export type TabId = "home" | "explore" | "reels" | "saved" | "profile";
+export type TabId = "home" | "explore" | "reels" | "saved";
 
 interface TabBarProps {
   active: TabId;
@@ -16,7 +16,7 @@ const TABS: { id: TabId; label: string; icon: typeof Home; href: string }[] = [
   { id: "home", label: "Acasă", icon: Home, href: "/" },
   { id: "explore", label: "Explorează", icon: Search, href: "/explore" },
   { id: "reels", label: "Reelurile mele", icon: Film, href: "/my-reels" },
-  { id: "profile", label: "Profil", icon: User, href: "/profile" },
+  { id: "saved", label: "Favorite", icon: Heart, href: "/saved" },
 ];
 
 export function TabBar({ active }: TabBarProps) {

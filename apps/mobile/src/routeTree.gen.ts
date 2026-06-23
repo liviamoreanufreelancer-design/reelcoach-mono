@@ -10,9 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as SettingsSubscriptionRouteImport } from './routes/settings-subscription'
+import { Route as SettingsBrandEditRouteImport } from './routes/settings-brand-edit'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
-import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProfessionRouteImport } from './routes/profession'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MyReelsRouteImport } from './routes/my-reels'
@@ -21,9 +22,6 @@ import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditingRouteImport } from './routes/editing'
 import { Route as EditRouteImport } from './routes/edit'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsSubscriptionRouteImport } from './routes/settings.subscription'
-import { Route as SettingsBrandEditRouteImport } from './routes/settings.brand-edit'
-import { Route as SettingsBrandRouteImport } from './routes/settings.brand'
 import { Route as ReelIdRouteImport } from './routes/reel.$id'
 import { Route as IdeasFormatRouteImport } from './routes/ideas.$format'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
@@ -31,6 +29,16 @@ import { Route as CategoryIdRouteImport } from './routes/category.$id'
 const TemplatesRoute = TemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsSubscriptionRoute = SettingsSubscriptionRouteImport.update({
+  id: '/settings-subscription',
+  path: '/settings-subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsBrandEditRoute = SettingsBrandEditRouteImport.update({
+  id: '/settings-brand-edit',
+  path: '/settings-brand-edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -41,11 +49,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfessionRoute = ProfessionRouteImport.update({
@@ -88,21 +91,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsSubscriptionRoute = SettingsSubscriptionRouteImport.update({
-  id: '/subscription',
-  path: '/subscription',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsBrandEditRoute = SettingsBrandEditRouteImport.update({
-  id: '/brand-edit',
-  path: '/brand-edit',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsBrandRoute = SettingsBrandRouteImport.update({
-  id: '/brand',
-  path: '/brand',
-  getParentRoute: () => SettingsRoute,
-} as any)
 const ReelIdRoute = ReelIdRouteImport.update({
   id: '/reel/$id',
   path: '/reel/$id',
@@ -128,16 +116,14 @@ export interface FileRoutesByFullPath {
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/profession': typeof ProfessionRoute
-  '/profile': typeof ProfileRoute
   '/saved': typeof SavedRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/settings-brand-edit': typeof SettingsBrandEditRoute
+  '/settings-subscription': typeof SettingsSubscriptionRoute
   '/templates': typeof TemplatesRoute
   '/category/$id': typeof CategoryIdRoute
   '/ideas/$format': typeof IdeasFormatRoute
   '/reel/$id': typeof ReelIdRoute
-  '/settings/brand': typeof SettingsBrandRoute
-  '/settings/brand-edit': typeof SettingsBrandEditRoute
-  '/settings/subscription': typeof SettingsSubscriptionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -148,16 +134,14 @@ export interface FileRoutesByTo {
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/profession': typeof ProfessionRoute
-  '/profile': typeof ProfileRoute
   '/saved': typeof SavedRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/settings-brand-edit': typeof SettingsBrandEditRoute
+  '/settings-subscription': typeof SettingsSubscriptionRoute
   '/templates': typeof TemplatesRoute
   '/category/$id': typeof CategoryIdRoute
   '/ideas/$format': typeof IdeasFormatRoute
   '/reel/$id': typeof ReelIdRoute
-  '/settings/brand': typeof SettingsBrandRoute
-  '/settings/brand-edit': typeof SettingsBrandEditRoute
-  '/settings/subscription': typeof SettingsSubscriptionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,16 +153,14 @@ export interface FileRoutesById {
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/profession': typeof ProfessionRoute
-  '/profile': typeof ProfileRoute
   '/saved': typeof SavedRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/settings-brand-edit': typeof SettingsBrandEditRoute
+  '/settings-subscription': typeof SettingsSubscriptionRoute
   '/templates': typeof TemplatesRoute
   '/category/$id': typeof CategoryIdRoute
   '/ideas/$format': typeof IdeasFormatRoute
   '/reel/$id': typeof ReelIdRoute
-  '/settings/brand': typeof SettingsBrandRoute
-  '/settings/brand-edit': typeof SettingsBrandEditRoute
-  '/settings/subscription': typeof SettingsSubscriptionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,16 +173,14 @@ export interface FileRouteTypes {
     | '/my-reels'
     | '/onboarding'
     | '/profession'
-    | '/profile'
     | '/saved'
     | '/settings'
+    | '/settings-brand-edit'
+    | '/settings-subscription'
     | '/templates'
     | '/category/$id'
     | '/ideas/$format'
     | '/reel/$id'
-    | '/settings/brand'
-    | '/settings/brand-edit'
-    | '/settings/subscription'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -211,16 +191,14 @@ export interface FileRouteTypes {
     | '/my-reels'
     | '/onboarding'
     | '/profession'
-    | '/profile'
     | '/saved'
     | '/settings'
+    | '/settings-brand-edit'
+    | '/settings-subscription'
     | '/templates'
     | '/category/$id'
     | '/ideas/$format'
     | '/reel/$id'
-    | '/settings/brand'
-    | '/settings/brand-edit'
-    | '/settings/subscription'
   id:
     | '__root__'
     | '/'
@@ -231,16 +209,14 @@ export interface FileRouteTypes {
     | '/my-reels'
     | '/onboarding'
     | '/profession'
-    | '/profile'
     | '/saved'
     | '/settings'
+    | '/settings-brand-edit'
+    | '/settings-subscription'
     | '/templates'
     | '/category/$id'
     | '/ideas/$format'
     | '/reel/$id'
-    | '/settings/brand'
-    | '/settings/brand-edit'
-    | '/settings/subscription'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -252,9 +228,10 @@ export interface RootRouteChildren {
   MyReelsRoute: typeof MyReelsRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfessionRoute: typeof ProfessionRoute
-  ProfileRoute: typeof ProfileRoute
   SavedRoute: typeof SavedRoute
-  SettingsRoute: typeof SettingsRouteWithChildren
+  SettingsRoute: typeof SettingsRoute
+  SettingsBrandEditRoute: typeof SettingsBrandEditRoute
+  SettingsSubscriptionRoute: typeof SettingsSubscriptionRoute
   TemplatesRoute: typeof TemplatesRoute
   CategoryIdRoute: typeof CategoryIdRoute
   IdeasFormatRoute: typeof IdeasFormatRoute
@@ -270,6 +247,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings-subscription': {
+      id: '/settings-subscription'
+      path: '/settings-subscription'
+      fullPath: '/settings-subscription'
+      preLoaderRoute: typeof SettingsSubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings-brand-edit': {
+      id: '/settings-brand-edit'
+      path: '/settings-brand-edit'
+      fullPath: '/settings-brand-edit'
+      preLoaderRoute: typeof SettingsBrandEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -282,13 +273,6 @@ declare module '@tanstack/react-router' {
       path: '/saved'
       fullPath: '/saved'
       preLoaderRoute: typeof SavedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profession': {
@@ -347,27 +331,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/subscription': {
-      id: '/settings/subscription'
-      path: '/subscription'
-      fullPath: '/settings/subscription'
-      preLoaderRoute: typeof SettingsSubscriptionRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/brand-edit': {
-      id: '/settings/brand-edit'
-      path: '/brand-edit'
-      fullPath: '/settings/brand-edit'
-      preLoaderRoute: typeof SettingsBrandEditRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/brand': {
-      id: '/settings/brand'
-      path: '/brand'
-      fullPath: '/settings/brand'
-      preLoaderRoute: typeof SettingsBrandRouteImport
-      parentRoute: typeof SettingsRoute
-    }
     '/reel/$id': {
       id: '/reel/$id'
       path: '/reel/$id'
@@ -392,22 +355,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface SettingsRouteChildren {
-  SettingsBrandRoute: typeof SettingsBrandRoute
-  SettingsBrandEditRoute: typeof SettingsBrandEditRoute
-  SettingsSubscriptionRoute: typeof SettingsSubscriptionRoute
-}
-
-const SettingsRouteChildren: SettingsRouteChildren = {
-  SettingsBrandRoute: SettingsBrandRoute,
-  SettingsBrandEditRoute: SettingsBrandEditRoute,
-  SettingsSubscriptionRoute: SettingsSubscriptionRoute,
-}
-
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
-  SettingsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EditRoute: EditRoute,
@@ -417,9 +364,10 @@ const rootRouteChildren: RootRouteChildren = {
   MyReelsRoute: MyReelsRoute,
   OnboardingRoute: OnboardingRoute,
   ProfessionRoute: ProfessionRoute,
-  ProfileRoute: ProfileRoute,
   SavedRoute: SavedRoute,
-  SettingsRoute: SettingsRouteWithChildren,
+  SettingsRoute: SettingsRoute,
+  SettingsBrandEditRoute: SettingsBrandEditRoute,
+  SettingsSubscriptionRoute: SettingsSubscriptionRoute,
   TemplatesRoute: TemplatesRoute,
   CategoryIdRoute: CategoryIdRoute,
   IdeasFormatRoute: IdeasFormatRoute,

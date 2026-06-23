@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter} from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronLeft, Check } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
@@ -25,12 +25,17 @@ const WIDE: Partial<Record<Profession, boolean>> = { par: true };
 
 function ProfessionPicker() {
   const nav = useNavigate();
+  const router = useRouter();
   const [sel, setSel] = useState<Profession>(() => getProfessionId() ?? "par");
 
+  const goBack = () => {
+    if (router.history.canGoBack()) router.history.back();
+    else nav({ to: "/" });
+  };
   const save = () => {
     success();
     setProfession(sel);
-    nav({ to: "/" });
+    goBack();
   };
 
   return (
@@ -40,7 +45,7 @@ function ProfessionPicker() {
 
         <header className="shrink-0 flex items-center gap-3.5 px-[22px] pb-3">
           <button
-            onClick={() => nav({ to: "/" })}
+            onClick={goBack}
             aria-label="Înapoi"
             className="w-10 h-10 grid place-items-center rounded-full bg-white border border-[#E6E6EA] shadow-[0_4px_14px_-10px_rgba(40,24,110,0.3)] active:scale-95 transition"
           >
