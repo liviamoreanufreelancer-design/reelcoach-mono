@@ -13,9 +13,9 @@ const config: CapacitorConfig = {
     allowNavigation: [],
   },
   ios: {
-    contentInset: "automatic",
+    contentInset: "never",
     allowsLinkPreview: false,
-    scrollEnabled: false,
+    scrollEnabled: true,
     preferredContentMode: "mobile",
   },
   android: {

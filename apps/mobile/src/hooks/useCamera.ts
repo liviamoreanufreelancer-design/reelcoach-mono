@@ -41,8 +41,11 @@ export function useCamera(initialFacing: Facing = "user") {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: f,
-            width: { ideal: 1080 },
-            height: { ideal: 1920 },
+            // Portret nativ: pe iOS cerem dimensiuni cu height > width ca
+            // streamul sa fie vertical (9:16), nu landscape rotit.
+            width: { ideal: 1080, max: 1080 },
+            height: { ideal: 1920, max: 1920 },
+            aspectRatio: { ideal: 0.5625 },
           },
           audio: true,
         });

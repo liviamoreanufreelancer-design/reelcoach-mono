@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BackButton } from "@/components/BackButton";
-import { CinematicBg } from "@/components/CinematicBg";
 import { getSelectedScenario, getSelectedIdeaId, clearLastOpenedIdeaId } from "@/lib/selected-idea";
 import { listClips, clearScenario, type StoredClip } from "@/lib/clip-store";
 import { playSelect, playSuccess, playTap } from "@/lib/ui-sound";
@@ -120,6 +119,7 @@ function Edit() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenarioId]);
+
 
   // Music removed — users add audio from TikTok / Instagram / Facebook when posting.
 
@@ -430,29 +430,28 @@ const blob = await renderReelInBrowser(
 
   return (
     <PhoneShell>
-      <CinematicBg src={scenario.scenes[0]?.bg} blur overlay={0.82} kenBurns={false} />
-<div className="relative z-10 flex flex-col h-full px-5 pt-12 pb-5">
+      <div className="relative z-10 flex flex-col h-full bg-[#F8F8FA] text-[#1F1F1F] px-5 pt-12 pb-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <BackButton confirm to="/" />
           <div className="text-center">
-            <p className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5] font-medium">
+            <p className="text-[10px] tracking-[0.4em] uppercase text-[#5B34FF] font-semibold">
               Pasul 02 · Editare
             </p>
-            <p className="text-white text-xs mt-0.5 truncate max-w-[200px]">{scenario.title}</p>
+            <p className="text-[#1F1F1F] text-xs mt-0.5 truncate max-w-[200px]">{scenario.title}</p>
           </div>
           <Link
             to="/settings-brand-edit"
-            className="w-10 h-10 rounded-full glass flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-white border border-[#E6E6EA] shadow-[0_4px_14px_-10px_rgba(40,24,110,0.3)] flex items-center justify-center active:scale-95 transition"
             aria-label="Brand"
           >
-            <Sparkles className="w-4 h-4 text-[#E8D5B5]" />
+            <Sparkles className="w-4 h-4 text-[#5B34FF]" />
           </Link>
         </div>
 
         {/* Preview */}
         <div
-          className="mt-3 mx-auto rounded-xl overflow-hidden border border-[#E8D5B5]/20 shadow-[0_4px_24px_rgba(244,228,193,0.4)] bg-black shrink-0 relative"
+          className="mt-3 mx-auto rounded-xl overflow-hidden border border-[#5B34FF]/20 shadow-[0_8px_24px_-8px_rgba(91,52,255,0.3)] bg-black shrink-0 relative"
           style={{ aspectRatio: "9/16", width: "min(42vw, 165px)" }}
         >
           {phase === "done" && videoUrl ? (
@@ -549,7 +548,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
             Only the "Texte" tab is available now; filters/effects/transitions
             are set by the template author in Studio, not editable here. */}
         {phase !== "done" && (
-          <div className="mt-3 flex gap-2 p-1 bg-white/5 rounded-full shrink-0">
+          <div className="mt-3 flex gap-2 p-1 bg-[#EDE8FF] rounded-full shrink-0">
             <TabBtn
               active={tab === "text"}
               onClick={() => setTab("text")}
@@ -570,10 +569,10 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                   <div
                     key={i}
                     onClick={() => setActiveScene(i)}
-                    className={`glass-lux rounded-2xl p-3 transition cursor-pointer ${activeScene === i ? "ring-1 ring-gold/60" : ""}`}
+                    className={`bg-white rounded-2xl border p-3 transition cursor-pointer shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)] ${activeScene === i ? "border-[#5B34FF] ring-1 ring-[#5B34FF]/30" : "border-[#E6E6EA]"}`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] tracking-widest uppercase text-[#E8D5B5]/80">
+                      <span className="text-[10px] tracking-widest uppercase text-[#5B34FF]/80 font-semibold">
                         Scena {i + 1}
                       </span>
                       <div className="flex gap-1">
@@ -585,21 +584,29 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                               updateCaption(i, { position: pos });
                               setActiveScene(i);
                             }}
-                            className={`text-[10px] px-2 py-1 rounded-full ${cap.position === pos ? "bg-[#E8D5B5] text-black" : "bg-white/10 text-white/60"}`}
+                            className={`text-[10px] px-2 py-1 rounded-full font-medium transition ${cap.position === pos ? "bg-[#5B34FF] text-white" : "bg-[#EDE8FF] text-[#5B34FF]"}`}
                           >
                             {pos === "top" ? "sus" : pos === "center" ? "centru" : "jos"}
                           </button>
                         ))}
                       </div>
                     </div>
-                    <textarea
+                    <SceneTextarea
                       value={cap.text}
-                      onFocus={() => setActiveScene(i)}
-                      onChange={(e) => updateCaption(i, { text: e.target.value.slice(0, 120) })}
-                      rows={2}
                       placeholder={(sc.overlayText ?? sc.hook).replace(/\n/g, " ")}
-                      className="w-full bg-transparent outline-none text-white text-sm resize-none placeholder:text-white/30"
+                      onCommit={(text) => updateCaption(i, { text })}
                     />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        light();
+                        playTap();
+                        nav({ to: "/film", search: { scene: i, single: true } });
+                      }}
+                      className="mt-2 flex items-center gap-1.5 text-[11px] text-[#5B34FF] font-medium px-3 py-1.5 rounded-full bg-[#EDE8FF] active:scale-95 transition"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Refilmează scena
+                    </button>
                   </div>
                 );
               })}
@@ -759,12 +766,12 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
             <div className="space-y-2">
               <button
                 onClick={() => setPhase("idle")}
-                className="w-full h-11 rounded-full text-white text-sm font-medium bg-white/10 border border-white/15 flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-full h-11 rounded-full text-[#5B34FF] text-sm font-medium bg-[#EDE8FF] border border-[#5B34FF]/20 flex items-center justify-center gap-2 active:scale-[0.98]"
               >
                 <Pencil className="w-4 h-4" /> Editează
               </button>
-              <div className="rounded-2xl border border-[#E8D5B5]/25 bg-white/[0.03] p-3">
-                <p className="text-[10px] tracking-[0.3em] uppercase text-[#E8D5B5]/80 text-center mb-2">
+              <div className="rounded-2xl border border-[#E6E6EA] bg-white p-3 shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)]">
+                <p className="text-[10px] tracking-[0.3em] uppercase text-[#5B34FF]/80 font-semibold text-center mb-2">
                   Postează cu muzică oficială
                 </p>
                 <div className="grid grid-cols-3 gap-2">
@@ -791,27 +798,27 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                     <span className="text-[10px] tracking-wide">Facebook</span>
                   </button>
                 </div>
-                <p className="text-white/45 text-[10px] mt-2 text-center leading-relaxed">
+                <p className="text-[#6B6B6B] text-[10px] mt-2 text-center leading-relaxed">
                   Se deschide aplicația cu clipul atașat — alegi piesa din librăria lor și postezi.
                 </p>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => share()}
-                  className="flex-1 h-11 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(244,228,193,0.4)] active:scale-[0.98]"
+                  className="flex-1 h-11 rounded-full bg-[#5B34FF] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_12px_26px_-12px_rgba(91,52,255,0.8)] active:scale-[0.98]"
                 >
                   <Share2 className="w-4 h-4" /> Altă aplicație
                 </button>
                 <button
                   onClick={download}
-                  className="flex-1 h-11 rounded-full text-white text-sm font-medium bg-white/10 border border-white/15 flex items-center justify-center gap-2 active:scale-[0.98]"
+                  className="flex-1 h-11 rounded-full text-[#5B34FF] text-sm font-medium bg-[#EDE8FF] border border-[#5B34FF]/20 flex items-center justify-center gap-2 active:scale-[0.98]"
                 >
                   <Download className="w-4 h-4" /> MP4
                 </button>
               </div>
               <button
                 onClick={generate}
-                className="w-full h-9 text-[11px] tracking-widest uppercase text-white/55 flex items-center justify-center gap-1.5"
+                className="w-full h-9 text-[11px] tracking-widest uppercase text-[#6B6B6B] flex items-center justify-center gap-1.5"
               >
                 <RefreshCw className="w-3 h-3" /> Re-generează
               </button>
@@ -819,15 +826,13 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                 onClick={() => {
                   light();
                   playTap();
-                  // Clear both clips AND the last-opened pointer so Home
-                  // shows no "Continuă" card after a finished reel.
-                  void (async () => {
-                    if (scenarioId) await clearScenario(scenarioId);
-                    clearLastOpenedIdeaId();
-                    nav({ to: "/" });
-                  })();
+                  // Pastram clipurile (stilista poate reedita / refilma o
+                  // scena ulterior). Doar curatam pointerul last-opened ca
+                  // Home sa nu mai arate "Continua" pentru un reel terminat.
+                  clearLastOpenedIdeaId();
+                  nav({ to: "/" });
                 }}
-                className="w-full h-12 rounded-full bg-white/5 border border-[#E8D5B5]/20 text-[#E8D5B5] text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-full h-12 rounded-full bg-[#EDE8FF] border border-[#5B34FF]/20 text-[#5B34FF] text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.98]"
               >
                 Înapoi acasă
               </button>
@@ -841,13 +846,13 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
             <div className="space-y-2">
               <button
                 onClick={generate}
-                className="w-full h-14 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(244,228,193,0.4)] active:scale-[0.98]"
+                className="w-full h-14 rounded-full bg-[#5B34FF] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_12px_26px_-12px_rgba(91,52,255,0.8)] active:scale-[0.98]"
               >
                 <Sparkles className="w-4 h-4" /> Generează Reel
               </button>
               <button
                 onClick={restart}
-                className="w-full h-9 text-[11px] tracking-widest uppercase text-white/45"
+                className="w-full h-9 text-[11px] tracking-widest uppercase text-[#6B6B6B]"
               >
                 Reia filmările
               </button>
@@ -897,6 +902,44 @@ function TransitionGlyph({ id }: { id: string }) {
   }
 }
 
+// Textarea cu state local + salvare debounced. Tastarea e instant (state
+// local), iar persistarea/redraw-ul preview-ului se intampla o singura data
+// la 400ms dupa ultima tasta, ca sa nu se blocheze scrisul.
+function SceneTextarea({
+  value,
+  placeholder,
+  onCommit,
+}: {
+  value: string;
+  placeholder: string;
+  onCommit: (text: string) => void;
+}) {
+  const [local, setLocal] = useState(value);
+  const focusedRef = useRef(false);
+  useEffect(() => {
+    if (!focusedRef.current) setLocal(value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  useEffect(() => {
+    if (local === value) return;
+    const id = window.setTimeout(() => onCommit(local), 500);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [local]);
+  return (
+    <textarea
+      value={local}
+      onFocus={() => { focusedRef.current = true; }}
+      onBlur={() => { focusedRef.current = false; }}
+      onChange={(e) => setLocal(e.target.value.slice(0, 120))}
+      rows={2}
+      placeholder={placeholder}
+      style={{ fontSize: 16 }}
+      className="w-full bg-[#F8F8FA] rounded-[10px] border border-[#E6E6EA] px-3 py-2 outline-none text-[#1F1F1F] resize-none placeholder:text-[#6B6B6B]/50 focus:border-[#5B34FF] focus:bg-white transition"
+    />
+  );
+}
+
 function TabBtn({
   active,
   onClick,
@@ -911,7 +954,7 @@ function TabBtn({
   return (
     <button
       onClick={onClick}
-      className={`flex-1 py-3 rounded-full text-xs uppercase tracking-wider font-medium flex items-center justify-center gap-2 transition-all ${active ? "bg-[#E8D5B5] text-black" : "text-white/60"}`}
+      className={`flex-1 py-3 rounded-full text-xs uppercase tracking-wider font-medium flex items-center justify-center gap-2 transition-all ${active ? "bg-[#5B34FF] text-white" : "text-[#5B34FF]/60"}`}
     >
       {icon} {label}
     </button>
@@ -921,12 +964,12 @@ function TabBtn({
 function NoClips() {
   return (
     <PhoneShell>
-      <div className="relative z-10 flex flex-col h-full items-center justify-center px-6 text-center bg-background">
-        <AlertCircle className="w-8 h-8 text-[#E8D5B5]" />
-        <p className="text-white text-sm mt-4">Nu există clipuri salvate pentru acest scenariu.</p>
+      <div className="relative z-10 flex flex-col h-full items-center justify-center px-6 text-center bg-[#F8F8FA]">
+        <AlertCircle className="w-8 h-8 text-[#5B34FF]" />
+        <p className="text-[#1F1F1F] text-sm mt-4">Nu există clipuri salvate pentru acest scenariu.</p>
         <Link
           to="/film"
-          className="mt-5 inline-flex h-12 px-6 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black text-sm font-semibold items-center"
+          className="mt-5 inline-flex h-12 px-6 rounded-full bg-[#5B34FF] text-white text-sm font-semibold items-center shadow-[0_12px_26px_-12px_rgba(91,52,255,0.8)]"
         >
           Începe filmarea
         </Link>

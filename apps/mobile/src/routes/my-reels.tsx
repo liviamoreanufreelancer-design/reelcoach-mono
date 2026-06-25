@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Check, Play, Image as ImageIcon, Film, Send, Undo2 } from "lucide-react";
+import { Plus, Check, Play, Image as ImageIcon, Film, Send, Undo2, Trash2 } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { TabBar } from "@/components/TabBar";
 import { listMyReels, type MyReel, type ReelStatus } from "@/lib/my-reels";
 import { markPosted, unmarkPosted } from "@/lib/reel-status";
 import { setSelectedIdeaId } from "@/lib/selected-idea";
+import { clearScenario } from "@/lib/clip-store";
 import { playTap } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
 
@@ -51,7 +52,13 @@ function MyReels() {
     light();
     playTap();
     setSelectedIdeaId(r.scenarioId);
-    if (r.status === "draft") {
+    // draft -> editare normala (idle, la scene).
+    // completed -> editare cu auto-generare (vezi reel-ul final direct).
+    // posted -> detalii (reel inchis, deja publicat).
+    if (r.status === "completed") {
+      try { sessionStorage.setItem("reelcoach:autoGenerate", r.scenarioId); } catch { /* ignore */ }
+      nav({ to: "/edit" });
+    } else if (r.status === "draft") {
       nav({ to: "/edit" });
     } else {
       nav({ to: "/reel/$id", params: { id: r.scenarioId } });
@@ -69,6 +76,18 @@ function MyReels() {
     light();
     playTap();
     await unmarkPosted(r.scenarioId);
+    reload();
+  };
+
+  const onDelete = async (r: MyReel) => {
+    const ok = window.confirm(
+      "Ștergi acest reel? Clipurile filmate se pierd definitiv.",
+    );
+    if (!ok) return;
+    light();
+    playTap();
+    await clearScenario(r.scenarioId);
+    unmarkPosted(r.scenarioId);
     reload();
   };
 
@@ -138,6 +157,7 @@ function MyReels() {
                   onOpen={() => openReel(r)}
                   onMarkPosted={() => onMarkPosted(r)}
                   onUnmarkPosted={() => onUnmarkPosted(r)}
+                  onDelete={() => onDelete(r)}
                 />
               ))}
             </div>
@@ -169,11 +189,13 @@ function ReelCard({
   onOpen,
   onMarkPosted,
   onUnmarkPosted,
+  onDelete,
 }: {
   reel: MyReel;
   onOpen: () => void;
   onMarkPosted: () => void;
   onUnmarkPosted: () => void;
+  onDelete: () => void;
 }) {
   const pct = reel.total > 0 ? Math.round((reel.done / reel.total) * 100) : 0;
 
@@ -264,6 +286,16 @@ function ReelCard({
               Anulează postare
             </button>
           )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="mt-2.5 ml-2 inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#FDECEC] text-[#E5484D] text-[12px] font-semibold active:scale-95 transition"
+          >
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+            Șterge
+          </button>
         </div>
       </div>
     </article>

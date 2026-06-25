@@ -50,7 +50,7 @@ export function BackButton({ confirm, to, label = "Înapoi" }: BackButtonProps) 
       type="button"
       onClick={handleClick}
       aria-label={label}
-      className="w-10 h-10 rounded-full bg-[#0F1419]/55 backdrop-blur-md border border-[#E8D5B5]/25 flex items-center justify-center text-[#E8D5B5] active:scale-95 transition shadow-[0_4px_16px_-4px_rgba(0,0,0,0.5)]"
+      className="w-10 h-10 rounded-full bg-white border border-[#E6E6EA] flex items-center justify-center text-[#5B34FF] active:scale-95 transition shadow-[0_4px_14px_-10px_rgba(40,24,110,0.3)]"
     >
       <ArrowLeft className="w-[18px] h-[18px]" />
     </button>

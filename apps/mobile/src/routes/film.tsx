@@ -21,6 +21,11 @@ import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavFor
 import { light } from "@/lib/haptic";
 
 export const Route = createFileRoute("/film")({
+  validateSearch: (search: Record<string, unknown>): { scene?: number; single?: boolean } => ({
+    scene: typeof search.scene === "number" ? search.scene
+      : typeof search.scene === "string" ? Number(search.scene) : undefined,
+    single: search.single === true || search.single === "true",
+  }),
   component: Film,
 });
 
@@ -54,7 +59,10 @@ function Film() {
     }
     return "materials";
   });
-  const [idx, setIdx] = useState(0);
+  const search = Route.useSearch();
+  const targetScene = search.scene;
+  const singleMode = search.single === true;
+  const [idx, setIdx] = useState(targetScene ?? 0);
   const [t, setT] = useState(0);
   const [captured, setCaptured] = useState<Set<number>>(new Set());
   const [showGuide, setShowGuide] = useState(true);
@@ -80,6 +88,9 @@ function Film() {
     listClips(scenarioId).then((cs) => {
       const done = new Set(cs.map((c) => c.sceneIdx));
       setCaptured(done);
+      // In mod refilmare o singura scena, ramanem pe scena tinta (nu sarim
+      // la prima nefilmata).
+      if (singleMode) return;
       // Reia de la prima scena nefilmata, nu mereu de la scena 1.
       // Daca toate au clip, ramane pe ultima (refilmare/editare).
       if (done.size > 0) {
@@ -250,11 +261,18 @@ function Film() {
     if (rec.state === "recording") rec.cancel();
     playNavForward();
     setT(0); setShowGuide(true);
+    // Mod refilmare o singura scena: dupa ce ai filmat scena tinta, revino
+    // la editare (nu continua secvential la urmatoarea).
+    if (singleMode) {
+      // Regenereaza reel-ul cu clipul nou la revenire in editare.
+      try { sessionStorage.setItem("reelcoach:autoGenerate", scenarioId); } catch { /* ignore */ }
+      nav({ to: "/edit" });
+      return;
+    }
     if (idx === scenes.length - 1) {
       nav({ to: "/edit" });
     } else {
       setIdx((p) => p + 1);
-      // Show the shot-first preshot screen before the next scene films.
       setPhase("preshot");
     }
   };
@@ -326,20 +344,20 @@ function Film() {
       {countdown !== null && countdown > 0 && (
         <button
           onClick={cancelCountdown}
-          className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#0F1419]/80 backdrop-blur-lg"
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/85 backdrop-blur-lg"
           aria-label="Anulează countdown"
         >
-          <span className="text-[10px] tracking-[0.5em] uppercase text-[#E8D5B5]/90 font-semibold">
+          <span className="text-[10px] tracking-[0.5em] uppercase text-[#5B34FF] font-semibold">
             Pregătește-te
           </span>
           <span
             key={countdown}
-            className="text-9xl font-bold text-[#E8D5B5] animate-fade-in mt-2"
+            className="text-9xl font-bold text-[#5B34FF] animate-fade-in mt-2"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {countdown}
           </span>
-          <span className="mt-4 text-[11px] tracking-widest uppercase text-white/55">
+          <span className="mt-4 text-[11px] tracking-widest uppercase text-[#6B6B6B]">
             Atinge ca să anulezi
           </span>
         </button>
@@ -363,10 +381,10 @@ function Film() {
             </g>
           </svg>
           {/* corner brackets */}
-          <div className="absolute top-20 left-4 w-6 h-6 border-l-2 border-t-2 border-[#E8D5B5]/70 rounded-tl" />
-          <div className="absolute top-20 right-4 w-6 h-6 border-r-2 border-t-2 border-[#E8D5B5]/70 rounded-tr" />
-          <div className="absolute bottom-44 left-4 w-6 h-6 border-l-2 border-b-2 border-[#E8D5B5]/70 rounded-bl" />
-          <div className="absolute bottom-44 right-4 w-6 h-6 border-r-2 border-b-2 border-[#E8D5B5]/70 rounded-br" />
+          <div className="absolute top-28 left-4 w-6 h-6 border-l-2 border-t-2 border-[#5B34FF]/70 rounded-tl" />
+          <div className="absolute top-28 right-4 w-6 h-6 border-r-2 border-t-2 border-[#5B34FF]/70 rounded-tr" />
+          <div className="absolute bottom-44 left-4 w-6 h-6 border-l-2 border-b-2 border-[#5B34FF]/70 rounded-bl" />
+          <div className="absolute bottom-44 right-4 w-6 h-6 border-r-2 border-b-2 border-[#5B34FF]/70 rounded-br" />
           {/* persistent scene badge */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm flex items-center gap-1.5">
             {isRecording && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
@@ -391,7 +409,7 @@ function Film() {
             disabled={cam.state !== "ready" || isRecording}
             aria-label="Schimbă camera"
             title="Schimbă camera (față ↔ spate)"
-            className="w-10 h-10 rounded-full bg-[#0F1419]/55 backdrop-blur-md border border-[#E8D5B5]/25 flex items-center justify-center text-[#E8D5B5] active:scale-95 transition shadow-[0_4px_16px_-4px_rgba(0,0,0,0.5)] disabled:opacity-30"
+            className="w-10 h-10 rounded-full bg-white border border-[#E6E6EA] flex items-center justify-center text-[#5B34FF] active:scale-95 transition shadow-[0_4px_14px_-10px_rgba(40,24,110,0.3)] disabled:opacity-30"
           >
             <RefreshCw className="w-[18px] h-[18px]" />
           </button>
@@ -403,7 +421,7 @@ function Film() {
               <div key={i} className="relative flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-300 ${
-                    i === idx && isRecording ? "shimmer-gold" : captured.has(i) ? "bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37]" : i < idx ? "bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37]" : ""
+                    i === idx && isRecording ? "shimmer-gold" : captured.has(i) ? "bg-[#5B34FF]" : i < idx ? "bg-[#5B34FF]" : ""
                   }`}
                   style={{
                     width:
