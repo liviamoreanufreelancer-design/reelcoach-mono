@@ -322,7 +322,7 @@ export function LivePreview({
           <button
             key={i}
             onClick={() => { setIdx(i); onSceneChange?.(i); }}
-            className={`h-[3px] rounded-full transition-all ${i === idx ? "w-5 bg-[#E8D5B5]" : "w-2 bg-white/35"}`}
+            className={`h-[3px] rounded-full transition-all ${i === idx ? "w-5 bg-[#5B34FF]" : "w-2 bg-white/35"}`}
             aria-label={`Scena ${i + 1}`}
           />
         ))}
@@ -499,7 +499,7 @@ function GoldDustEffect() {
     left: `${5 + ((i * 11.3) % 90)}%`,
     size: 1.5 + (i % 2) * 0.5,
     delay: i * 380,
-    color: i % 2 === 0 ? "#F4E4C1" : "#E8D5B5",
+    color: i % 2 === 0 ? "#5B34FF" : "#7C5CFF",
   }));
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">

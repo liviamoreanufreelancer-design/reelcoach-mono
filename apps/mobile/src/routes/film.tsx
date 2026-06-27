@@ -44,7 +44,7 @@ function Film() {
   const diffDots = diff === "easy" ? 1 : diff === "medium" ? 2 : 3;
   const diffTone =
     diff === "easy" ? "text-emerald-300/90"
-    : diff === "medium" ? "text-[#E8D5B5]"
+    : diff === "medium" ? "text-[#EDE8FF]"
     : "text-rose-300/90";
 
   /** materials (storyboard, legacy) → preshot (shot-first card) → film */
@@ -438,7 +438,7 @@ function Film() {
             {/* Spacer left — keeps the center block actually centered */}
             <span className="w-9 h-9 shrink-0" />
             <div className="flex flex-col items-center gap-1 max-w-[60%]">
-              <span className="text-[11px] tracking-[0.3em] uppercase text-[#E8D5B5]/90">
+              <span className="text-[11px] tracking-[0.3em] uppercase text-[#EDE8FF]/90">
                 Scena {idx + 1} din {scenes.length}
               </span>
               <span className="text-[10px] text-white/55 truncate w-full text-center">
@@ -472,7 +472,7 @@ function Film() {
         {cam.state === "requesting" && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0F1419]/70 backdrop-blur-md">
             <div className="text-center px-6">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full border border-[#E8D5B5]/25 border-t-[#E8D5B5] animate-spin" />
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full border border-[#EDE8FF]/25 border-t-[#EDE8FF] animate-spin" />
               <p className="text-white/70 text-xs tracking-[0.3em] uppercase">
                 Se cere accesul la cameră
               </p>
@@ -483,7 +483,7 @@ function Film() {
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0F1419]/70 backdrop-blur-md">
             <button
               onClick={() => void cam.start("environment")}
-              className="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black text-[11px] tracking-widest uppercase font-semibold shadow-[0_4px_24px_rgba(244,228,193,0.4)] active:scale-[0.98]"
+              className="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-[#5B34FF] text-white text-[11px] tracking-widest uppercase font-semibold shadow-[0_8px_26px_-8px_rgba(91,52,255,0.7)] active:scale-[0.98]"
             >
               <Camera className="w-3.5 h-3.5" />
               Activează camera
@@ -493,7 +493,7 @@ function Film() {
         {(cam.state === "denied" || cam.state === "unsupported" || cam.state === "error" || cam.state === "disconnected") && (
           <div className="mt-8 mx-auto glass-lux rounded-2xl px-5 py-4 max-w-[90%]">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-[#E8D5B5] mt-0.5 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-[#EDE8FF] mt-0.5 shrink-0" />
               <div className="flex-1">
                 <p className="text-white text-sm font-semibold">
                   {cam.state === "denied" ? "Acces refuzat la cameră"
@@ -510,7 +510,7 @@ function Film() {
                 </p>
                 <button
                   onClick={() => void cam.start()}
-                  className="mt-3 inline-flex items-center gap-2 px-4 h-9 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black text-[11px] tracking-widest uppercase font-semibold shadow-[0_4px_24px_rgba(244,228,193,0.4)] active:scale-[0.98] transition-transform"
+                  className="mt-3 inline-flex items-center gap-2 px-4 h-9 rounded-full bg-[#5B34FF] text-white text-[11px] tracking-widest uppercase font-semibold shadow-[0_8px_26px_-8px_rgba(91,52,255,0.7)] active:scale-[0.98] transition-transform"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   {cam.state === "disconnected" ? "Reconectează camera" : "Reîncearcă"}
@@ -530,7 +530,7 @@ function Film() {
         <div className="shrink-0 pt-2">
           <div className="flex items-baseline justify-center gap-2">
             <span
-              className={`font-display text-[48px] leading-none tracking-[-0.04em] ${isRecording ? "text-[#E8D5B5]" : "text-white"}`}
+              className={`font-display text-[48px] leading-none tracking-[-0.04em] ${isRecording ? "text-[#EDE8FF]" : "text-white"}`}
               style={{ fontVariantNumeric: "tabular-nums" }}
             >
               {(scene.duration - t).toFixed(1)}
@@ -548,7 +548,7 @@ function Film() {
             onClick={isRecording ? handleStop : handleStart}
             disabled={cam.state !== "ready" || countdown !== null}
             className={`mt-4 w-full h-16 rounded-full font-semibold text-base flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 ${
-              isRecording ? "glass-lux text-white" : "bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-[#0F1419] shadow-[0_4px_24px_rgba(244,228,193,0.4)]"
+              isRecording ? "glass-lux text-white" : "bg-[#5B34FF] text-white shadow-[0_8px_26px_-8px_rgba(91,52,255,0.7)]"
             }`}
           >
             {isRecording ? (
@@ -622,9 +622,9 @@ function InstructionCard({
       className="glass-lux rounded-2xl px-4 py-3 flex gap-3 items-start animate-fade-in"
       style={{ animationDelay: `${delay}ms`, animationFillMode: "backwards" }}
     >
-      <div className="mt-0.5 w-8 h-8 rounded-full bg-[#E8D5B5]/15 text-[#E8D5B5] flex items-center justify-center shrink-0">{icon}</div>
+      <div className="mt-0.5 w-8 h-8 rounded-full bg-[#5B34FF]/15 text-[#EDE8FF] flex items-center justify-center shrink-0">{icon}</div>
       <div className="min-w-0">
-        <p className="text-[10px] tracking-[0.35em] uppercase text-[#E8D5B5] font-semibold">{label}</p>
+        <p className="text-[10px] tracking-[0.35em] uppercase text-[#EDE8FF] font-semibold">{label}</p>
         <p className="text-white text-[13px] leading-snug mt-0.5">{text}</p>
       </div>
     </div>
@@ -639,7 +639,7 @@ function InstructionCard({
  * etc.) so we no longer try to color-code by id.
  */
 function patternBadge(_patternId?: string): string {
-  return "bg-[#E8D5B5]/15 text-[#E8D5B5]";
+  return "bg-[#5B34FF]/15 text-[#EDE8FF]";
 }
 
 /**
@@ -648,7 +648,7 @@ function patternBadge(_patternId?: string): string {
  * the text, so an imperfect guess is harmless.
  */
 function instructionNumber(n: number): React.ReactNode {
-  return <span className="text-[#E8D5B5] text-xs font-medium">{n}</span>;
+  return <span className="text-[#EDE8FF] text-xs font-medium">{n}</span>;
 }
 
 /**
@@ -741,7 +741,7 @@ function StoryboardScreen({
         <button
           onClick={onBack}
           aria-label="Înapoi"
-          className="w-10 h-10 rounded-full bg-[#0F1419]/55 backdrop-blur-md border border-[#E8D5B5]/25 flex items-center justify-center text-[#E8D5B5] active:scale-95 transition"
+          className="w-10 h-10 rounded-full bg-[#0F1419]/55 backdrop-blur-md border border-[#EDE8FF]/25 flex items-center justify-center text-[#EDE8FF] active:scale-95 transition"
         >
           <ChevronLeft className="w-[18px] h-[18px]" />
         </button>
@@ -754,7 +754,7 @@ function StoryboardScreen({
         <div className="absolute top-12 right-5 z-30">
           <button
             onClick={handleStart}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#0F1419]/55 backdrop-blur-md border border-[#E8D5B5]/25 text-[#E8D5B5] text-[11px] font-semibold uppercase tracking-[0.14em] active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#0F1419]/55 backdrop-blur-md border border-[#EDE8FF]/25 text-[#EDE8FF] text-[11px] font-semibold uppercase tracking-[0.14em] active:scale-95 transition"
           >
             Sari peste
             <ChevronRight className="w-3.5 h-3.5" />
@@ -765,7 +765,7 @@ function StoryboardScreen({
       <div className="relative z-10 flex flex-col h-full px-6 pt-12 pb-12">
         {/* Step indicator centered above content */}
         <div className="text-center mb-4">
-          <span className="text-[9px] tracking-[0.4em] uppercase text-[#E8D5B5]/70 font-medium">
+          <span className="text-[9px] tracking-[0.4em] uppercase text-[#EDE8FF]/70 font-medium">
             Pregătire
           </span>
         </div>
@@ -774,25 +774,25 @@ function StoryboardScreen({
         <div className="flex flex-col gap-4">
           {/* Title + summary */}
           <div>
-            <p className="text-[9px] tracking-[0.32em] uppercase text-[#E8D5B5]/65 font-medium mb-2">
+            <p className="text-[9px] tracking-[0.32em] uppercase text-[#EDE8FF]/65 font-medium mb-2">
               Storyboard
             </p>
             <h1 className="font-editorial text-[26px] leading-[1.05] tracking-[-0.01em] text-white">
-              Așa va arăta <em className="italic text-[#E8D5B5]">reel-ul.</em>
+              Așa va arăta <em className="italic text-[#EDE8FF]">reel-ul.</em>
             </h1>
             <div className="flex items-center gap-3 mt-3 text-[10px] tracking-[0.18em] uppercase text-white/50">
-              <span><b className="text-[#E8D5B5] font-medium mr-1 tabular-nums">{totalScenes}</b>cadre</span>
-              <span className="text-[#E8D5B5]/40">·</span>
-              <span><b className="text-[#E8D5B5] font-medium mr-1 tabular-nums">{Math.round(totalRecording)}s</b>filmare</span>
-              <span className="text-[#E8D5B5]/40">·</span>
-              <span><b className="text-[#E8D5B5] font-medium mr-1 tabular-nums">~{Math.round(totalFinal)}s</b>reel</span>
+              <span><b className="text-[#EDE8FF] font-medium mr-1 tabular-nums">{totalScenes}</b>cadre</span>
+              <span className="text-[#EDE8FF]/40">·</span>
+              <span><b className="text-[#EDE8FF] font-medium mr-1 tabular-nums">{Math.round(totalRecording)}s</b>filmare</span>
+              <span className="text-[#EDE8FF]/40">·</span>
+              <span><b className="text-[#EDE8FF] font-medium mr-1 tabular-nums">~{Math.round(totalFinal)}s</b>reel</span>
             </div>
           </div>
 
           {/* Editorial pitch — only shown if the template has one */}
           {pitch && (
             <div>
-              <p className="text-[9px] tracking-[0.4em] uppercase text-[#E8D5B5]/55 mb-2">
+              <p className="text-[9px] tracking-[0.4em] uppercase text-[#EDE8FF]/55 mb-2">
                 Senzația
               </p>
               <p className="font-editorial italic font-light text-[15px] leading-[1.45] text-white/82">
@@ -803,23 +803,23 @@ function StoryboardScreen({
 
           {/* Storyboard carousel + strip */}
           <div>
-            <p className="text-[9px] tracking-[0.32em] uppercase text-[#E8D5B5]/55 font-medium mb-2">
+            <p className="text-[9px] tracking-[0.32em] uppercase text-[#EDE8FF]/55 font-medium mb-2">
               Cadre · {activeIdx + 1} din {totalScenes}
             </p>
             <div
-              className="bg-white/[0.025] border border-[#E8D5B5]/15 rounded-2xl px-4 pt-4 pb-3"
+              className="bg-white/[0.025] border border-[#EDE8FF]/15 rounded-2xl px-4 pt-4 pb-3"
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-editorial italic text-[22px] text-[#E8D5B5] leading-none">
+                <span className="font-editorial italic text-[22px] text-[#EDE8FF] leading-none">
                   {String(activeIdx + 1).padStart(2, "0")}
                 </span>
-                <span className="text-[9px] tracking-[0.32em] uppercase text-[#E8D5B5]/60">
+                <span className="text-[9px] tracking-[0.32em] uppercase text-[#EDE8FF]/60">
                   {prettyPattern(pattern)}
                 </span>
               </div>
-              <div className="flex justify-center py-1 text-[#E8D5B5]">
+              <div className="flex justify-center py-1 text-[#EDE8FF]">
                 <ShotIcon pattern={pattern} size={64} />
               </div>
               <p className="text-[13px] text-white font-medium text-center leading-tight mb-1">
@@ -840,14 +840,14 @@ function StoryboardScreen({
                     onClick={() => goTo(i)}
                     className={`flex-1 aspect-square rounded-lg flex items-center justify-center transition ${
                       isActive
-                        ? "bg-[#E8D5B5]/[0.06] border border-[#E8D5B5]/45"
-                        : "bg-white/[0.025] border border-[#E8D5B5]/10"
+                        ? "bg-[#5B34FF]/[0.08] border border-[#5B34FF]/45"
+                        : "bg-white/[0.025] border border-[#EDE8FF]/12"
                     }`}
                     aria-label={`Sari la cadrul ${i + 1}`}
                   >
                     <span
                       className={`font-editorial italic text-[13px] ${
-                        isActive ? "text-[#E8D5B5]" : "text-[#E8D5B5]/45"
+                        isActive ? "text-[#EDE8FF]" : "text-[#EDE8FF]/45"
                       }`}
                     >
                       {String(i + 1).padStart(2, "0")}
@@ -859,22 +859,22 @@ function StoryboardScreen({
           </div>
 
           {/* Checklist */}
-          <div className="pt-3 border-t border-[#E8D5B5]/10">
+          <div className="pt-3 border-t border-[#EDE8FF]/12">
             <div className="flex justify-between items-center mb-2.5">
-              <p className="text-[9px] tracking-[0.32em] uppercase text-[#E8D5B5]/55">
+              <p className="text-[9px] tracking-[0.32em] uppercase text-[#EDE8FF]/55">
                 Înainte să începi
               </p>
               <p className="text-[9px] tracking-[0.18em] uppercase text-white/40 tabular-nums">
-                <b className="text-[#E8D5B5] font-medium">~2 min</b> cu clienta
+                <b className="text-[#EDE8FF] font-medium">~2 min</b> cu clienta
               </p>
             </div>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2.5 text-[11.5px] text-white/70">
-                <span className="text-[#E8D5B5] text-[14px] w-4 text-center">⚡</span>
+                <span className="text-[#EDE8FF] text-[14px] w-4 text-center">⚡</span>
                 <span>Telefon încărcat</span>
               </div>
               <div className="flex items-center gap-2.5 text-[11.5px] text-white/70">
-                <span className="text-[#E8D5B5] text-[14px] w-4 text-center">☀</span>
+                <span className="text-[#EDE8FF] text-[14px] w-4 text-center">☀</span>
                 <span>Lumină bună spre clientă</span>
               </div>
             </div>
@@ -883,7 +883,7 @@ function StoryboardScreen({
 
         <button
           onClick={handleStart}
-          className="mt-6 w-full h-12 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-[#0F1419] font-semibold uppercase tracking-[0.16em] text-[12px] shadow-[0_6px_24px_rgba(232,213,181,0.3)] active:scale-[0.98] transition flex items-center justify-center gap-1.5"
+          className="mt-6 w-full h-12 rounded-full bg-[#5B34FF] text-white font-semibold uppercase tracking-[0.16em] text-[12px] shadow-[0_8px_26px_-8px_rgba(91,52,255,0.7)] active:scale-[0.98] transition flex items-center justify-center gap-1.5"
         >
           <Play className="w-3.5 h-3.5 fill-current" />
           Sunt pregătit, începem

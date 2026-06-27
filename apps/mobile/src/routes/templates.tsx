@@ -58,7 +58,7 @@ function Templates() {
               <span
                 key={idx}
                 className={`h-[3px] rounded-full transition-all duration-500 ${
-                  idx === i ? "w-8 bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37]" : "w-4 bg-white/25"
+                  idx === i ? "w-8 bg-[#5B34FF]" : "w-4 bg-white/25"
                 }`}
               />
             ))}
@@ -77,15 +77,15 @@ function Templates() {
             onClick={() => nav({ to: "/profession" })}
             className="mt-6 self-start glass-lux rounded-full pl-1.5 pr-4 py-1.5 flex items-center gap-2"
           >
-            <span className="w-7 h-7 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-[#E8D5B5]">
+            <span className="w-7 h-7 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-[#EDE8FF]">
               <ProfessionIcon id={prof.id} className="w-4 h-4" />
             </span>
             <span className="text-[12px] text-white/90 font-medium">{prof.label}</span>
-            <span className="text-[10px] tracking-[0.25em] uppercase text-[#E8D5B5] font-semibold">schimbă</span>
+            <span className="text-[10px] tracking-[0.25em] uppercase text-[#EDE8FF] font-semibold">schimbă</span>
           </button>
         )}
 
-        <p className="mt-8 text-xs tracking-[0.4em] uppercase font-semibold text-[#E8D5B5]">
+        <p className="mt-8 text-xs tracking-[0.4em] uppercase font-semibold text-[#EDE8FF]">
           {t.tag}
         </p>
 
@@ -98,11 +98,11 @@ function Templates() {
             {t.label.split(" / ").map((w, idx, arr) => (
               <span key={idx}>
                 {idx === arr.length - 1 && arr.length > 1 ? (
-                  <em className="italic font-editorial text-[#E8D5B5] not-italic-fix">{w}</em>
+                  <em className="italic font-editorial text-[#EDE8FF] not-italic-fix">{w}</em>
                 ) : (
                   <span>{w}</span>
                 )}
-                {idx < arr.length - 1 && <span className="text-[#E8D5B5]/60"> / </span>}
+                {idx < arr.length - 1 && <span className="text-[#EDE8FF]/60"> / </span>}
               </span>
             ))}
           </h2>
@@ -124,7 +124,7 @@ function Templates() {
 
             <button
               onClick={() => nav({ to: "/ideas/$format", params: { format: t.id } })}
-              className="flex-1 h-14 rounded-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] text-black font-semibold text-base shadow-[0_4px_24px_rgba(244,228,193,0.4)] active:scale-[0.98] transition"
+              className="flex-1 h-14 rounded-full bg-[#5B34FF] text-white font-semibold text-base shadow-[0_8px_26px_-8px_rgba(91,52,255,0.7)] active:scale-[0.98] transition"
             >
               Vezi ideile
             </button>

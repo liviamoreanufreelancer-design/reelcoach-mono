@@ -34,15 +34,15 @@ function Editing() {
         <div className="flex justify-center" style={{ marginTop: "22%" }}>
           <div className="relative w-[72px] h-[72px]">
             <span
-              className="absolute inset-0 rounded-full border border-[#E8D5B5]/25"
+              className="absolute inset-0 rounded-full border border-[#EDE8FF]/25"
               style={{ animation: "breathe 3s ease-in-out infinite" }}
             />
             <span
-              className="absolute inset-[14px] rounded-full border border-[#E8D5B5]/45"
+              className="absolute inset-[14px] rounded-full border border-[#5B34FF]/45"
               style={{ animation: "breathe 3s ease-in-out infinite 0.5s" }}
             />
             <span
-              className="absolute inset-[28px] rounded-full bg-[#E8D5B5]"
+              className="absolute inset-[28px] rounded-full bg-[#5B34FF]"
               style={{ opacity: 0.7 }}
             />
           </div>
@@ -50,7 +50,7 @@ function Editing() {
 
         {/* Step kicker + two-line serif title — single dominant element. */}
         <div className="flex flex-col items-center text-center px-7 mt-14">
-          <p className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5]/65 font-medium">
+          <p className="text-[10px] tracking-[0.4em] uppercase text-[#EDE8FF]/65 font-medium">
             Pasul · 02
           </p>
           <h1
@@ -60,7 +60,7 @@ function Editing() {
             E timpul să
           </h1>
           <h1
-            className="font-editorial italic text-[#E8D5B5] mt-1"
+            className="font-editorial italic text-[#EDE8FF] mt-1"
             style={{ fontSize: "34px", lineHeight: 1.05, letterSpacing: "-0.02em" }}
           >
             edităm
@@ -69,12 +69,12 @@ function Editing() {
 
         {/* Lower third: thin shimmer line. */}
         <div className="mt-auto flex flex-col items-center pb-20">
-          <div className="relative w-[44%] h-px bg-[#E8D5B5]/10 overflow-hidden rounded-full">
+          <div className="relative w-[44%] h-px bg-[#5B34FF]/10 overflow-hidden rounded-full">
             <div
               className="absolute inset-y-0 w-1/2"
               style={{
                 background:
-                  "linear-gradient(90deg, transparent, #E8D5B5, transparent)",
+                  "linear-gradient(90deg, transparent, #5B34FF, transparent)",
                 animation: "shimmer-line 2.4s ease-in-out infinite",
               }}
             />

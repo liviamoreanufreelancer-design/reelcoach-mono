@@ -33,9 +33,9 @@ export function HomeButton() {
       type="button"
       onClick={handleClick}
       aria-label="Acasă"
-      className="fixed z-[60] bottom-4 left-4 w-11 h-11 rounded-full glass border border-[#E8D5B5]/25 flex items-center justify-center text-white/85 active:scale-95 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] backdrop-blur-md"
+      className="fixed z-[60] bottom-4 left-4 w-11 h-11 rounded-full glass border border-[#EDE8FF]/25 flex items-center justify-center text-white/85 active:scale-95 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] backdrop-blur-md"
     >
-      <Home className="w-4 h-4 text-[#E8D5B5]" />
+      <Home className="w-4 h-4 text-[#EDE8FF]" />
     </button>
   );
 }

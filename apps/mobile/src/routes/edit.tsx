@@ -491,16 +491,16 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                 </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <FilmIcon className="w-8 h-8 text-[#E8D5B5] animate-pulse" />
+                  <FilmIcon className="w-8 h-8 text-[#EDE8FF] animate-pulse" />
                 </div>
               )}
               <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 via-black/55 to-transparent">
-                <p className="text-[9px] tracking-[0.25em] uppercase text-[#E8D5B5]/90 text-center mb-1.5">
+                <p className="text-[9px] tracking-[0.25em] uppercase text-[#EDE8FF]/90 text-center mb-1.5">
                   Preview live · randez calitate finală
                 </p>
                 <div className="h-[3px] bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-[#F4E4C1] via-[#E8D5B5] to-[#D4AF37] transition-all duration-200"
+                    className="h-full bg-[#5B34FF] transition-all duration-200"
                     style={{ width: `${Math.min(100, Math.max(2, Math.round(progress.pct)))}%` }}
                   />
                 </div>
@@ -538,7 +538,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-white/45 text-[11px] tracking-widest uppercase gap-2 p-3 text-center">
-              <FilmIcon className="w-7 h-7 text-[#E8D5B5]/70" />
+              <FilmIcon className="w-7 h-7 text-[#EDE8FF]/70" />
               <span>Se încarcă…</span>
             </div>
           )}
@@ -616,7 +616,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
           {state && tab === "style" && (
             <div className="space-y-4">
               <div>
-                <p className="text-[10px] tracking-widest uppercase text-[#E8D5B5]/80 mb-2 px-1">
+                <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
                   Pachet stil
                 </p>
                 <div className="space-y-2">
@@ -627,15 +627,15 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                       <button
                         key={v}
                         onClick={() => setStyle(v)}
-                        className={`w-full text-left rounded-2xl p-4 border transition ${active ? "border-[#E8D5B5] bg-white/[0.06]" : "border-white/10 bg-white/[0.02]"}`}
+                        className={`w-full text-left rounded-2xl p-4 border transition ${active ? "border-[#5B34FF] bg-white/[0.06]" : "border-white/10 bg-white/[0.02]"}`}
                       >
                         <div className="flex items-center justify-between">
                           <span
-                            className={`font-display text-2xl ${active ? "text-[#E8D5B5]-gradient" : "text-white"}`}
+                            className={`font-display text-2xl ${active ? "text-[#EDE8FF]-gradient" : "text-white"}`}
                           >
                             {sp.label}
                           </span>
-                          {active && <Check className="w-4 h-4 text-[#E8D5B5]" />}
+                          {active && <Check className="w-4 h-4 text-[#EDE8FF]" />}
                         </div>
                         <p className="text-white/55 text-xs mt-1">{sp.desc}</p>
                       </button>
@@ -651,14 +651,14 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                 >
                   <div className="text-left">
                     <p className="text-white text-sm font-medium flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#E8D5B5]" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#EDE8FF]" />
                       Efecte premium
                     </p>
                     <p className="text-white/55 text-[11px] mt-0.5 leading-snug">
                       Sclipiri, lumini și bokeh aplicate automat pe scenele potrivite.
                     </p>
                   </div>
-                  <span className={`relative w-10 h-6 rounded-full transition shrink-0 ${state.effectsEnabled ? "bg-[#E8D5B5]" : "bg-white/15"}`}>
+                  <span className={`relative w-10 h-6 rounded-full transition shrink-0 ${state.effectsEnabled ? "bg-[#5B34FF]" : "bg-white/15"}`}>
                     <span
                       className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${state.effectsEnabled ? "left-[18px]" : "left-0.5"}`}
                     />
@@ -667,7 +667,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
               </div>
 
               <div>
-                <p className="text-[10px] tracking-widest uppercase text-[#E8D5B5]/80 mb-2 px-1">
+                <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
                   Tranziție între scene
                 </p>
                 <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -678,16 +678,16 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                       <button
                         key={tr.id}
                         onClick={() => { playSelect(); setTransition(isOverride ? null : tr.id); }}
-                        className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#E8D5B5] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
+                        className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#5B34FF] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
                       >
                         <div className="w-full h-12 rounded-md mb-1.5 border border-white/10 overflow-hidden relative flex items-center justify-center bg-[linear-gradient(135deg,#3a2a1c_0%,#7a5638_50%,#2a1f12_100%)]">
                           <TransitionGlyph id={tr.id} />
                         </div>
                         <div className="flex items-center justify-between gap-1">
-                          <span className={`text-xs font-medium ${active ? "text-[#E8D5B5]" : "text-white/85"}`}>
+                          <span className={`text-xs font-medium ${active ? "text-[#EDE8FF]" : "text-white/85"}`}>
                             {tr.label}
                           </span>
-                          {active && <Check className="w-3 h-3 text-[#E8D5B5]" />}
+                          {active && <Check className="w-3 h-3 text-[#EDE8FF]" />}
                         </div>
                       </button>
                     );
@@ -701,7 +701,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
               <div className="space-y-4">
                 {FILTER_GROUPS.map((group) => (
                   <div key={group.id}>
-                    <p className="text-[10px] tracking-widest uppercase text-[#E8D5B5]/80 mb-2 px-1">
+                    <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
                       {group.label}
                     </p>
                     <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -711,7 +711,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                           <button
                             key={f.id}
                             onClick={() => { playSelect(); setFilter(f.id); }}
-                            className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#E8D5B5] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
+                            className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#5B34FF] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
                           >
                             <div className="relative w-full h-12 rounded-md mb-1.5 border border-white/10 overflow-hidden">
                               <div
@@ -740,10 +740,10 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                               )}
                             </div>
                             <div className="flex items-center justify-between gap-1">
-                              <span className={`text-xs font-medium ${active ? "text-[#E8D5B5]" : "text-white/85"}`}>
+                              <span className={`text-xs font-medium ${active ? "text-[#EDE8FF]" : "text-white/85"}`}>
                                 {f.label}
                               </span>
-                              {active && <Check className="w-3 h-3 text-[#E8D5B5]" />}
+                              {active && <Check className="w-3 h-3 text-[#EDE8FF]" />}
                             </div>
                           </button>
                         );

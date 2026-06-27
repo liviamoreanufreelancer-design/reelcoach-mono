@@ -5,7 +5,7 @@ export type Vibe = "luxury" | "soft" | "bold";
 export interface BrandProfile {
   name: string;
   handle: string;          // without leading "@"
-  primary: string;         // hex e.g. "#D4AF37"
+  primary: string;         // hex e.g. "#5B34FF"
   accent: string;          // hex
   vibe: Vibe;
   phone?: string;
@@ -60,7 +60,7 @@ export function markOnboardingDone(): void {
 export const DEFAULT_BRAND: BrandProfile = {
   name: "",
   handle: "",
-  primary: "#D4AF37",
+  primary: "#5B34FF",
   accent: "#F4E2B8",
   vibe: "luxury",
   updatedAt: 0,

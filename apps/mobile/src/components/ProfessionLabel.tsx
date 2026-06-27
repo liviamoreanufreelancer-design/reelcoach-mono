@@ -32,9 +32,9 @@ export function ProfessionLabel({ tone = "light", className = "" }: ProfessionLa
   const palette =
     tone === "light"
       ? {
-          primary: "text-[#E8D5B5]",
-          secondary: "text-[#E8D5B5]/55",
-          divider: "bg-[#E8D5B5]/30",
+          primary: "text-[#EDE8FF]",
+          secondary: "text-[#EDE8FF]/55",
+          divider: "bg-[#5B34FF]/30",
         }
       : {
           primary: "text-[#0F1419]",

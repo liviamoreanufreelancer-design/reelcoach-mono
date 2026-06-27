@@ -74,7 +74,7 @@ function CategoryTemplates() {
         {/* Header — back + category label */}
         <div className="flex items-center justify-between px-5">
           <BackButton to="/" />
-          <span className="text-[10px] tracking-[0.4em] uppercase text-[#E8D5B5] font-semibold">
+          <span className="text-[10px] tracking-[0.4em] uppercase text-[#EDE8FF] font-semibold">
             {category.label}
           </span>
           <span className="w-10" />
@@ -82,7 +82,7 @@ function CategoryTemplates() {
 
         {/* Title block */}
         <div className="px-5 mt-8 mb-5">
-          <p className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/70 mb-2">
+          <p className="text-[10px] tracking-[0.32em] uppercase text-[#EDE8FF]/70 mb-2">
             Idei de reel
           </p>
           <h1 className="h1-lux text-[36px] text-white">{category.label}</h1>
@@ -95,8 +95,8 @@ function CategoryTemplates() {
         <div className="flex-1 overflow-y-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {templates.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center px-4 py-12">
-              <div className="w-14 h-14 rounded-full bg-[#E8D5B5]/10 border border-[#E8D5B5]/20 flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6 text-[#E8D5B5]" />
+              <div className="w-14 h-14 rounded-full bg-[#5B34FF]/10 border border-[#5B34FF]/20 flex items-center justify-center mb-4">
+                <Sparkles className="w-6 h-6 text-[#EDE8FF]" />
               </div>
               <p className="text-[14px] text-white/70 leading-snug max-w-[16rem]">
                 Idei pentru {category.label.toLowerCase()} vin în curând.
