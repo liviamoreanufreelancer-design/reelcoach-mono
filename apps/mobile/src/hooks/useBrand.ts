@@ -4,20 +4,31 @@ import { loadBrand, saveBrand, type BrandProfile, DEFAULT_BRAND } from "@/lib/br
 export function useBrand() {
   const [brand, setBrand] = useState<BrandProfile | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [profileUrl, setProfileUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let url: string | null = null;
+    let logoU: string | null = null;
+    let profU: string | null = null;
     void (async () => {
       const b = await loadBrand();
       setBrand(b);
       if (b?.logoBlob) {
-        url = URL.createObjectURL(b.logoBlob);
-        setLogoUrl(url);
+        logoU = URL.createObjectURL(b.logoBlob);
+        setLogoUrl(logoU);
+      }
+      // Poza de profil: profileBlob daca exista, altfel cade pe logo.
+      const profSource = b?.profileBlob ?? b?.logoBlob;
+      if (profSource) {
+        profU = URL.createObjectURL(profSource);
+        setProfileUrl(profU);
       }
       setLoading(false);
     })();
-    return () => { if (url) URL.revokeObjectURL(url); };
+    return () => {
+      if (logoU) URL.revokeObjectURL(logoU);
+      if (profU) URL.revokeObjectURL(profU);
+    };
   }, []);
 
   const update = useCallback(async (patch: Partial<BrandProfile>) => {
@@ -28,7 +39,13 @@ export function useBrand() {
       if (logoUrl) URL.revokeObjectURL(logoUrl);
       setLogoUrl(URL.createObjectURL(patch.logoBlob));
     }
-  }, [brand, logoUrl]);
+    // profileUrl se recalculeaza din profileBlob nou SAU din logoBlob nou (fallback)
+    const profSource = patch.profileBlob ?? next.profileBlob ?? patch.logoBlob ?? next.logoBlob;
+    if (patch.profileBlob || patch.logoBlob) {
+      if (profileUrl) URL.revokeObjectURL(profileUrl);
+      setProfileUrl(profSource ? URL.createObjectURL(profSource) : null);
+    }
+  }, [brand, logoUrl, profileUrl]);
 
-  return { brand, logoUrl, loading, update };
+  return { brand, logoUrl, profileUrl, loading, update };
 }

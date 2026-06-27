@@ -190,7 +190,7 @@ function Edit() {
           continue;
         }
         overlayBlob = await renderOverlay({
-          caption: { text: cap.text, position: cap.position, presetId: preset.id },
+          caption: { text: cap.text, position: cap.position, presetId: preset.id, color: cap.color ?? brand?.primary },
           preset,
           handle: brand?.handle,
           logoBitmap: logoBmp,
@@ -473,7 +473,10 @@ const blob = await renderReelInBrowser(
                   <LivePreview
                     clips={clips}
                     captions={clips.map(
-                      (c) => state.captions[c.sceneIdx] ?? { text: "", position: "bottom" },
+                      (c) => {
+                        const _cap = state.captions[c.sceneIdx] ?? { text: "", position: "bottom" as const };
+                        return { ..._cap, color: _cap.color ?? brand?.primary };
+                      },
                     )}
                     preset={livePreset}
                     transition={effectiveTransitionId}
@@ -521,7 +524,10 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
             <LivePreview
               clips={clips}
               captions={clips.map(
-                (c) => state.captions[c.sceneIdx] ?? { text: "", position: "bottom" },
+                (c) => {
+                        const _cap = state.captions[c.sceneIdx] ?? { text: "", position: "bottom" as const };
+                        return { ..._cap, color: _cap.color ?? brand?.primary };
+                      },
               )}
               preset={livePreset}
               transition={effectiveTransitionId}
@@ -591,6 +597,28 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                         ))}
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] tracking-widest uppercase text-[#5B34FF]/60 font-semibold">Culoare</span>
+                      <div className="flex gap-1.5">
+                        {[
+                          { id: "brand", val: brand?.primary ?? "#5B34FF", label: "Brand" },
+                          { id: "white", val: "#FFFFFF", label: "Alb" },
+                          { id: "black", val: "#000000", label: "Negru" },
+                        ].map((sw) => {
+                          const current = cap.color ?? brand?.primary ?? "#5B34FF";
+                          const active = current.toUpperCase() === sw.val.toUpperCase();
+                          return (
+                            <button
+                              key={sw.id}
+                              onClick={(e) => { e.stopPropagation(); updateCaption(i, { color: sw.val }); setActiveScene(i); }}
+                              aria-label={sw.label}
+                              className={`w-6 h-6 rounded-full border-2 transition ${active ? "border-[#5B34FF] scale-110" : "border-[#E6E6EA]"}`}
+                              style={{ background: sw.val }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
                     <SceneTextarea
                       value={cap.text}
                       placeholder={(sc.overlayText ?? sc.hook).replace(/\n/g, " ")}
@@ -631,7 +659,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                       >
                         <div className="flex items-center justify-between">
                           <span
-                            className={`font-display text-2xl ${active ? "text-[#EDE8FF]-gradient" : "text-white"}`}
+                            className={`font-display text-2xl ${active ? "text-purple-gradient" : "text-white"}`}
                           >
                             {sp.label}
                           </span>

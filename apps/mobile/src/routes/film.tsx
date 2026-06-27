@@ -255,7 +255,7 @@ function Film() {
   const prev = () => {
     if (rec.state === "recording") rec.cancel();
     setT(0); setShowGuide(true);
-    setIdx((p) => Math.max(0, p - 1));
+    setIdx((p: number) => Math.max(0, p - 1));
   };
   const next = () => {
     if (rec.state === "recording") rec.cancel();
@@ -272,7 +272,7 @@ function Film() {
     if (idx === scenes.length - 1) {
       nav({ to: "/edit" });
     } else {
-      setIdx((p) => p + 1);
+      setIdx((p: number) => p + 1);
       setPhase("preshot");
     }
   };
@@ -294,7 +294,7 @@ function Film() {
           // which would re-enter preshot and create a loop).
           nav({ to: "/reel/$id", params: { id: scenarioId }, replace: true });
         } else {
-          setIdx((p) => p - 1);
+          setIdx((p: number) => p - 1);
         }
       }}
       onReady={() => {

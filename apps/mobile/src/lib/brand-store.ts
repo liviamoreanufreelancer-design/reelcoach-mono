@@ -11,6 +11,7 @@ export interface BrandProfile {
   phone?: string;
   location?: string;
   logoBlob?: Blob;         // PNG (rasterized at upload time, max 512x512)
+  profileBlob?: Blob;      // Poza de profil. Daca lipseste, se foloseste logoBlob.
   updatedAt: number;
 }
 

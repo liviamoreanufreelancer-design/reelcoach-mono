@@ -8,6 +8,8 @@ import type { TransitionId } from "@reelcoach/core";
 export interface CaptionState {
   text: string;
   position: TextPosition;
+  /** Culoare text optionala (default = brand.primary). */
+  color?: string;
 }
 
 export interface EditorState {

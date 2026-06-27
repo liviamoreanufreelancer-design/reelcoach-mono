@@ -134,7 +134,7 @@ export function LivePreview({
       fontStyle: preset.italic ? "italic" : "normal",
       fontSize: `${preset.size * scale}px`,
       lineHeight: 1.1,
-      color: preset.color,
+      color: cap?.color ?? preset.color,
       letterSpacing: preset.letterSpacing ? `${preset.letterSpacing * scale}px` : undefined,
       textTransform: preset.uppercase ? "uppercase" : "none",
       textAlign: "center",
@@ -160,7 +160,7 @@ export function LivePreview({
       (s as React.CSSProperties & { paintOrder?: string }).paintOrder = "stroke fill";
     }
     return s;
-  }, [preset]);
+  }, [preset, cap?.color]);
 
   const positionClass =
     cap?.position === "top"    ? "items-start pt-8"   :

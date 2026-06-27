@@ -19,9 +19,13 @@ import "./styles.css";
 // input. Blocam inregistrarea lui pe document inainte sa monteze React.
 // selectionchange nu e necesar pentru UX-ul mobil al app-ului.
 const _origAdd = document.addEventListener.bind(document);
-document.addEventListener = function (type, listener, options) {
+document.addEventListener = function (
+  type: string,
+  listener: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions,
+) {
   if (type === "selectionchange") return;
-  return _origAdd(type, listener, options as any);
+  return _origAdd(type, listener, options);
 } as typeof document.addEventListener;
 
 const { router, queryClient } = createAppContext();

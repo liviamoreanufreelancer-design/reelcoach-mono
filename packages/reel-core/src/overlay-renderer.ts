@@ -18,6 +18,8 @@ export interface Caption {
   text: string;
   position: TextPosition;
   presetId: string;
+  /** Optional brand color override for the text fill. Defaults to preset color. */
+  color?: string;
 }
 
 export interface OverlayInputs {
@@ -165,7 +167,7 @@ export function drawCaption(
     });
   }
 
-  ctx.fillStyle = scaledPreset.color;
+  ctx.fillStyle = caption.color ?? scaledPreset.color;
   lines.forEach((line, i) => {
     const y = cy - totalH / 2 + lh / 2 + i * lh;
     ctx.fillText(line, cx, y);
