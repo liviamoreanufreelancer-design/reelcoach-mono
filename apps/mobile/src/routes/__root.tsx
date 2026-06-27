@@ -73,7 +73,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
       { title: "Reel Coach — Reels pentru saloane" },
       { name: "description", content: "Coach-ul tău pentru Reels TikTok și Instagram. Pentru profesioniste din saloane de înfrumusețare." },
       { name: "author", content: "Reel Coach" },

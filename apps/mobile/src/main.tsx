@@ -14,6 +14,16 @@ import { App as CapApp } from "@capacitor/app";
 // vars load correctly inside the Capacitor WKWebView.
 import "./styles.css";
 
+// iOS 26.5 WKWebView: un listener global "selectionchange" (adaugat de o
+// biblioteca UI) blocheaza complet procesul WebContent la prima tasta intr-un
+// input. Blocam inregistrarea lui pe document inainte sa monteze React.
+// selectionchange nu e necesar pentru UX-ul mobil al app-ului.
+const _origAdd = document.addEventListener.bind(document);
+document.addEventListener = function (type, listener, options) {
+  if (type === "selectionchange") return;
+  return _origAdd(type, listener, options as any);
+} as typeof document.addEventListener;
+
 const { router, queryClient } = createAppContext();
 
 // Android hardware back button — navigate back or exit app.
