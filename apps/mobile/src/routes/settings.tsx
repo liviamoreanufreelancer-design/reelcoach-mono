@@ -61,10 +61,11 @@ function SettingsScreen() {
           <div className="px-[22px]">
             <section className="bg-white rounded-[22px] border border-[#E6E6EA] shadow-[0_1px_3px_rgba(20,20,40,0.04)] p-4 flex items-center gap-4">
               <div className="relative shrink-0">
-                <div className="w-[88px] h-[88px] rounded-full bg-[#EDE8FF] border-4 border-white flex items-center justify-center shadow-[0_2px_8px_rgba(20,20,40,0.12)] overflow-hidden">
-                  {profileUrl ? (
-                    <img alt="" className="w-full h-full object-cover rounded-full" src={profileUrl} />
-                  ) : (
+                <div
+                  className="w-[88px] h-[88px] rounded-full bg-[#EDE8FF] border-4 border-white shadow-[0_2px_8px_rgba(20,20,40,0.12)] flex items-center justify-center"
+                  style={profileUrl ? { backgroundImage: `url("${profileUrl}")`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" } : undefined}
+                >
+                  {!profileUrl && (
                     <span className="font-display font-bold text-[38px] text-[#5B34FF] leading-none">{initial}</span>
                   )}
                 </div>
