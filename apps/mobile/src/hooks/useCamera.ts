@@ -41,11 +41,13 @@ export function useCamera(initialFacing: Facing = "user") {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: f,
-            // Portret nativ: pe iOS cerem dimensiuni cu height > width ca
-            // streamul sa fie vertical (9:16), nu landscape rotit.
-            width: { ideal: 1080, max: 1080 },
-            height: { ideal: 1920, max: 1920 },
-            aspectRatio: { ideal: 0.5625 },
+            // NU constrangem aspectRatio: senzorul telefonului e 4:3. Daca cerem
+            // 9:16, WKWebView pre-decupeaza senzorul (= zoom + camp vizual ingust).
+            // Cerem rezolutie mare in raportul natural al senzorului si lasam
+            // object-cover (pe <video>) sa umple ecranul 9:16 — camp vizual larg
+            // ca la camera nativa, fara dungi negre, fara zoom artificial.
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
           },
           audio: true,
         });

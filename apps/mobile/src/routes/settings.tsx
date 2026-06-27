@@ -18,7 +18,7 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsScreen() {
   const nav = useNavigate();
-  const { brand, logoUrl } = useBrand();
+  const { brand, profileUrl } = useBrand();
   const [stats, setStats] = useState<{ create: number; postate: number; ciorne: number } | null>(null);
 
   useEffect(() => {
@@ -57,33 +57,28 @@ function SettingsScreen() {
         </header>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {/* Card identitate: cover + avatar + nume */}
+          {/* Card identitate: avatar + nume */}
           <div className="px-[22px]">
-            <section className="bg-white rounded-[22px] border border-[#E6E6EA] overflow-hidden shadow-[0_1px_3px_rgba(20,20,40,0.04)]">
-              <div className="relative h-[130px] bg-[#EDE8FF]">
-                {logoUrl ? (
-                  <img alt="" className="w-full h-full object-cover" src={logoUrl} />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#EDE8FF] to-[#DCD3FF]" />
-                )}
-                <div className="absolute -bottom-9 left-4">
-                  <div className="relative">
-                    <div className="w-[78px] h-[78px] rounded-full bg-[#EDE8FF] border-4 border-white flex items-center justify-center shadow-[0_2px_8px_rgba(20,20,40,0.12)]">
-                      <span className="font-display font-bold text-[34px] text-[#5B34FF] leading-none">{initial}</span>
-                    </div>
-                    <button
-                      onClick={() => goto("/settings-brand-edit")}
-                      className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#5B34FF] border-2 border-white flex items-center justify-center text-white shadow"
-                      aria-label="Editează"
-                    >
-                      <Camera className="w-3 h-3" strokeWidth={2} />
-                    </button>
-                  </div>
+            <section className="bg-white rounded-[22px] border border-[#E6E6EA] shadow-[0_1px_3px_rgba(20,20,40,0.04)] p-4 flex items-center gap-4">
+              <div className="relative shrink-0">
+                <div className="w-[88px] h-[88px] rounded-full bg-[#EDE8FF] border-4 border-white flex items-center justify-center shadow-[0_2px_8px_rgba(20,20,40,0.12)] overflow-hidden">
+                  {profileUrl ? (
+                    <img alt="" className="w-full h-full object-cover rounded-full" src={profileUrl} />
+                  ) : (
+                    <span className="font-display font-bold text-[38px] text-[#5B34FF] leading-none">{initial}</span>
+                  )}
                 </div>
+                <button
+                  onClick={() => goto("/settings-brand-edit")}
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#5B34FF] border-2 border-white flex items-center justify-center text-white shadow"
+                  aria-label="Editează"
+                >
+                  <Camera className="w-3 h-3" strokeWidth={2} />
+                </button>
               </div>
-              <div className="pt-11 px-4 pb-4">
-                <h2 className="font-display font-bold text-[22px] leading-none">{name}</h2>
-                <div className="mt-1.5 flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display font-bold text-[22px] leading-none truncate">{name}</h2>
+                <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                   {handle && <span className="text-[13.5px] text-[#6B6B6B]">@{handle}</span>}
                   {profLabel && (
                     <span className="px-2.5 py-[3px] rounded-full bg-[#EDE8FF] text-[#5B34FF] text-[11px] font-semibold leading-none">
