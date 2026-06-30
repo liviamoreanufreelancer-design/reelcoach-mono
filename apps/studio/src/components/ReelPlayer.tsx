@@ -6,7 +6,8 @@
  * tab in the editor. "Preview = export" — this IS the export.
  */
 import { useEffect, useRef, useState } from "react";
-import { uploadReelPreview } from "@/lib/template-actions";
+import { setPreviewReelUrl } from "@/lib/template-actions";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   renderReelInBrowser,
   renderOverlay,
@@ -104,18 +105,22 @@ export default function ReelPlayer({
       urlRef.current = url;
       setVideoUrl(url);
       setPhase("done");
-      // Auto-urcare: salvam reel-ul montat ca preview pentru app (o singura data).
+      // Auto-urcare: urcam reel-ul DIRECT din browser in storage (video prea mare
+      // pentru body-ul unei server action), apoi salvam doar URL-ul prin server action.
       if (!uploadedRef.current) {
         uploadedRef.current = true;
         try {
-          const fd = new FormData();
-          fd.set("reel", new File([blob], "reel.mp4", { type: "video/mp4" }));
-          await uploadReelPreview(templateId, fd);
+          const sb = getSupabaseBrowserClient();
+          const path = `${templateId}/reel-${Date.now()}.mp4`;
+          const { error: upErr } = await sb.storage
+            .from("previews")
+            .upload(path, blob, { contentType: "video/mp4", upsert: true });
+          if (upErr) throw upErr;
+          const { data: pub } = sb.storage.from("previews").getPublicUrl(path);
+          await setPreviewReelUrl(templateId, pub.publicUrl);
         } catch (e) {
-          // Esecul urcarii nu trebuie sa strice afisarea reel-ului.
           uploadedRef.current = false;
           console.error("[reel-preview] urcare esuata:", e);
-          alert("Urcare preview esuata: " + (e instanceof Error ? e.message : String(e)));
         }
       }
     } catch (err) {
