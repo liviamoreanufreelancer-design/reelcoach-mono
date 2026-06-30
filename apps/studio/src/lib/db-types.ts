@@ -55,6 +55,8 @@ export interface TemplateRow {
   emotional_pitch: string | null;
   category_id: string;
   cover_url: string | null;
+  /** Reel-ul complet montat (renderReelInBrowser), urcat in `previews`. */
+  preview_reel_url: string | null;
   example_video_url: string | null;
   /** Migration 004: which concept this template is a recipe-variant of. */
   concept_id: string | null;

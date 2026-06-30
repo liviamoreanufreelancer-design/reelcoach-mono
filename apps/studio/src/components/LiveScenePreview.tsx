@@ -430,7 +430,7 @@ export default function LiveScenePreview({
         </fieldset>
       </div>
       <div className={reelMode ? "" : "hidden"}>
-        {reelMounted && <ReelPlayer shots={shots} globalFilter={globalFilter} />}
+        {reelMounted && <ReelPlayer shots={shots} globalFilter={globalFilter} templateId={templateId} />}
       </div>
     </div>
   );

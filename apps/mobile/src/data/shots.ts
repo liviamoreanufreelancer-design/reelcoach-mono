@@ -246,6 +246,8 @@ export interface ReelTemplate {
    */
   emotionalPitch?: string;
   cover: string;
+  /** Reel-ul complet montat (din Studio), redat in ecranul de detalii. */
+  previewReelUrl?: string;
   /** Filming difficulty — easy/medium/hard (label: Ușor/Mediu/Avansat). */
   difficulty?: "easy" | "medium" | "hard";
   professions: Profession[];

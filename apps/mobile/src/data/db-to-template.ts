@@ -55,6 +55,7 @@ export function dbToReelTemplate(
     title: template.title,
     promise: template.promise ?? "",
     emotionalPitch: template.emotional_pitch ?? undefined,
+    previewReelUrl: template.preview_reel_url ?? undefined,
     difficulty: template.difficulty ?? "easy",
     cover,
     // Studio uses category_id to mean the leaf category (Subcategory in mobile

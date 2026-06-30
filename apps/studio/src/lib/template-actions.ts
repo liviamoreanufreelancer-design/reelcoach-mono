@@ -285,6 +285,39 @@ export async function uploadCover(templateId: string, formData: FormData) {
 }
 
 
+/**
+ * Upload the fully-rendered reel MP4 (montat in browser via renderReelInBrowser)
+ * to the `previews` bucket and save its URL on the template. The mobile app
+ * plays this as the full preview reel. Mirrors uploadCover, but for the reel video.
+ */
+export async function uploadReelPreview(templateId: string, formData: FormData) {
+  const supabase = await getSupabaseServerClient();
+
+  const file = formData.get("reel") as File | null;
+  if (!file || file.size === 0) throw new Error("Niciun fișier selectat");
+  if (file.size > 50 * 1024 * 1024) throw new Error("Reel-ul depășește 50MB");
+
+  const path = `${templateId}/reel-${Date.now()}.mp4`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("previews")
+    .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data: publicData } = supabase.storage.from("previews").getPublicUrl(path);
+  const publicUrl = publicData.publicUrl;
+
+  const { error: updateError } = await supabase
+    .from("templates")
+    .update({ preview_reel_url: publicUrl })
+    .eq("id", templateId);
+  if (updateError) throw new Error(updateError.message);
+
+  revalidatePath(`/dashboard/templates/${templateId}`);
+  return publicUrl;
+}
+
+
 export async function uploadExampleImage(shotId: string, templateId: string, formData: FormData) {
   const supabase = await getSupabaseServerClient();
   const file = formData.get("example") as File | null;

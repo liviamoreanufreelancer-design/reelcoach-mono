@@ -6,7 +6,7 @@
  * Tap "Începe filmarea" → /film.
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bookmark, Play, Eye, Heart, Clock, BarChart3, ChevronRight } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { useTemplate } from "@/data/templates-context";
@@ -31,6 +31,67 @@ function fmtMMSS(sec: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+/**
+ * ReelClipPlayer — reda clipurile exemplu ale scenelor la rand (story-style).
+ * Auto-play: scena 1 -> 2 -> 3 -> reia. Scenele fara clip sunt sarite.
+ * Tap pe video = pauza/play.
+ */
+function ReelVideoPlayer({
+  src,
+  caption,
+}: {
+  src: string;
+  caption?: string;
+}) {
+  const [paused, setPaused] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const onTimeUpdate = () => {
+    const v = videoRef.current;
+    if (!v || !v.duration) return;
+    setProgress((v.currentTime / v.duration) * 100);
+  };
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) { void v.play().catch(() => undefined); setPaused(false); }
+    else { v.pause(); setPaused(true); }
+  };
+  return (
+    <div className="absolute inset-0 bg-black" onClick={togglePlay}>
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        loop
+        muted
+        playsInline
+        onTimeUpdate={onTimeUpdate}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      <div
+        className="absolute left-[14px] right-[14px] z-[5]"
+        style={{ top: "max(calc(env(safe-area-inset-top, 56px) + 6px), 62px)" }}
+      >
+        <div className="h-[3px] rounded-full bg-white/35 overflow-hidden">
+          <div className="h-full rounded-full bg-white" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+      {caption && (
+        <div className="absolute left-1/2 -translate-x-1/2 z-[4]" style={{ bottom: "248px" }}>
+          <span className="inline-block bg-[#EDE8FF] text-[#5B34FF] text-[14px] font-semibold px-4 py-1.5 rounded-full">
+            {caption}
+          </span>
+        </div>
+      )}
+      {paused && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[4] w-[54px] h-[54px] rounded-full bg-black/35 backdrop-blur grid place-items-center border border-white/50">
+          <Play className="w-[24px] h-[24px] text-white ml-[2px]" fill="currentColor" />
+        </div>
+      )}
+    </div>
+  );
+}
 function ReelPreview() {
   const { id } = Route.useParams();
   const nav = useNavigate();
@@ -67,6 +128,11 @@ function ReelPreview() {
 
   // Flatten scenes from sections.
   const scenes = template.sections.flatMap((sec) => sec.shots);
+  // Clipurile exemplu pentru player (scenele fara clip sunt sarite).
+  const previewUrl = template.previewReelUrl;
+  const hasReel = Boolean(previewUrl);
+  // Caption afisat peste video — overlay-ul primei scene, sau titlul.
+  const reelCaption = scenes.find((s) => s.overlayText?.trim())?.overlayText || template.title;
   const totalSec = Math.round(totalFinalSeconds(template));
   const diff = template.difficulty ?? "easy";
   const description = template.emotionalPitch || template.promise || "";
@@ -79,6 +145,70 @@ function ReelPreview() {
     { Icon: BarChart3, value: DIFF_LABEL[diff], label: "Dificultate" },
   ];
 
+  // Layout full-screen cu player (cand exista clipuri exemplu).
+  if (hasReel && previewUrl) {
+    return (
+      <PhoneShell>
+        <div className="absolute inset-0 bg-black">
+          <ReelVideoPlayer src={previewUrl} caption={reelCaption} />
+
+          {/* Controale sus — inapoi + bookmark, peste video */}
+          <div
+            className="absolute left-0 right-0 px-[16px] z-[10] flex items-center justify-between"
+            style={{ top: "max(calc(env(safe-area-inset-top, 56px) + 18px), 74px)" }}
+          >
+            <button
+              onClick={() => nav({ to: "/" })}
+              aria-label="Înapoi"
+              className="grid place-items-center w-[40px] h-[40px] rounded-full bg-white/92 backdrop-blur text-[#1F1F1F] shadow-[0_3px_12px_rgba(0,0,0,.22)] transition active:scale-90"
+            >
+              <ArrowLeft className="w-[20px] h-[20px]" />
+            </button>
+            <button
+              onClick={() => setSaved((v) => !v)}
+              aria-label="Salvează"
+              className="grid place-items-center w-[40px] h-[40px] rounded-full bg-white/92 backdrop-blur shadow-[0_3px_12px_rgba(0,0,0,.22)] transition active:scale-90"
+              style={{ color: saved ? "#5B34FF" : "#1F1F1F" }}
+            >
+              <Bookmark className="w-[19px] h-[19px]" fill={saved ? "currentColor" : "none"} />
+            </button>
+          </div>
+
+          {/* Gradient + detalii suprapuse jos */}
+          <div className="absolute left-0 right-0 bottom-0 z-[8] pointer-events-none" style={{ height: "300px", background: "linear-gradient(to top, rgba(10,6,18,0.92) 0%, rgba(10,6,18,0.78) 40%, rgba(10,6,18,0.3) 72%, transparent 100%)" }} />
+          <div
+            className="absolute left-0 right-0 bottom-0 z-[9] px-[20px]"
+            style={{ paddingBottom: "max(env(safe-area-inset-bottom, 28px), 28px)" }}
+          >
+            <span className="block text-[10px] tracking-[0.18em] uppercase text-[#C9BFFF] font-bold mb-2">
+              {template.title ? (template.sections[0]?.title ?? "Reel") : "Reel"}
+            </span>
+            <h1 className="font-display font-extrabold text-white text-[25px] leading-[1.12] tracking-[0.2px] mb-3">
+              {template.title}
+            </h1>
+            <div className="flex gap-4 mb-4 text-white/85 text-[12.5px]">
+              {stats.map(({ Icon, value }) => (
+                <span key={value} className="flex items-center gap-1.5">
+                  <Icon className="w-[15px] h-[15px]" strokeWidth={1.9} />{value}
+                </span>
+              ))}
+            </div>
+            <button
+              onClick={startFilming}
+              className="w-full h-[56px] rounded-[18px] bg-[#5B34FF] text-white font-bold text-[16.5px] flex items-center justify-center gap-[11px] shadow-[0_14px_30px_-10px_rgba(91,52,255,.8)] transition active:scale-[.98]"
+            >
+              <span className="w-[26px] h-[26px] rounded-full bg-white/95 grid place-items-center">
+                <span className="w-[13px] h-[13px] rounded-full bg-[#FF3B30]" />
+              </span>
+              Începe filmarea
+            </button>
+          </div>
+        </div>
+      </PhoneShell>
+    );
+  }
+
+  // Fallback: cover static + lista (cand nicio scena n-are clip).
   return (
     <PhoneShell>
       <div className="absolute inset-0 flex flex-col bg-[#F8F8FA]">

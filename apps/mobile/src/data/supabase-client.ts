@@ -57,6 +57,7 @@ export interface DbTemplateRow {
   emotional_pitch: string | null;
   category_id: string;
   cover_url: string | null;
+  preview_reel_url: string | null;
   status: "draft" | "published";
   is_recommended: boolean;
   difficulty: "easy" | "medium" | "hard";

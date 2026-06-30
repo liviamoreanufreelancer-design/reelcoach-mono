@@ -6,6 +6,7 @@
  * tab in the editor. "Preview = export" — this IS the export.
  */
 import { useEffect, useRef, useState } from "react";
+import { uploadReelPreview } from "@/lib/template-actions";
 import {
   renderReelInBrowser,
   renderOverlay,
@@ -21,9 +22,11 @@ const H = 960;
 export default function ReelPlayer({
   shots,
   globalFilter,
+  templateId,
 }: {
   shots: ShotRow[];
   globalFilter: string | null;
+  templateId: string;
 }) {
   const [phase, setPhase] = useState<"idle" | "rendering" | "done" | "error">("idle");
   const [pct, setPct] = useState(0);
@@ -31,6 +34,7 @@ export default function ReelPlayer({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
   const startedRef = useRef(false);
+  const uploadedRef = useRef(false);
 
   const withFootage = shots.filter((s) => s.sample_video_url);
   const missingCount = shots.length - withFootage.length;
@@ -100,6 +104,18 @@ export default function ReelPlayer({
       urlRef.current = url;
       setVideoUrl(url);
       setPhase("done");
+      // Auto-urcare: salvam reel-ul montat ca preview pentru app (o singura data).
+      if (!uploadedRef.current) {
+        uploadedRef.current = true;
+        try {
+          const fd = new FormData();
+          fd.set("reel", new File([blob], "reel.mp4", { type: "video/mp4" }));
+          await uploadReelPreview(templateId, fd);
+        } catch {
+          // Esecul urcarii nu trebuie sa strice afisarea reel-ului.
+          uploadedRef.current = false;
+        }
+      }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
       setPhase("error");
