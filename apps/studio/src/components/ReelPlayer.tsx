@@ -111,9 +111,11 @@ export default function ReelPlayer({
           const fd = new FormData();
           fd.set("reel", new File([blob], "reel.mp4", { type: "video/mp4" }));
           await uploadReelPreview(templateId, fd);
-        } catch {
+        } catch (e) {
           // Esecul urcarii nu trebuie sa strice afisarea reel-ului.
           uploadedRef.current = false;
+          console.error("[reel-preview] urcare esuata:", e);
+          alert("Urcare preview esuata: " + (e instanceof Error ? e.message : String(e)));
         }
       }
     } catch (err) {
