@@ -138,6 +138,8 @@ export interface Scene {
   overlayText?: string;
   /** Font/preset caption setat in Studio per scena (default reel-ului). */
   captionPreset?: string;
+  /** Clipul video exemplu (montat in Studio) — ruleaza in pre-shot. */
+  sampleVideoUrl?: string;
   /** Seconds of this clip actually used in the final reel (auto-trim target). */
   finalUsageDuration?: number;
   /** Premium effect overlay for this scene (sparkle/leak/bokeh/dust/none). */

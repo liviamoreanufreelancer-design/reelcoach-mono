@@ -274,19 +274,6 @@ export default function LiveScenePreview({
     });
   };
 
-  const captureExample = () => {
-    if (!shot) return;
-    captureHiRes((blob) => {
-      if (!blob) { alert("Nu am putut captura cadrul."); return; }
-      const file = new File([blob], `example-${Date.now()}.png`, { type: "image/png" });
-      const fd = new FormData();
-      fd.set("example", file);
-      startTransition(async () => {
-        await uploadExampleImage(shot.id, templateId, fd);
-        router.refresh();
-      });
-    });
-  };
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -360,10 +347,6 @@ export default function LiveScenePreview({
           <button type="button" onClick={captureCover} disabled={disabled || !hasVideo}
             className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
             📷 Salvează cover
-          </button>
-          <button type="button" onClick={captureExample} disabled={disabled || !hasVideo}
-            className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
-            🖼 Salvează cadru ca exemplu scenă
           </button>
         </div>
 

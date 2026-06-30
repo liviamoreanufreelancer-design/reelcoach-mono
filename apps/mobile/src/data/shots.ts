@@ -127,6 +127,8 @@ export interface Shot {
   motionBlur?: boolean;
   /** Imaginea de exemplu pentru această scenă (cum trebuie să arate cadrul). */
   exampleImageUrl?: string;
+  /** Clipul video exemplu (montat de partenera in Studio). */
+  sampleVideoUrl?: string;
   /** Diagrama de filmare (din biblioteca globală, refolosibilă). */
   diagramUrl?: string;
   /**
@@ -151,7 +153,7 @@ export interface Shot {
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset">> {
+  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -163,6 +165,7 @@ export interface ResolvedShot
   motionBlur?: boolean;
   exampleImageUrl?: string;
   diagramUrl?: string;
+  sampleVideoUrl?: string;
   /** Font/preset caption per scena (din Studio). */
   captionPreset?: string;
 }
@@ -210,6 +213,7 @@ export function resolveShot(shot: Shot): ResolvedShot {
     mustSee: shot.mustSee ?? [],
     howShoot: shot.howShoot ?? [],
     captionPreset: shot.captionPreset,
+    sampleVideoUrl: shot.sampleVideoUrl,
     // Per-scene playback speed + motion blur. Carried through so the choices
     // the partner makes in Studio actually reach the renderer (without this,
     // they were silently dropped here and never applied to the export).

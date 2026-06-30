@@ -57,7 +57,6 @@ export interface DbTemplateRow {
   emotional_pitch: string | null;
   category_id: string;
   cover_url: string | null;
-  example_video_url: string | null;
   status: "draft" | "published";
   is_recommended: boolean;
   difficulty: "easy" | "medium" | "hard";
@@ -85,6 +84,7 @@ export interface DbShotRow {
   must_see: string[] | null;
   how_shoot: { icon: string; label: string; detail: string }[] | null;
   example_image_url: string | null;
+  sample_video_url: string | null;
   diagram_id: string | null;
   /** Join cu diagrams pe diagram_id — diagrama de filmare (refolosibila). */
   diagram: { image_url: string } | null;

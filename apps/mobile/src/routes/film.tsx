@@ -1012,6 +1012,19 @@ function PreShotScreen({
             <span>Durata: ~{Math.round(scene.duration)} sec</span>
           </div>
 
+          {/* Video exemplu — clipul montat in Studio, ruleaza in bucla */}
+          {scene.sampleVideoUrl && (
+            <div className="mt-3 w-full aspect-[9/16] max-h-[42vh] mx-auto rounded-[18px] overflow-hidden border border-[#E6E6EA] bg-black shadow-[0_10px_30px_-16px_rgba(40,24,110,0.32)]">
+              <video
+                src={scene.sampleVideoUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
           {/* Diagrama — piesa centrala */}
           <div className="mt-3 w-full aspect-[3/2] rounded-[18px] overflow-hidden border border-[#E6E6EA] bg-white shadow-[0_10px_30px_-16px_rgba(40,24,110,0.32)]">
             {scene.diagramUrl ? (

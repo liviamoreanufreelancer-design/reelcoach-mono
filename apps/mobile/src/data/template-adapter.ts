@@ -52,6 +52,7 @@ export function templateToScenario(t: ReelTemplate): Scenario {
       // filming instructions. Empty string means "no caption".
       overlayText: shot.overlayText,
       captionPreset: shot.captionPreset,
+      sampleVideoUrl: shot.sampleVideoUrl,
       // How much of this clip the renderer keeps in the final reel
       // (auto-trim — record generously, keep only the good middle).
       finalUsageDuration: shot.finalUsageDuration,
