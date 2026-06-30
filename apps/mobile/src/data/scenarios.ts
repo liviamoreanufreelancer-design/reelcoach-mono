@@ -136,6 +136,8 @@ export interface Scene {
   instructions?: string[];
   /** Caption burned onto the final video (reel hook, NOT filming instructions). */
   overlayText?: string;
+  /** Font/preset caption setat in Studio per scena (default reel-ului). */
+  captionPreset?: string;
   /** Seconds of this clip actually used in the final reel (auto-trim target). */
   finalUsageDuration?: number;
   /** Premium effect overlay for this scene (sparkle/leak/bokeh/dust/none). */

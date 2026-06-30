@@ -8,6 +8,8 @@ interface Props {
   clips: StoredClip[];
   captions: CaptionState[];
   preset: TextPreset;
+  /** Preset per scena (preview = export). Daca lipseste, se foloseste `preset`. */
+  presets?: TextPreset[];
   transition: TransitionId;
   /** Per-clip premium effect ids matching the clips array. */
   effectIds?: (string | undefined)[];
@@ -40,7 +42,7 @@ interface Props {
  * effects/transitions are reproduced in CSS to stay smooth on-device.
  */
 export function LivePreview({
-  clips, captions, preset, transition, filter, effectIds, effectsEnabled = true,
+  clips, captions, preset, presets, transition, filter, effectIds, effectsEnabled = true,
   transitionTypes, playbackSpeeds, motionBlurs,
   handle, logoUrl,
   activeIdx, onSceneChange,
@@ -125,42 +127,43 @@ export function LivePreview({
   const captionText = cap?.text?.trim();
 
   // Build CSS that mirrors the TextPreset (canvas-equivalent rendering).
+  const activePreset = presets?.[idx] ?? preset;
   const captionStyle: React.CSSProperties = useMemo(() => {
     // Canvas is 1080w; preview is ~250w. Scale font down accordingly.
     const scale = 250 / 1080;
     const s: React.CSSProperties = {
-      fontFamily: preset.font,
-      fontWeight: preset.weight,
-      fontStyle: preset.italic ? "italic" : "normal",
-      fontSize: `${preset.size * scale}px`,
+      fontFamily: activePreset.font,
+      fontWeight: activePreset.weight,
+      fontStyle: activePreset.italic ? "italic" : "normal",
+      fontSize: `${activePreset.size * scale}px`,
       lineHeight: 1.1,
-      color: cap?.color ?? preset.color,
-      letterSpacing: preset.letterSpacing ? `${preset.letterSpacing * scale}px` : undefined,
-      textTransform: preset.uppercase ? "uppercase" : "none",
+      color: cap?.color ?? activePreset.color,
+      letterSpacing: activePreset.letterSpacing ? `${activePreset.letterSpacing * scale}px` : undefined,
+      textTransform: activePreset.uppercase ? "uppercase" : "none",
       textAlign: "center",
-      maxWidth: `${(preset.maxWidth ?? 880) * scale}px`,
+      maxWidth: `${(activePreset.maxWidth ?? 880) * scale}px`,
       whiteSpace: "pre-wrap",
       wordBreak: "break-word",
       pointerEvents: "none",
     };
-    if (preset.bg) {
-      s.background = preset.bg;
-      s.padding = `${(preset.paddingY ?? 16) * scale}px ${(preset.paddingX ?? 28) * scale}px`;
-      s.borderRadius = `${(preset.radius ?? 16) * scale}px`;
+    if (activePreset.bg) {
+      s.background = activePreset.bg;
+      s.padding = `${(activePreset.paddingY ?? 16) * scale}px ${(activePreset.paddingX ?? 28) * scale}px`;
+      s.borderRadius = `${(activePreset.radius ?? 16) * scale}px`;
     }
-    if (preset.shadow) {
+    if (activePreset.shadow) {
       s.textShadow = "0 2px 6px rgba(0,0,0,0.55)";
     }
-    if (preset.outline) {
-      const w = preset.outline.width * scale;
-      const c = preset.outline.color;
+    if (activePreset.outline) {
+      const w = activePreset.outline.width * scale;
+      const c = activePreset.outline.color;
       s.WebkitTextStroke = `${w}px ${c}`;
       // -webkit-text-stroke renders the stroke through the fill, so paint the
       // fill on top using paint-order (supported in modern browsers).
       (s as React.CSSProperties & { paintOrder?: string }).paintOrder = "stroke fill";
     }
     return s;
-  }, [preset, cap?.color]);
+  }, [activePreset, cap?.color]);
 
   const positionClass =
     cap?.position === "top"    ? "items-start pt-8"   :

@@ -51,6 +51,7 @@ export function templateToScenario(t: ReelTemplate): Scenario {
       // Text burned on the final video = the reel hook, NOT the
       // filming instructions. Empty string means "no caption".
       overlayText: shot.overlayText,
+      captionPreset: shot.captionPreset,
       // How much of this clip the renderer keeps in the final reel
       // (auto-trim — record generously, keep only the good middle).
       finalUsageDuration: shot.finalUsageDuration,

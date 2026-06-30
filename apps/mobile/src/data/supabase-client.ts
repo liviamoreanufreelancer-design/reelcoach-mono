@@ -90,4 +90,5 @@ export interface DbShotRow {
   diagram: { image_url: string } | null;
   playback_speed: number;
   motion_blur: boolean;
+  caption_preset: string | null;
 }

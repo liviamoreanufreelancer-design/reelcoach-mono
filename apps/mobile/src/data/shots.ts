@@ -146,10 +146,12 @@ export interface Shot {
    * pre-shot screen.
    */
   howShoot?: { icon: string; label: string; detail: string }[];
+  /** Font/preset caption setat in Studio per scena (default reel-ului). */
+  captionPreset?: string;
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl">> {
+  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -161,6 +163,8 @@ export interface ResolvedShot
   motionBlur?: boolean;
   exampleImageUrl?: string;
   diagramUrl?: string;
+  /** Font/preset caption per scena (din Studio). */
+  captionPreset?: string;
 }
 
 /**
@@ -205,6 +209,7 @@ export function resolveShot(shot: Shot): ResolvedShot {
     patternMeta: p,
     mustSee: shot.mustSee ?? [],
     howShoot: shot.howShoot ?? [],
+    captionPreset: shot.captionPreset,
     // Per-scene playback speed + motion blur. Carried through so the choices
     // the partner makes in Studio actually reach the renderer (without this,
     // they were silently dropped here and never applied to the export).

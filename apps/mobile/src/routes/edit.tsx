@@ -23,7 +23,7 @@ import { playSelect, playSuccess, playTap } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
 import type { ConcatProgress } from "@reelcoach/core";
 import { useBrand } from "@/hooks/useBrand";
-import { useEditor, type CaptionState } from "@/hooks/useEditor";
+import { useEditor, type CaptionState, type StyleId } from "@/hooks/useEditor";
 import { STYLE_PACKS } from "@/data/style-packs";
 import { TEXT_PRESETS } from "@reelcoach/core";
 import type { Scenario } from "@/data/scenarios";
@@ -123,10 +123,25 @@ function Edit() {
 
   // Music removed — users add audio from TikTok / Instagram / Facebook when posting.
 
-  const stylePack = state ? STYLE_PACKS[state.styleId] : STYLE_PACKS.luxury;
-  // User's transition choice takes precedence over the style pack default.
+  // Precedenta font: "original" = fontul setat in Studio per scena (scene.captionPreset);
+  // altfel suprascrie cu fontul stilului (vibe) ales de stilista pentru tot reel-ul.
+  function resolvePreset(styleId: StyleId, sceneCaptionPreset?: string) {
+    if (styleId === "original") {
+      return TEXT_PRESETS[sceneCaptionPreset ?? "hookBold"] ?? TEXT_PRESETS.hookBold;
+    }
+    return TEXT_PRESETS[STYLE_PACKS[styleId].textPresetId] ?? TEXT_PRESETS.hookBold;
+  }
+  // Pentru fallback-ul de tranzitie avem nevoie de un stylePack; "original" nu e
+  // in STYLE_PACKS, asa ca folosim luxury doar ca sursa de default (tranzitia e
+  // oricum suprascrisa per scena mai jos).
+  const stylePack = state && state.styleId !== "original" ? STYLE_PACKS[state.styleId] : STYLE_PACKS.luxury;
   const effectiveTransitionId = (state?.transitionId ?? stylePack.transitionId) as TransitionId;
-  const livePreset = TEXT_PRESETS[stylePack.textPresetId] ?? TEXT_PRESETS.hookBold;
+  // Preset per scena pentru preview (preview = export). Cand e "original", fiecare
+  // scena foloseste fontul ei din Studio; altfel toate folosesc fontul stilului.
+  const livePresets = state
+    ? scenario.scenes.map((sc) => resolvePreset(state.styleId, sc.captionPreset))
+    : [];
+  const livePreset = livePresets[0] ?? TEXT_PRESETS.hookBold;
 
   async function generate() {
     if (!state) return;
@@ -150,14 +165,16 @@ function Edit() {
 
       // Ținem live preview-ul existent pe ecran și generăm doar versiunea finală.
       setProgress({ phase: "writing", pct: 8, message: "Pregătesc textele și brandul…" });
-      const stylePack = STYLE_PACKS[state.styleId];
-      const preset = TEXT_PRESETS[stylePack.textPresetId] ?? TEXT_PRESETS.hookBold;
+      // Presetul se rezolva PER SCENA in bucla (vezi mai jos), nu global —
+      // ca "original" sa pastreze fontul fiecarei scene din Studio.
       const logoBmp = await logoToBitmap(brand?.logoBlob);
 
       const overlays: (Blob | undefined)[] = [];
       for (let i = 0; i < clips.length; i++) {
         const c = clips[i];
         const cap = state.captions[c.sceneIdx];
+        // Preset per scena: "original" => fontul scenei din Studio; vibe => fontul stilului.
+        const preset = resolvePreset(state.styleId, scenario.scenes[c.sceneIdx]?.captionPreset);
         const overlayKey = JSON.stringify({
           sceneIdx: c.sceneIdx,
           text: cap?.text?.trim() ?? "",
@@ -479,6 +496,7 @@ const blob = await renderReelInBrowser(
                       },
                     )}
                     preset={livePreset}
+                    presets={livePresets}
                     transition={effectiveTransitionId}
                     filter={FILTERS[state.filterId] ?? FILTERS.none}
                     effectIds={clips.map((c) => scenario.scenes[c.sceneIdx]?.effectId)}
@@ -530,6 +548,7 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
                       },
               )}
               preset={livePreset}
+                    presets={livePresets}
               transition={effectiveTransitionId}
               filter={FILTERS[state.filterId] ?? FILTERS.none}
               effectIds={clips?.map((c) => scenario.scenes[c.sceneIdx]?.effectId)}
@@ -569,6 +588,30 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
         <div className="flex-1 min-h-0 overflow-y-auto mt-2.5 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {state && tab === "text" && (
             <div className="space-y-2">
+              {/* Selector global de stil pentru tot reel-ul */}
+              <div className="bg-white rounded-2xl border border-[#E6E6EA] p-3 shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)]">
+                <p className="text-[10px] tracking-widest uppercase text-[#5B34FF]/80 font-semibold mb-2 px-1">
+                  Stilul reel-ului
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["original", "luxury", "soft", "bold"] as StyleId[]).map((v) => {
+                    const sp = v === "original" ? null : STYLE_PACKS[v];
+                    const active = state.styleId === v;
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setStyle(v)}
+                        className={`rounded-xl p-3 border text-center transition active:scale-[0.98] ${active ? "border-[#5B34FF] bg-[#EDE8FF]" : "border-[#E6E6EA] bg-white"}`}
+                      >
+                        <span className={`block font-display text-lg leading-none ${active ? "text-[#5B34FF]" : "text-[#1F1F1F]"}`}>
+                          {v === "original" ? "Original" : sp!.label}
+                        </span>
+                        <span className="block text-[10px] text-[#6B6B6B] mt-1 leading-tight">{v === "original" ? "Fontul din exemplu" : sp!.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               {scenario.scenes.map((sc, i) => {
                 const cap = state.captions[i] ?? { text: "", position: "bottom" as const };
                 return (

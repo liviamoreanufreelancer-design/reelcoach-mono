@@ -12,10 +12,13 @@ export interface CaptionState {
   color?: string;
 }
 
+/** "original" = pastreaza fontul setat in Studio per scena; altfel suprascrie cu vibe. */
+export type StyleId = Vibe | "original";
+
 export interface EditorState {
   scenarioId: string;
   captions: CaptionState[];
-  styleId: Vibe;
+  styleId: StyleId;
   filterId: FilterId;
   /** Optional override for transition. If null, use the style pack's default. */
   transitionId: TransitionId | null;
@@ -43,7 +46,7 @@ export function useEditor(scenarioId: string, defaults: { captions: CaptionState
       } : {
         scenarioId,
         captions: defaults.captions,
-        styleId: defaults.vibe,
+        styleId: "original",
         filterId: "none",
         transitionId: null,
         trackId: null,
@@ -66,7 +69,7 @@ export function useEditor(scenarioId: string, defaults: { captions: CaptionState
     void persist({ ...state, captions, updatedAt: Date.now() });
   }, [state, persist]);
 
-  const setStyle = useCallback((styleId: Vibe) => {
+  const setStyle = useCallback((styleId: StyleId) => {
     if (!state) return;
     void persist({ ...state, styleId, updatedAt: Date.now() });
   }, [state, persist]);
