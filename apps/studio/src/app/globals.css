@@ -1,24 +1,21 @@
 @import "tailwindcss";
-
 /* ============================================================================
- * ReelCoach Studio — champagne palette
+ * ReelCoach Studio — purple-light palette (aliniat cu mobile)
  * ============================================================================ */
-
 @theme {
-  --color-bg: #0a0c0f;
-  --color-bg-card: rgba(255, 255, 255, 0.04);
-  --color-border: rgba(232, 213, 181, 0.15);
-  --color-champagne: #E8D5B5;
-  --color-champagne-light: #F4E4C1;
-  --color-champagne-gold: #D4AF37;
-  --color-text: #ffffff;
-  --color-text-muted: rgba(255, 255, 255, 0.55);
-  --color-text-dim: rgba(255, 255, 255, 0.35);
-
+  --color-bg: #F8F8FA;
+  --color-bg-card: #ffffff;
+  --color-border: #E7E3F5;
+  --color-purple: #5B34FF;
+  --color-purple-light: #EDE8FF;
+  --color-purple-soft: #F6F4FE;
+  --color-accent: #F5B228;
+  --color-text: #1F1F1F;
+  --color-text-muted: #6B6B6B;
+  --color-text-dim: #9A9A9A;
   --font-display: "League Spartan", system-ui, sans-serif;
   --font-body: "DM Sans", system-ui, sans-serif;
 }
-
 html, body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -27,91 +24,77 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-body {
-  background:
-    radial-gradient(ellipse at 50% -10%, rgba(232, 213, 181, 0.06) 0%, transparent 50%),
-    #0a0c0f;
-}
-
-/* Headings use League Spartan, tight tracking */
+body { background: var(--color-bg); }
 .h-display {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.05;
 }
-
 .eyebrow {
   font-size: 10px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: rgba(232, 213, 181, 0.65);
+  color: var(--color-purple);
   font-weight: 600;
 }
-
-/* Champagne CTA button */
+/* Purple CTA button */
 .btn-champagne {
-  background: linear-gradient(90deg, #F4E4C1 0%, #E8D5B5 50%, #D4AF37 100%);
-  color: #0F1419;
+  background: #5B34FF;
+  color: #ffffff;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-size: 12px;
-  padding: 14px 22px;
-  border-radius: 9999px;
-  box-shadow: 0 6px 24px rgba(232, 213, 181, 0.3);
+  letter-spacing: 0.06em;
+  font-size: 13px;
+  padding: 13px 22px;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px -8px rgba(91, 52, 255, 0.6);
   transition: transform 0.15s;
 }
 .btn-champagne:active { transform: scale(0.98); }
 .btn-champagne:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* Secondary glass button */
+/* Secondary button */
 .btn-glass {
-  background: rgba(15, 20, 25, 0.55);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(232, 213, 181, 0.25);
-  color: var(--color-champagne);
+  background: #ffffff;
+  border: 1px solid #D8D0F5;
+  color: #5B34FF;
   font-weight: 600;
   font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 12px 20px;
-  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  padding: 11px 18px;
+  border-radius: 10px;
   transition: transform 0.15s;
 }
 .btn-glass:active { transform: scale(0.98); }
-
+.btn-glass:hover { background: #F6F4FE; }
 /* Card surface */
 .card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 14px;
 }
-
 /* Form input */
 .input {
-  background: rgba(255, 255, 255, 0.04);
+  background: #ffffff;
   border: 1px solid var(--color-border);
   color: var(--color-text);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 11px 13px;
   font-size: 14px;
   width: 100%;
 }
 .input:focus {
   outline: none;
-  border-color: var(--color-champagne);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-purple);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(91, 52, 255, 0.12);
 }
 .input::placeholder { color: var(--color-text-dim); }
-
 /* Label above input */
 .label {
   font-size: 10px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(232, 213, 181, 0.7);
+  color: var(--color-text-muted);
   font-weight: 600;
   margin-bottom: 6px;
   display: block;

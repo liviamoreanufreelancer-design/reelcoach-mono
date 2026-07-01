@@ -294,8 +294,8 @@ export default function LiveScenePreview({
   if (shots.length === 0) {
     return (
       <div className="card p-6 text-center">
-        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/85 font-bold mb-2">Editor scenă</h2>
-        <p className="text-[12px] text-white/45 leading-relaxed">Adaugă o scenă mai jos pentru a începe.</p>
+        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold mb-2">Editor scenă</h2>
+        <p className="text-[12px] text-[#6B6B6B] leading-relaxed">Adaugă o scenă mai jos pentru a începe.</p>
       </div>
     );
   }
@@ -310,40 +310,40 @@ export default function LiveScenePreview({
           const active = i === selectedIdx && !reelMode;
           return (
             <button key={s.id} type="button" onClick={() => selectScene(i)}
-              className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition tabular-nums ${active ? "bg-[#E8D5B5] text-[#0F1419]" : "text-white/55 hover:text-white/85"}`}>
+              className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition tabular-nums ${active ? "bg-[#5B34FF] text-white" : "text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
               Scena {i + 1}{s.sample_video_url ? " ✓" : ""}
             </button>
           );
         })}
-        <span className="w-px h-5 bg-[#E8D5B5]/20 mx-1" />
+        <span className="w-px h-5 bg-[#E7E3F5] mx-1" />
         <button type="button" onClick={() => { setReelMode(true); setReelMounted(true); }}
-          className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition ${reelMode ? "bg-[#E8D5B5] text-[#0F1419]" : "text-white/55 hover:text-white/85"}`}>
+          className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition ${reelMode ? "bg-[#5B34FF] text-white" : "text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
           ▶ Reel
         </button>
-        {(pending || uploading) && <span className="text-[9px] tracking-[0.2em] uppercase text-white/40 ml-2">{uploading ? "urc…" : "salvez…"}</span>}
+        {(pending || uploading) && <span className="text-[9px] tracking-[0.2em] uppercase text-[#9A9A9A] ml-2">{uploading ? "urc…" : "salvez…"}</span>}
       </div>
 
       <div className={`grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-7 items-start ${reelMode ? "hidden" : ""}`}>
 
         {/* LEFT: preview + clip buttons */}
         <div className="flex flex-col gap-2">
-          <div className="relative w-full rounded-2xl overflow-hidden bg-black border border-[#E8D5B5]/15" style={{ aspectRatio: "9 / 16" }}>
+          <div className="relative w-full rounded-2xl overflow-hidden bg-black border border-[#EDE8FF]" style={{ aspectRatio: "9 / 16" }}>
             <canvas ref={canvasRef} width={W} height={H} className="absolute inset-0 w-full h-full object-cover" />
             <video ref={videoRef} className="hidden" playsInline muted onLoadedMetadata={onMeta} />
             {!hasVideo && (
-              <div className="absolute inset-0 flex items-center justify-center text-white/35">
+              <div className="absolute inset-0 flex items-center justify-center text-[#9A9A9A]">
                 <span className="text-[12px]">Niciun clip</span>
               </div>
             )}
             {hasVideo && (
               <button type="button" onClick={togglePlay}
-                className="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-black/55 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 transition">
+                className="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-black/55 backdrop-blur-md flex items-center justify-center text-[#1F1F1F] hover:bg-black/70 transition">
                 {paused ? "▶" : "⏸"}
               </button>
             )}
             <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
-              <span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-[#E8D5B5] font-medium">{resolvedFilterId}</span>
-              {resolvedEffectId !== "none" && (<span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-[#E8D5B5]/75">{resolvedEffectId}</span>)}
+              <span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-[#5B34FF] font-medium">{resolvedFilterId}</span>
+              {resolvedEffectId !== "none" && (<span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-[#5B34FF]/75">{resolvedEffectId}</span>)}
             </div>
           </div>
 
@@ -363,16 +363,16 @@ export default function LiveScenePreview({
         <fieldset disabled={disabled} className="disabled:opacity-50 flex flex-col gap-5 min-w-0">
           {/* Durată */}
           <div>
-            <div className="text-[10px] tracking-[0.18em] uppercase text-white/40 mb-2">Durată scenă</div>
+            <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Durată scenă</div>
             <div className="flex items-center gap-3">
-              <input type="range" min={1} max={trimMax} step={0.1} value={Math.min(trimSec, trimMax)} onChange={(e) => onTrimChange(Number(e.target.value))} disabled={!hasVideo} className="flex-1 accent-[#E8D5B5] disabled:opacity-40" />
-              <span className="text-[14px] text-[#E8D5B5] font-medium tabular-nums min-w-[80px] text-right">{trimSec.toFixed(1)}s{clipDuration > 0 && <span className="text-white/30 font-normal"> / {clipDuration.toFixed(1)}s</span>}</span>
+              <input type="range" min={1} max={trimMax} step={0.1} value={Math.min(trimSec, trimMax)} onChange={(e) => onTrimChange(Number(e.target.value))} disabled={!hasVideo} className="flex-1 accent-[#5B34FF] disabled:opacity-40" />
+              <span className="text-[14px] text-[#5B34FF] font-medium tabular-nums min-w-[80px] text-right">{trimSec.toFixed(1)}s{clipDuration > 0 && <span className="text-[#B8B8B8] font-normal"> / {clipDuration.toFixed(1)}s</span>}</span>
             </div>
           </div>
 
           {/* Text pe video */}
-          <div className="rounded-xl bg-[#E8D5B5]/[0.04] border border-[#E8D5B5]/15 p-3.5">
-            <div className="text-[10px] tracking-[0.18em] uppercase text-[#E8D5B5]/85 mb-2.5">✦ Text pe video</div>
+          <div className="rounded-xl bg-[#F6F4FE] border border-[#EDE8FF] p-3.5">
+            <div className="text-[10px] tracking-[0.18em] uppercase text-[#5B34FF]/85 mb-2.5">✦ Text pe video</div>
             <input type="text" value={textValue} onChange={(e) => onTextChange(e.target.value)} placeholder="Scrie textul scenei…" className="input mb-2.5" />
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -380,7 +380,7 @@ export default function LiveScenePreview({
                 <div className="flex gap-1">
                   {TEXT_POSITIONS.map((p) => (
                     <button key={p.id} type="button" onClick={() => { setTextPos(p.id); saveShot({ caption_position: p.id as "top" | "center" | "bottom" }); }}
-                      className={`flex-1 py-1.5 rounded-lg text-[11px] transition ${textPos === p.id ? "bg-[#E8D5B5] text-[#0F1419] font-medium" : "bg-white/[0.04] text-white/55 hover:text-white/80"}`}>
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] transition ${textPos === p.id ? "bg-[#5B34FF] text-white font-medium" : "bg-white border border-[#E7E3F5] text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
                       {p.label}
                     </button>
                   ))}
@@ -397,7 +397,7 @@ export default function LiveScenePreview({
 
           {/* Aspect */}
           <div>
-            <div className="text-[10px] tracking-[0.18em] uppercase text-white/40 mb-2">Aspect</div>
+            <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Aspect</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">Filtru (tot reel-ul)</label>
@@ -416,7 +416,7 @@ export default function LiveScenePreview({
 
           {/* Mișcare */}
           <div>
-            <div className="text-[10px] tracking-[0.18em] uppercase text-white/40 mb-2">Mișcare</div>
+            <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Mișcare</div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="label">Tranziție</label>
@@ -432,8 +432,8 @@ export default function LiveScenePreview({
               </div>
             </div>
             <label className="flex items-center gap-2.5 cursor-pointer">
-              <input type="checkbox" checked={shot.motion_blur ?? false} onChange={(e) => saveShot({ motion_blur: e.target.checked })} className="w-4 h-4 accent-[#E8D5B5]" />
-              <span className="text-[13px] text-white/80">Motion blur</span>
+              <input type="checkbox" checked={shot.motion_blur ?? false} onChange={(e) => saveShot({ motion_blur: e.target.checked })} className="w-4 h-4 accent-[#5B34FF]" />
+              <span className="text-[13px] text-[#1F1F1F]">Motion blur</span>
             </label>
           </div>
         </fieldset>
