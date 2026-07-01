@@ -7,7 +7,8 @@
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bookmark, Play, Eye, Heart, Clock, BarChart3, ChevronRight } from "lucide-react";
+import { ArrowLeft, Bookmark, Play, Eye, Heart, Clock, BarChart3, ChevronRight, ChevronLeft, Share2, Layers } from "lucide-react";
+import { Share } from "@capacitor/share";
 import { PhoneShell } from "@/components/PhoneShell";
 import { useTemplate } from "@/data/templates-context";
 import {
@@ -119,6 +120,20 @@ function ReelPreview() {
     nav({ to: "/film" });
   };
 
+  const shareTemplate = async () => {
+    light();
+    playTap();
+    try {
+      await Share.share({
+        title: template.title,
+        text: `Vezi șablonul „${template.title}" în Reel Coach.`,
+        dialogTitle: "Partajează șablonul",
+      });
+    } catch {
+      // Anulat de utilizator sau share indisponibil — ignoram.
+    }
+  };
+
   // Flatten scenes from sections.
   const scenes = template.sections.flatMap((sec) => sec.shots);
   // Clipurile exemplu pentru player (scenele fara clip sunt sarite).
@@ -145,53 +160,60 @@ function ReelPreview() {
         <div className="absolute inset-0 bg-black">
           <ReelVideoPlayer src={previewUrl} caption={reelCaption} />
 
-          {/* Controale sus — inapoi + bookmark, peste video */}
-          <div
-            className="absolute left-0 right-0 px-[16px] z-[10] flex items-center justify-between"
-            style={{ top: "max(calc(env(safe-area-inset-top, 56px) + 18px), 74px)" }}
+          {/* Chevron minimal sus-stanga */}
+          <button
+            onClick={() => nav({ to: "/" })}
+            aria-label="Înapoi"
+            className="absolute z-[10] left-[10px] p-2 text-white active:scale-90 transition"
+            style={{ top: "max(calc(env(safe-area-inset-top, 56px) + 14px), 70px)", filter: "drop-shadow(0 1px 3px rgba(0,0,0,.5))" }}
           >
-            <button
-              onClick={() => nav({ to: "/" })}
-              aria-label="Înapoi"
-              className="grid place-items-center w-[40px] h-[40px] rounded-full bg-white/92 backdrop-blur text-[#1F1F1F] shadow-[0_3px_12px_rgba(0,0,0,.22)] transition active:scale-90"
-            >
-              <ArrowLeft className="w-[20px] h-[20px]" />
-            </button>
+            <ChevronLeft className="w-[28px] h-[28px]" strokeWidth={2.4} />
+          </button>
+
+          {/* Gradient jos pentru lizibilitate */}
+          <div
+            className="absolute left-0 right-0 bottom-0 z-[7] pointer-events-none"
+            style={{ height: "230px", background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.4) 45%, transparent 100%)" }}
+          />
+
+          {/* Coloana dreapta — Salvează + Share */}
+          <div className="absolute right-[12px] z-[9] flex flex-col items-center gap-[22px]" style={{ bottom: "150px" }}>
             <button
               onClick={() => setSaved((v) => !v)}
               aria-label="Salvează"
-              className="grid place-items-center w-[40px] h-[40px] rounded-full bg-white/92 backdrop-blur shadow-[0_3px_12px_rgba(0,0,0,.22)] transition active:scale-90"
-              style={{ color: saved ? "#5B34FF" : "#1F1F1F" }}
+              className="flex flex-col items-center gap-[5px] active:scale-90 transition"
+              style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,.6))" }}
             >
-              <Bookmark className="w-[19px] h-[19px]" fill={saved ? "currentColor" : "none"} />
+              <Bookmark className="w-[30px] h-[30px] text-white" fill={saved ? "currentColor" : "none"} strokeWidth={2} />
+              <span className="text-white text-[11px] font-semibold">Salvează</span>
+            </button>
+            <button
+              onClick={shareTemplate}
+              aria-label="Partajează"
+              className="flex flex-col items-center gap-[5px] active:scale-90 transition"
+              style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,.6))" }}
+            >
+              <Share2 className="w-[29px] h-[29px] text-white" strokeWidth={2} />
+              <span className="text-white text-[11px] font-semibold">Share</span>
             </button>
           </div>
 
-          {/* Gradient + detalii suprapuse jos */}
-          <div className="absolute left-0 right-0 bottom-0 z-[8] pointer-events-none" style={{ height: "300px", background: "linear-gradient(to top, rgba(10,6,18,0.92) 0%, rgba(10,6,18,0.78) 40%, rgba(10,6,18,0.3) 72%, transparent 100%)" }} />
-          <div
-            className="absolute left-0 right-0 bottom-0 z-[9] px-[20px]"
-            style={{ paddingBottom: "max(env(safe-area-inset-bottom, 28px), 28px)" }}
-          >
-            <span className="block text-[10px] tracking-[0.18em] uppercase text-[#C9BFFF] font-bold mb-2">
-              {template.title ? (template.sections[0]?.title ?? "Reel") : "Reel"}
-            </span>
-            <h1 className="font-display font-extrabold text-white text-[25px] leading-[1.12] tracking-[0.2px] mb-3">
-              {template.title}
-            </h1>
-            <div className="flex gap-4 mb-4 text-white/85 text-[12.5px]">
-              {stats.map(({ Icon, value }) => (
-                <span key={value} className="flex items-center gap-1.5">
-                  <Icon className="w-[15px] h-[15px]" strokeWidth={1.9} />{value}
-                </span>
-              ))}
+          {/* Meta jos-stanga: durata + scene (fara titlu) */}
+          <div className="absolute left-[16px] z-[9]" style={{ bottom: "96px", right: "70px" }}>
+            <div className="flex gap-[14px] text-white/90 text-[13px]" style={{ textShadow: "0 1px 3px rgba(0,0,0,.5)" }}>
+              <span className="flex items-center gap-[5px]"><Clock className="w-[14px] h-[14px]" strokeWidth={2} />{fmtMMSS(totalSec)}</span>
+              <span className="flex items-center gap-[5px]"><Layers className="w-[14px] h-[14px]" strokeWidth={2} />{shotCount(template)} scene</span>
             </div>
+          </div>
+
+          {/* Buton lat jos */}
+          <div className="absolute left-0 right-0 bottom-0 z-[9] px-[16px]" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 30px), 30px)" }}>
             <button
               onClick={startFilming}
-              className="w-full h-[56px] rounded-[18px] bg-[#5B34FF] text-white font-bold text-[16.5px] flex items-center justify-center gap-[11px] shadow-[0_14px_30px_-10px_rgba(91,52,255,.8)] transition active:scale-[.98]"
+              className="w-full h-[54px] rounded-[14px] bg-[#5B34FF] text-white font-bold text-[16px] flex items-center justify-center gap-[10px] shadow-[0_12px_28px_-10px_rgba(91,52,255,.8)] transition active:scale-[.98]"
             >
-              <span className="w-[26px] h-[26px] rounded-full bg-white/95 grid place-items-center">
-                <span className="w-[13px] h-[13px] rounded-full bg-[#FF3B30]" />
+              <span className="w-[24px] h-[24px] rounded-full bg-white grid place-items-center">
+                <span className="w-[12px] h-[12px] rounded-full bg-[#FF3B30]" />
               </span>
               Începe filmarea
             </button>
