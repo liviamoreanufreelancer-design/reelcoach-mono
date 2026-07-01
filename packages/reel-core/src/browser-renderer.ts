@@ -282,9 +282,10 @@ function createRecorder(canvas: HTMLCanvasElement, fps: number) {
   }
   const mimeType = getOutputMimeType();
   const stream = canvas.captureStream(fps);
-  // Scale bitrate with resolution: ~0.12 bits/pixel/frame → great quality at 1080p30.
+  // Scale bitrate with resolution: ~0.30 bits/pixel/frame → premium quality at 1080p.
+  // Higher target because iOS MediaRecorder compresses more aggressively than requested.
   const pixels = canvas.width * canvas.height;
-  const bitrate = Math.min(24_000_000, Math.max(6_000_000, Math.round(pixels * fps * 0.12)));
+  const bitrate = Math.min(30_000_000, Math.max(12_000_000, Math.round(pixels * fps * 0.30)));
   const chunks: BlobPart[] = [];
   const recorder = mimeType
     ? new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate })

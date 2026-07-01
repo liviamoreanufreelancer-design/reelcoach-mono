@@ -67,7 +67,7 @@ function ReelVideoPlayer({
         muted
         playsInline
         onTimeUpdate={onTimeUpdate}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-contain"
       />
       <div
         className="absolute left-[14px] right-[14px] z-[5]"
