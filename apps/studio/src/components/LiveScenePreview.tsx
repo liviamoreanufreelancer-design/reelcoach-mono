@@ -68,6 +68,7 @@ export default function LiveScenePreview({
 
   const [trimSec, setTrimSec] = useState<number>(shot?.final_usage_duration ?? 2);
   const [textValue, setTextValue] = useState<string>(shot?.overlay_text ?? "");
+  const [howFilm, setHowFilm] = useState<string>((shot?.instructions ?? []).join("\n"));
   const [textPos, setTextPos] = useState<string>(shot?.caption_position ?? "bottom");
   const [textStyle, setTextStyle] = useState<string>(shot?.caption_preset ?? "hookBold");
   useEffect(() => { setTextPos(shot?.caption_position ?? "bottom"); }, [shot?.id, shot?.caption_position]);
@@ -75,6 +76,7 @@ export default function LiveScenePreview({
 
   useEffect(() => { setTrimSec(shot?.final_usage_duration ?? 2); }, [shot?.id, shot?.final_usage_duration]);
   useEffect(() => { setTextValue(shot?.overlay_text ?? ""); }, [shot?.id]); // doar la schimbare scena, nu in timp ce tastezi
+  useEffect(() => { setHowFilm((shot?.instructions ?? []).join("\n")); }, [shot?.id]); // reset instructiuni la schimbare scena
 
   const filterRef = useRef(resolvedFilterId);
   const effectRef = useRef(resolvedEffectId);
@@ -342,8 +344,8 @@ export default function LiveScenePreview({
               </button>
             )}
             <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
-              <span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-[#5B34FF] font-medium">{resolvedFilterId}</span>
-              {resolvedEffectId !== "none" && (<span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-[#5B34FF]/75">{resolvedEffectId}</span>)}
+              <span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-white font-medium">{resolvedFilterId}</span>
+              {resolvedEffectId !== "none" && (<span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-white/75">{resolvedEffectId}</span>)}
             </div>
           </div>
 
@@ -360,7 +362,14 @@ export default function LiveScenePreview({
         </div>
 
         {/* RIGHT: grouped controls */}
-        <fieldset disabled={disabled} className="disabled:opacity-50 flex flex-col gap-5 min-w-0">
+        <fieldset disabled={disabled} className="disabled:opacity-50 flex flex-col gap-4 min-w-0">
+          {/* ═══ CARD: Ce se vede ═══ */}
+          <div className="card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[#5B34FF] text-[17px]">◉</span>
+              <span className="text-[15px] font-semibold text-[#1F1F1F]">Ce se vede</span>
+            </div>
+            <div className="flex flex-col gap-5">
           {/* Durată */}
           <div>
             <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Durată scenă</div>
@@ -435,6 +444,25 @@ export default function LiveScenePreview({
               <input type="checkbox" checked={shot.motion_blur ?? false} onChange={(e) => saveShot({ motion_blur: e.target.checked })} className="w-4 h-4 accent-[#5B34FF]" />
               <span className="text-[13px] text-[#1F1F1F]">Motion blur</span>
             </label>
+          </div>
+            </div>
+          </div>
+
+          {/* ═══ CARD: Cum filmezi ═══ */}
+          <div className="card p-5" style={{ boxShadow: "inset 3px 0 0 #5B34FF" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[#5B34FF] text-[17px]">▶</span>
+              <span className="text-[15px] font-semibold text-[#1F1F1F]">Cum filmezi</span>
+            </div>
+            <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Instrucțiuni pentru stilistă</div>
+            <textarea
+              value={howFilm}
+              onChange={(e) => setHowFilm(e.target.value)}
+              onBlur={() => saveShot({ instructions: howFilm.split("\n").map((l) => l.trim()).filter(Boolean) })}
+              placeholder="Ex: Ține telefonul la nivelul ochilor, filmează încet mișcarea din stânga spre dreapta…"
+              rows={4}
+              className="input resize-none leading-relaxed"
+            />
           </div>
         </fieldset>
       </div>

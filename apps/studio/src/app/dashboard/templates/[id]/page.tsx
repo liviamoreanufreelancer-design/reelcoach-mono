@@ -63,7 +63,7 @@ export default async function TemplateDetailPage({
       <div className="flex items-center justify-between gap-3">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.16em] uppercase text-white/55 hover:text-white transition"
+          className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.16em] uppercase text-[#6B6B6B] hover:text-[#1F1F1F] transition"
         >
           <ChevronLeft className="w-4 h-4" />
           Toate șabloanele
@@ -83,11 +83,11 @@ export default async function TemplateDetailPage({
       {/* Title block */}
       <div>
         <p className="eyebrow mb-2">Șablon</p>
-        <h1 className="h-display text-[28px] sm:text-[32px] text-white leading-tight">
+        <h1 className="h-display text-[28px] sm:text-[32px] text-[#1F1F1F] leading-tight">
           {template.title || "Fără titlu"}
         </h1>
-        <p className="text-[11px] text-white/40 mt-2 tabular-nums">
-          ID: <code className="text-white/60">{template.id}</code>
+        <p className="text-[11px] text-[#9A9A9A] mt-2 tabular-nums">
+          ID: <code className="text-[#6B6B6B]">{template.id}</code>
         </p>
       </div>
 
