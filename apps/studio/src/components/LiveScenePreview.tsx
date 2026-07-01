@@ -12,12 +12,16 @@ import { renderPreviewFrame, FILTERS, type FilterId } from "@reelcoach/core";
 import { updateShot, updateGlobalFilter, setShotSampleUrl, uploadCover, uploadExampleImage } from "@/lib/template-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { TRANSITIONS, FILTERS as FILTER_OPTS, EFFECTS } from "@/lib/options";
-import type { ShotRow, TransitionId, EffectId } from "@/lib/db-types";
+import type { ShotRow, TransitionId, EffectId, LightSource } from "@/lib/db-types";
 import ReelPlayer from "./ReelPlayer";
 
 const W = 540;
 const H = 960;
 const SPEED_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0];
+const PHONE_HOLDS = [{ id: "hand", label: "Mână" }, { id: "tripod", label: "Stativ" }] as const;
+const DISTANCES = [{ id: "palm", label: "La o palmă" }, { id: "arm", label: "Un braț" }, { id: "step", label: "Un pas" }, { id: "two_steps", label: "Doi pași" }] as const;
+const MOVEMENTS = [{ id: "fixed", label: "Fix" }, { id: "follow", label: "Urmărire" }, { id: "pan", label: "Panoramare" }, { id: "zoom", label: "Zoom" }] as const;
+const LIGHTS = [{ id: "natural", label: "Naturală" }, { id: "ring", label: "Ring light" }, { id: "led", label: "LED-uri" }, { id: "reflector", label: "Reflector" }] as const;
 const TEXT_POSITIONS = [
   { id: "top", label: "Sus" },
   { id: "center", label: "Centru" },
@@ -69,6 +73,10 @@ export default function LiveScenePreview({
   const [trimSec, setTrimSec] = useState<number>(shot?.final_usage_duration ?? 2);
   const [textValue, setTextValue] = useState<string>(shot?.overlay_text ?? "");
   const [howFilm, setHowFilm] = useState<string>((shot?.instructions ?? []).join("\n"));
+  const [phoneHold, setPhoneHold] = useState<string | null>(shot?.phone_hold ?? null);
+  const [shotDist, setShotDist] = useState<string | null>(shot?.shot_distance ?? null);
+  const [phoneMove, setPhoneMove] = useState<string | null>(shot?.phone_movement ?? null);
+  const [lights, setLights] = useState<LightSource[]>(shot?.light_sources ?? []);
   const [textPos, setTextPos] = useState<string>(shot?.caption_position ?? "bottom");
   const [textStyle, setTextStyle] = useState<string>(shot?.caption_preset ?? "hookBold");
   useEffect(() => { setTextPos(shot?.caption_position ?? "bottom"); }, [shot?.id, shot?.caption_position]);
@@ -77,6 +85,12 @@ export default function LiveScenePreview({
   useEffect(() => { setTrimSec(shot?.final_usage_duration ?? 2); }, [shot?.id, shot?.final_usage_duration]);
   useEffect(() => { setTextValue(shot?.overlay_text ?? ""); }, [shot?.id]); // doar la schimbare scena, nu in timp ce tastezi
   useEffect(() => { setHowFilm((shot?.instructions ?? []).join("\n")); }, [shot?.id]); // reset instructiuni la schimbare scena
+  useEffect(() => {
+    setPhoneHold(shot?.phone_hold ?? null);
+    setShotDist(shot?.shot_distance ?? null);
+    setPhoneMove(shot?.phone_movement ?? null);
+    setLights(shot?.light_sources ?? []);
+  }, [shot?.id]); // reset variabile filmare la schimbare scena
 
   const filterRef = useRef(resolvedFilterId);
   const effectRef = useRef(resolvedEffectId);
@@ -218,6 +232,37 @@ export default function LiveScenePreview({
       router.refresh();
     });
   };
+
+  // Single-select: click pe optiunea activa o deselecteaza (toggle).
+  const selectHold = (id: "hand" | "tripod") => {
+    const next = phoneHold === id ? null : id;
+    setPhoneHold(next);
+    // cand nu mai e "Mână", miscarea nu mai are sens -> o golim
+    if (next !== "hand") { setPhoneMove(null); saveShot({ phone_hold: next, phone_movement: null }); }
+    else saveShot({ phone_hold: next });
+  };
+  const selectDist = (id: "palm" | "arm" | "step" | "two_steps") => {
+    const next = shotDist === id ? null : id;
+    setShotDist(next); saveShot({ shot_distance: next });
+  };
+  const selectMove = (id: "fixed" | "follow" | "pan" | "zoom") => {
+    const next = phoneMove === id ? null : id;
+    setPhoneMove(next); saveShot({ phone_movement: next });
+  };
+  // Contor lumina: + adauga/creste, - scade, la 0 dispare.
+  const bumpLight = (type: LightSource["type"], delta: number) => {
+    const cur = [...lights];
+    const idx = cur.findIndex((l) => l.type === type);
+    if (idx === -1) {
+      if (delta > 0) cur.push({ type, count: 1 });
+    } else {
+      const c = cur[idx].count + delta;
+      if (c <= 0) cur.splice(idx, 1);
+      else cur[idx] = { type, count: c };
+    }
+    setLights(cur); saveShot({ light_sources: cur });
+  };
+  const lightCount = (type: LightSource["type"]) => lights.find((l) => l.type === type)?.count ?? 0;
   const saveFilter = (filterId: string) => {
     startTransition(async () => {
       await updateGlobalFilter(templateId, filterId);
@@ -454,6 +499,70 @@ export default function LiveScenePreview({
               <span className="text-[#5B34FF] text-[17px]">▶</span>
               <span className="text-[15px] font-semibold text-[#1F1F1F]">Cum filmezi</span>
             </div>
+            {/* Cum ții telefonul */}
+            <div className="mb-4">
+              <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Cum ții telefonul</div>
+              <div className="flex gap-2">
+                {PHONE_HOLDS.map((o) => (
+                  <button key={o.id} type="button" onClick={() => selectHold(o.id)}
+                    className={`flex-1 py-2 rounded-lg text-[12px] transition ${phoneHold === o.id ? "bg-[#5B34FF] text-white font-medium" : "bg-white border border-[#E7E3F5] text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Distanța */}
+            <div className="mb-4">
+              <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Distanța față de subiect</div>
+              <div className="grid grid-cols-4 gap-2">
+                {DISTANCES.map((o) => (
+                  <button key={o.id} type="button" onClick={() => selectDist(o.id)}
+                    className={`py-2 rounded-lg text-[11px] transition ${shotDist === o.id ? "bg-[#5B34FF] text-white font-medium" : "bg-white border border-[#E7E3F5] text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mișcarea telefonului — doar cand tii in mana */}
+            {phoneHold === "hand" && (
+              <div className="mb-4">
+                <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Mișcarea telefonului</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {MOVEMENTS.map((o) => (
+                    <button key={o.id} type="button" onClick={() => selectMove(o.id)}
+                      className={`py-2 rounded-lg text-[11px] transition ${phoneMove === o.id ? "bg-[#5B34FF] text-white font-medium" : "bg-white border border-[#E7E3F5] text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Surse de lumină — cu numarator */}
+            <div className="mb-4">
+              <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Surse de lumină</div>
+              <div className="flex flex-col gap-2">
+                {LIGHTS.map((o) => {
+                  const n = lightCount(o.id);
+                  const active = n > 0;
+                  return (
+                    <div key={o.id} className={`flex items-center justify-between px-3 py-2 rounded-lg border transition ${active ? "bg-[#F6F4FE] border-[#5B34FF]/30" : "bg-white border-[#E7E3F5]"}`}>
+                      <span className={`text-[13px] ${active ? "text-[#1F1F1F] font-medium" : "text-[#6B6B6B]"}`}>{o.label}</span>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => bumpLight(o.id, -1)} disabled={n === 0}
+                          className="w-7 h-7 rounded-md grid place-items-center bg-white border border-[#E7E3F5] text-[#5B34FF] disabled:opacity-30 transition active:scale-90">−</button>
+                        <span className="text-[13px] font-medium tabular-nums min-w-[28px] text-center text-[#1F1F1F]">{active ? `×${n}` : "—"}</span>
+                        <button type="button" onClick={() => bumpLight(o.id, 1)}
+                          className="w-7 h-7 rounded-md grid place-items-center bg-[#5B34FF] text-white transition active:scale-90">+</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Instrucțiuni pentru stilistă</div>
             <textarea
               value={howFilm}
