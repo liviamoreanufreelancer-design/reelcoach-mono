@@ -77,13 +77,6 @@ function ReelVideoPlayer({
           <div className="h-full rounded-full bg-white" style={{ width: `${progress}%` }} />
         </div>
       </div>
-      {caption && (
-        <div className="absolute left-1/2 -translate-x-1/2 z-[4]" style={{ bottom: "248px" }}>
-          <span className="inline-block bg-[#EDE8FF] text-[#5B34FF] text-[14px] font-semibold px-4 py-1.5 rounded-full">
-            {caption}
-          </span>
-        </div>
-      )}
       {paused && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[4] w-[54px] h-[54px] rounded-full bg-black/35 backdrop-blur grid place-items-center border border-white/50">
           <Play className="w-[24px] h-[24px] text-white ml-[2px]" fill="currentColor" />

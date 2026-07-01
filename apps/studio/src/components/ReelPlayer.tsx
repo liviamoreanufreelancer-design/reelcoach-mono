@@ -17,8 +17,8 @@ import {
 } from "@reelcoach/core";
 import type { ShotRow, TransitionId } from "@/lib/db-types";
 
-const W = 540;
-const H = 960;
+const W = 1080;
+const H = 1920;
 
 export default function ReelPlayer({
   shots,
