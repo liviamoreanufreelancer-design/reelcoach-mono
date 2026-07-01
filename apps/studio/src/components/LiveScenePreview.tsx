@@ -9,7 +9,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { renderPreviewFrame, FILTERS, type FilterId } from "@reelcoach/core";
-import { updateShot, updateGlobalFilter, uploadShotSample, uploadCover, uploadExampleImage } from "@/lib/template-actions";
+import { updateShot, updateGlobalFilter, setShotSampleUrl, uploadCover, uploadExampleImage } from "@/lib/template-actions";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { TRANSITIONS, FILTERS as FILTER_OPTS, EFFECTS } from "@/lib/options";
 import type { ShotRow, TransitionId, EffectId } from "@/lib/db-types";
 import ReelPlayer from "./ReelPlayer";
@@ -186,12 +187,20 @@ export default function LiveScenePreview({
     setHasVideo(true);
     setPaused(false);
 
-    const fd = new FormData();
-    fd.set("sample", file);
     setUploading(true);
     startTransition(async () => {
       try {
-        await uploadShotSample(shot.id, templateId, fd);
+        // Upload DIRECT din browser (footage real de iPhone e prea mare pentru
+        // body-ul unei server action -> 413). Salvam doar URL-ul prin server action.
+        const sb = getSupabaseBrowserClient();
+        const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
+        const path = `${templateId}/${shot.id}-${Date.now()}.${ext}`;
+        const { error: upErr } = await sb.storage
+          .from("samples")
+          .upload(path, file, { contentType: file.type || "video/mp4", upsert: true });
+        if (upErr) throw upErr;
+        const { data: pub } = sb.storage.from("samples").getPublicUrl(path);
+        await setShotSampleUrl(shot.id, templateId, pub.publicUrl);
         if (localUrlRef.current) { URL.revokeObjectURL(localUrlRef.current); localUrlRef.current = null; }
         router.refresh();
       } finally {

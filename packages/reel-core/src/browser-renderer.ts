@@ -156,8 +156,12 @@ function drawClipFrame(
   ctx.fillRect(0, 0, width, height);
 
   // Apply CSS filter to the video draw only.
+  // "Auto-enhance" subtil aplicat mereu (look CapCut fara AI): contrast + saturatie
+  // + luminozitate usoara. Se compune cu filtrul partenerei (CSS filters se inlantuie).
   const prevFilter = ctx.filter;
-  ctx.filter = filter.cssFilter || "none";
+  const ENHANCE = "contrast(1.08) saturate(1.12) brightness(1.02)";
+  const partnerFilter = filter.cssFilter && filter.cssFilter !== "none" ? filter.cssFilter : "";
+  ctx.filter = `${ENHANCE} ${partnerFilter}`.trim();
 
   let zoom = 1;
   if (enableKenBurns && variant !== "static") {

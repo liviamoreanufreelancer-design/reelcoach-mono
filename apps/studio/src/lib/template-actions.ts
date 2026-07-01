@@ -381,3 +381,19 @@ export async function uploadShotSample(shotId: string, templateId: string, formD
   revalidatePath(`/dashboard/templates/${templateId}`);
   return publicUrl;
 }
+
+/**
+ * Save the shot's sample video URL. The video itself is uploaded DIRECTLY from
+ * the browser to the `samples` bucket (real iPhone footage is too big to route
+ * through a server action body — causes 413), so here we only persist the URL.
+ */
+export async function setShotSampleUrl(shotId: string, templateId: string, url: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("shots")
+    .update({ sample_video_url: url })
+    .eq("id", shotId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/templates/${templateId}`);
+  return url;
+}
