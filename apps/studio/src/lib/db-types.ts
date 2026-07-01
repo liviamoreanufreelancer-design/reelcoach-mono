@@ -118,6 +118,12 @@ export interface TechniqueDemoRow {
   updated_at: string;
 }
 
+/** Migration 008: o sursa de lumina cu numarator (ex. Ring light x2). */
+export interface LightSource {
+  type: 'natural' | 'ring' | 'led' | 'reflector';
+  count: number;
+}
+
 export interface ShotRow {
   id: string;
   template_id: string;
@@ -149,6 +155,16 @@ export interface ShotRow {
   playback_speed: number;
   /** Apply motion blur across the entire scene clip (cinematic effect). */
   motion_blur: boolean;
+  /** Migration 008: cum tii telefonul. */
+  phone_hold: 'hand' | 'tripod' | null;
+  /** Migration 008: distanta fata de subiect (termeni umani). */
+  shot_distance: 'palm' | 'arm' | 'step' | 'two_steps' | null;
+  /** Migration 008: surse de lumina cu numarator. */
+  light_sources: LightSource[];
+  /** Migration 008: miscarea telefonului (doar cand tii in mana). */
+  phone_movement: 'fixed' | 'follow' | 'pan' | 'zoom' | null;
+  /** Migration 008: tip subiect (pentru filmare hands-free viitoare). */
+  subject_type: 'face' | 'hands' | 'hair' | 'product' | null;
   /** Migration 006: video demo de tehnica din biblioteca (cum se filmeaza). */
   technique_demo_id: string | null;
   /** Migration 006: slot pentru diagrama vizuala (designul vine separat). */

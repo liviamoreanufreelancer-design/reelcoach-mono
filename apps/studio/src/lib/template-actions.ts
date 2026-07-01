@@ -14,6 +14,7 @@ import type {
   TemplateStatus,
   Difficulty,
   HowShootItem,
+  LightSource,
 } from "./db-types";
 
 /**
@@ -197,6 +198,11 @@ export async function updateShot(
     how_shoot?: HowShootItem[];
     playback_speed?: number;
     motion_blur?: boolean;
+    phone_hold?: 'hand' | 'tripod' | null;
+    shot_distance?: 'palm' | 'arm' | 'step' | 'two_steps' | null;
+    light_sources?: LightSource[];
+    phone_movement?: 'fixed' | 'follow' | 'pan' | 'zoom' | null;
+    subject_type?: 'face' | 'hands' | 'hair' | 'product' | null;
     caption_position?: 'top' | 'center' | 'bottom';
     caption_preset?: string;
     diagram_id?: string | null;
