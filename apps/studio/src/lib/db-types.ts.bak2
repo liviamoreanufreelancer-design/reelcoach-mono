@@ -121,7 +121,7 @@ export interface TechniqueDemoRow {
 /** Migration 008: o sursa de lumina cu numarator (ex. Ring light x2). */
 export interface LightSource {
   type: 'natural' | 'ring' | 'led' | 'reflector';
-  position: 'front' | 'left' | 'right' | 'back' | 'top' | 'bottom';
+  count: number;
 }
 
 export interface ShotRow {

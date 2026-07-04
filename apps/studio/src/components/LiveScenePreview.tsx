@@ -22,6 +22,7 @@ const PHONE_HOLDS = [{ id: "hand", label: "Mână" }, { id: "tripod", label: "St
 const DISTANCES = [{ id: "palm", label: "La o palmă" }, { id: "arm", label: "Un braț" }, { id: "step", label: "Un pas" }, { id: "two_steps", label: "Doi pași" }] as const;
 const MOVEMENTS = [{ id: "fixed", label: "Fix" }, { id: "follow", label: "Urmărire" }, { id: "pan", label: "Panoramare" }, { id: "zoom", label: "Zoom" }] as const;
 const LIGHTS = [{ id: "natural", label: "Naturală" }, { id: "ring", label: "Ring light" }, { id: "led", label: "LED-uri" }, { id: "reflector", label: "Reflector" }] as const;
+const LIGHT_POSITIONS = [{ id: "front", label: "Față" }, { id: "left", label: "Stânga" }, { id: "right", label: "Dreapta" }, { id: "back", label: "Spate" }, { id: "top", label: "Sus" }, { id: "bottom", label: "Jos" }] as const;
 const TEXT_POSITIONS = [
   { id: "top", label: "Sus" },
   { id: "center", label: "Centru" },
@@ -249,48 +250,36 @@ export default function LiveScenePreview({
     const next = phoneMove === id ? null : id;
     setPhoneMove(next); saveShot({ phone_movement: next });
   };
-  // Contor lumina: + adauga/creste, - scade, la 0 dispare.
-  const bumpLight = (type: LightSource["type"], delta: number) => {
-    const cur = [...lights];
-    const idx = cur.findIndex((l) => l.type === type);
-    if (idx === -1) {
-      if (delta > 0) cur.push({ type, count: 1 });
-    } else {
-      const c = cur[idx].count + delta;
-      if (c <= 0) cur.splice(idx, 1);
-      else cur[idx] = { type, count: c };
-    }
+  // Lumini per bec: fiecare bec = tip + pozitie. Poti avea mai multe de acelasi tip.
+  const addLight = (type: LightSource["type"]) => {
+    const cur = [...lights, { type, position: "front" as LightSource["position"] }];
     setLights(cur); saveShot({ light_sources: cur });
   };
-  const lightCount = (type: LightSource["type"]) => lights.find((l) => l.type === type)?.count ?? 0;
+  const setLightPos = (idx: number, position: LightSource["position"]) => {
+    const cur = lights.map((l, i) => (i === idx ? { ...l, position } : l));
+    setLights(cur); saveShot({ light_sources: cur });
+  };
+  const removeLight = (idx: number) => {
+    const cur = lights.filter((_, i) => i !== idx);
+    setLights(cur); saveShot({ light_sources: cur });
+  };
 
   const [reportCopied, setReportCopied] = useState(false);
   const generateReport = () => {
     if (!shot) return;
     const L = (id: string, opts: readonly { id: string; label: string }[]) => opts.find((o) => o.id === id)?.label ?? "—";
+    const posLabel = (pos: string) => LIGHT_POSITIONS.find((p) => p.id === pos)?.label ?? pos;
     const lightsStr = lights.length
-      ? lights.map((l) => `${LIGHTS.find((o) => o.id === l.type)?.label ?? l.type} ×${l.count}`).join(", ")
+      ? lights.map((l) => `${LIGHTS.find((o) => o.id === l.type)?.label ?? l.type} (${posLabel(l.position)})`).join(", ")
       : "—";
     const lines = [
-      "═══ RAPORT SCENĂ ═══",
-      `Template: ${templateId}`,
-      `Scena: ${selectedIdx + 1}`,
+      "═══ CUM FILMEZI — Scena " + (selectedIdx + 1) + " ═══",
       "",
-      "── Ce se vede ──",
-      `Durată: ${trimSec.toFixed(1)}s`,
-      `Text pe video: ${textValue ? `"${textValue}"` : "—"}`,
-      `Poziție text: ${L(textPos, TEXT_POSITIONS)}`,
-      `Filtru: ${resolvedFilterId}`,
-      `Efect: ${resolvedEffectId}`,
-      `Tranziție: ${shot.transition_type}`,
-      `Viteză: ${shot.playback_speed}×`,
-      `Motion blur: ${shot.motion_blur ? "da" : "nu"}`,
-      "",
-      "── Cum filmezi ──",
       `Cum ții telefonul: ${phoneHold ? L(phoneHold, PHONE_HOLDS) : "—"}`,
       `Distanța: ${shotDist ? L(shotDist, DISTANCES) : "—"}`,
       `Mișcarea: ${phoneMove ? L(phoneMove, MOVEMENTS) : "—"}`,
       `Surse de lumină: ${lightsStr}`,
+      "",
       `Instrucțiuni: ${howFilm.trim() || "—"}`,
     ];
     const txt = lines.join("\n");
@@ -585,26 +574,36 @@ export default function LiveScenePreview({
               </div>
             )}
 
-            {/* Surse de lumină — cu numarator */}
+            {/* Surse de lumină — listă de becuri, fiecare cu tip + poziție */}
             <div className="mb-4">
               <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Surse de lumină</div>
-              <div className="flex flex-col gap-2">
-                {LIGHTS.map((o) => {
-                  const n = lightCount(o.id);
-                  const active = n > 0;
-                  return (
-                    <div key={o.id} className={`flex items-center justify-between px-3 py-2 rounded-lg border transition ${active ? "bg-[#F6F4FE] border-[#5B34FF]/30" : "bg-white border-[#E7E3F5]"}`}>
-                      <span className={`text-[13px] ${active ? "text-[#1F1F1F] font-medium" : "text-[#6B6B6B]"}`}>{o.label}</span>
-                      <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => bumpLight(o.id, -1)} disabled={n === 0}
-                          className="w-7 h-7 rounded-md grid place-items-center bg-white border border-[#E7E3F5] text-[#5B34FF] disabled:opacity-30 transition active:scale-90">−</button>
-                        <span className="text-[13px] font-medium tabular-nums min-w-[28px] text-center text-[#1F1F1F]">{active ? `×${n}` : "—"}</span>
-                        <button type="button" onClick={() => bumpLight(o.id, 1)}
-                          className="w-7 h-7 rounded-md grid place-items-center bg-[#5B34FF] text-white transition active:scale-90">+</button>
-                      </div>
+              {lights.length > 0 && (
+                <div className="flex flex-col gap-2 mb-2.5">
+                  {lights.map((l, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-[#F6F4FE] border border-[#D8D0F5] rounded-lg px-3 py-2">
+                      <span className="flex-1 text-[13px] font-medium text-[#1F1F1F]">{LIGHTS.find((o) => o.id === l.type)?.label ?? l.type}</span>
+                      <select
+                        value={l.position}
+                        onChange={(e) => setLightPos(idx, e.target.value as LightSource["position"])}
+                        className="text-[12px] bg-white border border-[#E7E3F5] rounded-lg px-2.5 py-1.5 text-[#1F1F1F]">
+                        {LIGHT_POSITIONS.map((pos) => (<option key={pos.id} value={pos.id}>{pos.label}</option>))}
+                      </select>
+                      <button type="button" onClick={() => removeLight(idx)} aria-label="Șterge"
+                        className="w-7 h-7 grid place-items-center text-[#C88] hover:text-[#A44] text-[18px] transition active:scale-90">×</button>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              )}
+              <div className="border border-dashed border-[#D8D0F5] rounded-lg p-2.5">
+                <div className="text-[11px] text-[#9A9A9A] mb-2">+ Adaugă o lumină</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {LIGHTS.map((o) => (
+                    <button key={o.id} type="button" onClick={() => addLight(o.id)}
+                      className="text-[12px] px-3 py-1.5 rounded-lg border border-[#E7E3F5] bg-white text-[#5B34FF] hover:bg-[#F6F4FE] transition active:scale-95">
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
