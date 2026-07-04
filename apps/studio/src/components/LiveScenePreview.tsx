@@ -263,6 +263,51 @@ export default function LiveScenePreview({
     setLights(cur); saveShot({ light_sources: cur });
   };
   const lightCount = (type: LightSource["type"]) => lights.find((l) => l.type === type)?.count ?? 0;
+
+  const [reportCopied, setReportCopied] = useState(false);
+  const generateReport = () => {
+    if (!shot) return;
+    const L = (id: string, opts: readonly { id: string; label: string }[]) => opts.find((o) => o.id === id)?.label ?? "—";
+    const lightsStr = lights.length
+      ? lights.map((l) => `${LIGHTS.find((o) => o.id === l.type)?.label ?? l.type} ×${l.count}`).join(", ")
+      : "—";
+    const lines = [
+      "═══ RAPORT SCENĂ ═══",
+      `Template: ${templateId}`,
+      `Scena: ${selectedIdx + 1}`,
+      "",
+      "── Ce se vede ──",
+      `Durată: ${trimSec.toFixed(1)}s`,
+      `Text pe video: ${textValue ? `"${textValue}"` : "—"}`,
+      `Poziție text: ${L(textPos, TEXT_POSITIONS)}`,
+      `Filtru: ${resolvedFilterId}`,
+      `Efect: ${resolvedEffectId}`,
+      `Tranziție: ${shot.transition_type}`,
+      `Viteză: ${shot.playback_speed}×`,
+      `Motion blur: ${shot.motion_blur ? "da" : "nu"}`,
+      "",
+      "── Cum filmezi ──",
+      `Cum ții telefonul: ${phoneHold ? L(phoneHold, PHONE_HOLDS) : "—"}`,
+      `Distanța: ${shotDist ? L(shotDist, DISTANCES) : "—"}`,
+      `Mișcarea: ${phoneMove ? L(phoneMove, MOVEMENTS) : "—"}`,
+      `Surse de lumină: ${lightsStr}`,
+      `Instrucțiuni: ${howFilm.trim() || "—"}`,
+    ];
+    const txt = lines.join("\n");
+    // 1) copiaza in clipboard
+    navigator.clipboard?.writeText(txt).then(() => {
+      setReportCopied(true);
+      setTimeout(() => setReportCopied(false), 2000);
+    }).catch(() => {});
+    // 2) descarca .txt
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `scena-${selectedIdx + 1}-${"reel".replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const saveFilter = (filterId: string) => {
     startTransition(async () => {
       await updateGlobalFilter(templateId, filterId);
@@ -572,6 +617,13 @@ export default function LiveScenePreview({
               rows={4}
               className="input resize-none leading-relaxed"
             />
+            <button
+              type="button"
+              onClick={generateReport}
+              className="mt-3 w-full py-2.5 rounded-lg text-[13px] font-medium bg-[#F6F4FE] border border-[#D8D0F5] text-[#5B34FF] hover:bg-[#EDE8FF] transition active:scale-[.98] flex items-center justify-center gap-2"
+            >
+              {reportCopied ? "✓ Copiat + descărcat" : "⬇ Generează raport (.txt)"}
+            </button>
           </div>
         </fieldset>
       </div>
