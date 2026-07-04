@@ -265,10 +265,11 @@ export default function LiveScenePreview({
   };
 
   const [reportCopied, setReportCopied] = useState(false);
+  const [reportText, setReportText] = useState<string | null>(null);
   const generateReport = () => {
     if (!shot) return;
     const L = (id: string, opts: readonly { id: string; label: string }[]) => opts.find((o) => o.id === id)?.label ?? "—";
-    const posLabel = (pos: string) => LIGHT_POSITIONS.find((p) => p.id === pos)?.label ?? pos;
+    const posLabel = (pos: string) => LIGHT_POSITIONS.find((p) => p.id === pos)?.label ?? "Față";
     const lightsStr = lights.length
       ? lights.map((l) => `${LIGHTS.find((o) => o.id === l.type)?.label ?? l.type} (${posLabel(l.position)})`).join(", ")
       : "—";
@@ -282,20 +283,26 @@ export default function LiveScenePreview({
       "",
       `Instrucțiuni: ${howFilm.trim() || "—"}`,
     ];
-    const txt = lines.join("\n");
-    // 1) copiaza in clipboard
-    navigator.clipboard?.writeText(txt).then(() => {
-      setReportCopied(true);
-      setTimeout(() => setReportCopied(false), 2000);
-    }).catch(() => {});
-    // 2) descarca .txt
-    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    setReportText(lines.join("\n"));
+  };
+
+  const downloadReport = () => {
+    if (!reportText) return;
+    const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `scena-${selectedIdx + 1}-${"reel".replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.txt`;
+    a.download = `scena-${selectedIdx + 1}-cum-filmezi.txt`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const copyReport = () => {
+    if (!reportText) return;
+    navigator.clipboard?.writeText(reportText).then(() => {
+      setReportCopied(true);
+      setTimeout(() => setReportCopied(false), 2000);
+    }).catch(() => {});
   };
   const saveFilter = (filterId: string) => {
     startTransition(async () => {
@@ -583,7 +590,7 @@ export default function LiveScenePreview({
                     <div key={idx} className="flex items-center gap-2 bg-[#F6F4FE] border border-[#D8D0F5] rounded-lg px-3 py-2">
                       <span className="flex-1 text-[13px] font-medium text-[#1F1F1F]">{LIGHTS.find((o) => o.id === l.type)?.label ?? l.type}</span>
                       <select
-                        value={l.position}
+                        value={l.position ?? "front"}
                         onChange={(e) => setLightPos(idx, e.target.value as LightSource["position"])}
                         className="text-[12px] bg-white border border-[#E7E3F5] rounded-lg px-2.5 py-1.5 text-[#1F1F1F]">
                         {LIGHT_POSITIONS.map((pos) => (<option key={pos.id} value={pos.id}>{pos.label}</option>))}
@@ -621,7 +628,7 @@ export default function LiveScenePreview({
               onClick={generateReport}
               className="mt-3 w-full py-2.5 rounded-lg text-[13px] font-medium bg-[#F6F4FE] border border-[#D8D0F5] text-[#5B34FF] hover:bg-[#EDE8FF] transition active:scale-[.98] flex items-center justify-center gap-2"
             >
-              {reportCopied ? "✓ Copiat + descărcat" : "⬇ Generează raport (.txt)"}
+              ⬇ Generează raport
             </button>
           </div>
         </fieldset>
@@ -629,6 +636,27 @@ export default function LiveScenePreview({
       <div className={reelMode ? "" : "hidden"}>
         {reelMounted && <ReelPlayer shots={shots} globalFilter={globalFilter} templateId={templateId} />}
       </div>
+
+      {/* Preview raport "Cum filmezi" */}
+      {reportText && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setReportText(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[15px] font-semibold text-[#1F1F1F]">Raport „Cum filmezi"</span>
+              <button type="button" onClick={() => setReportText(null)} aria-label="Închide" className="text-[#9A9A9A] hover:text-[#1F1F1F] text-[22px] leading-none">×</button>
+            </div>
+            <pre className="bg-[#F6F4FE] border border-[#EDE8FF] rounded-xl p-3.5 text-[12px] text-[#1F1F1F] whitespace-pre-wrap max-h-[50vh] overflow-y-auto" style={{ fontFamily: "ui-monospace, monospace" }}>{reportText}</pre>
+            <div className="flex gap-2 mt-4">
+              <button type="button" onClick={copyReport} className="flex-1 py-2.5 rounded-lg text-[13px] font-medium bg-white border border-[#D8D0F5] text-[#5B34FF] hover:bg-[#F6F4FE] transition active:scale-[.98]">
+                {reportCopied ? "✓ Copiat" : "Copiază"}
+              </button>
+              <button type="button" onClick={downloadReport} className="flex-1 py-2.5 rounded-lg text-[13px] font-medium bg-[#5B34FF] text-white transition active:scale-[.98]">
+                Descarcă .txt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
