@@ -81,10 +81,10 @@ export default function PreviewPanel({
   if (shots.length === 0) {
     return (
       <div className="card p-5">
-        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/85 font-bold mb-3">
+        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold mb-3">
           Preview vizual
         </h2>
-        <p className="text-[12px] text-white/45 leading-relaxed">
+        <p className="text-[12px] text-[#9A9A9A] leading-relaxed">
           Adaugă o scenă pentru a vedea preview-urile și a edita efectele.
         </p>
       </div>
@@ -94,11 +94,11 @@ export default function PreviewPanel({
   return (
     <div className="card p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/85 font-bold">
+        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold">
           Preview & efecte
         </h2>
         {pending && (
-          <span className="text-[9px] tracking-[0.2em] uppercase text-white/45">salvez…</span>
+          <span className="text-[9px] tracking-[0.2em] uppercase text-[#9A9A9A]">salvez…</span>
         )}
       </div>
 
@@ -122,7 +122,7 @@ export default function PreviewPanel({
 
       {/* Video preview frame — 9:16 portrait */}
       <div
-        className="relative w-full rounded-xl overflow-hidden bg-black border border-[#E8D5B5]/15 mb-3"
+        className="relative w-full rounded-xl overflow-hidden bg-black border border-[#5B34FF]/15 mb-3"
         style={{ aspectRatio: "9 / 16" }}
       >
         {videoUrl && (
@@ -139,7 +139,7 @@ export default function PreviewPanel({
 
         {/* Current value badge — top right corner overlay */}
         <div className="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[#E8D5B5] font-semibold">
+          <span className="text-[10px] tracking-[0.2em] uppercase text-[#5B34FF] font-semibold">
             {getCurrentValue(shot, dimension)}
           </span>
         </div>
@@ -203,7 +203,7 @@ export default function PreviewPanel({
                 <option key={e.id} value={e.id}>{e.label}</option>
               ))}
             </select>
-            <p className="text-[10px] text-white/40 mt-1.5 leading-snug">
+            <p className="text-[10px] text-[#9A9A9A] mt-1.5 leading-snug">
               {EFFECTS.find((e) => e.id === shot.effect)?.desc}
             </p>
           </div>
@@ -221,7 +221,7 @@ export default function PreviewPanel({
                 <option key={t.id} value={t.id}>{t.label}</option>
               ))}
             </select>
-            <p className="text-[10px] text-white/40 mt-1.5 leading-snug">
+            <p className="text-[10px] text-[#9A9A9A] mt-1.5 leading-snug">
               {TRANSITIONS.find((t) => t.id === shot.transition_type)?.desc}
             </p>
           </div>
@@ -240,8 +240,8 @@ export default function PreviewPanel({
                     onClick={() => saveField({ playback_speed: p.v })}
                     className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition tabular-nums ${
                       active
-                        ? "bg-[#E8D5B5] text-[#0F1419] border border-[#E8D5B5]"
-                        : "bg-white/[0.04] text-white/70 border border-[#E8D5B5]/12 hover:border-[#E8D5B5]/30 hover:text-white"
+                        ? "bg-[#5B34FF] text-[#1F1F1F] border border-[#5B34FF]"
+                        : "bg-white/[0.04] text-[#4B4B4B] border border-[#5B34FF]/12 hover:border-[#5B34FF]/30 hover:text-[#1F1F1F]"
                     }`}
                   >
                     {p.label}
@@ -250,7 +250,7 @@ export default function PreviewPanel({
               })}
             </div>
             {shot.playback_speed !== 1.0 && (
-              <p className="text-[10px] text-white/40 mt-2 leading-snug">
+              <p className="text-[10px] text-[#9A9A9A] mt-2 leading-snug">
                 {shot.playback_speed < 1.0
                   ? "Slow motion — clipul devine mai lung în reel."
                   : "Fast forward — clipul devine mai scurt în reel."}
@@ -260,15 +260,15 @@ export default function PreviewPanel({
         )}
 
         {/* Motion blur toggle — always visible, separate from dimension tabs */}
-        <label className="flex items-center gap-2.5 cursor-pointer mt-4 pt-3 border-t border-[#E8D5B5]/10">
+        <label className="flex items-center gap-2.5 cursor-pointer mt-4 pt-3 border-t border-[#5B34FF]/10">
           <input
             type="checkbox"
             checked={shot.motion_blur ?? false}
             onChange={(e) => saveField({ motion_blur: e.target.checked })}
-            className="w-4 h-4 accent-[#E8D5B5]"
+            className="w-4 h-4 accent-[#5B34FF]"
           />
-          <span className="text-[12px] text-white/85">
-            Motion blur <span className="text-white/45">(pe toată scena)</span>
+          <span className="text-[12px] text-[#1F1F1F]">
+            Motion blur <span className="text-[#9A9A9A]">(pe toată scena)</span>
           </span>
         </label>
       </fieldset>
@@ -293,8 +293,8 @@ function DimTab({
       onClick={onClick}
       className={`px-1.5 py-1.5 rounded-lg text-[10px] font-medium transition flex flex-col items-center gap-1 ${
         active
-          ? "bg-[#E8D5B5] text-[#0F1419]"
-          : "bg-white/[0.04] text-white/65 hover:bg-white/[0.08] hover:text-white"
+          ? "bg-[#5B34FF] text-[#1F1F1F]"
+          : "bg-white/[0.04] text-[#1F1F1F]/65 hover:bg-white/[0.08] hover:text-[#1F1F1F]"
       }`}
     >
       {icon}

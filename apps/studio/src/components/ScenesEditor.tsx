@@ -63,10 +63,10 @@ export default function ScenesEditor({
     <div className="card p-5 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/85 font-bold">
+          <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold">
             Scene
           </h2>
-          <p className="text-[11px] text-white/40 mt-1">
+          <p className="text-[11px] text-[#9A9A9A] mt-1">
             {shots.length} scen{shots.length === 1 ? "ă" : "e"}
           </p>
         </div>
@@ -82,8 +82,8 @@ export default function ScenesEditor({
       </div>
 
       {shots.length === 0 ? (
-        <div className="border border-dashed border-[#E8D5B5]/20 rounded-xl p-8 text-center">
-          <p className="text-[13px] text-white/55">
+        <div className="border border-dashed border-[#5B34FF]/20 rounded-xl p-8 text-center">
+          <p className="text-[13px] text-[#6B6B6B]">
             Nicio scenă încă. Adaugă prima scenă pentru a construi șablonul.
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function ScenesEditor({
             return (
               <div
                 key={shot.id}
-                className="rounded-xl border border-[#E8D5B5]/15 bg-white/[0.025] overflow-hidden"
+                className="rounded-xl border border-[#5B34FF]/15 bg-white/[0.025] overflow-hidden"
               >
                 {/* Collapsed header — always visible */}
                 <div className="flex items-center gap-2 p-3">
@@ -104,18 +104,18 @@ export default function ScenesEditor({
                     className="flex-1 flex items-center gap-3 min-w-0 text-left"
                   >
                     <ChevronRight
-                      className={`w-4 h-4 text-[#E8D5B5]/75 shrink-0 transition-transform ${
+                      className={`w-4 h-4 text-[#5B34FF]/75 shrink-0 transition-transform ${
                         isExpanded ? "rotate-90" : ""
                       }`}
                     />
-                    <span className="text-[10px] tracking-[0.22em] uppercase text-[#E8D5B5]/65 font-semibold tabular-nums shrink-0">
+                    <span className="text-[10px] tracking-[0.22em] uppercase text-[#5B34FF]/65 font-semibold tabular-nums shrink-0">
                       {index + 1}
                     </span>
-                    <span className="text-[14px] text-white font-medium truncate">
+                    <span className="text-[14px] text-[#1F1F1F] font-medium truncate">
                       {shot.title || "Fără titlu"}
                     </span>
                     {shot.pattern && (
-                      <span className="text-[9px] tracking-[0.2em] uppercase text-white/40 shrink-0 hidden sm:inline">
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-[#9A9A9A] shrink-0 hidden sm:inline">
                         {shot.pattern}
                       </span>
                     )}
@@ -123,7 +123,7 @@ export default function ScenesEditor({
 
                   {shot.example_image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={shot.example_image_url} alt="" className="w-8 h-11 rounded-md object-cover border border-[#E8D5B5]/20 shrink-0" />
+                    <img src={shot.example_image_url} alt="" className="w-8 h-11 rounded-md object-cover border border-[#5B34FF]/20 shrink-0" />
                   )}
                   {/* Move + delete */}
                   <div className="flex items-center gap-1 shrink-0">
@@ -132,7 +132,7 @@ export default function ScenesEditor({
                       onClick={() => onMove(index, -1)}
                       disabled={disabled || pending || index === 0}
                       aria-label="Mută în sus"
-                      className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-white/55 disabled:opacity-25 active:scale-95"
+                      className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-[#6B6B6B] disabled:opacity-25 active:scale-95"
                     >
                       <ChevronUp className="w-4 h-4" />
                     </button>
@@ -141,7 +141,7 @@ export default function ScenesEditor({
                       onClick={() => onMove(index, 1)}
                       disabled={disabled || pending || index === shots.length - 1}
                       aria-label="Mută în jos"
-                      className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-white/55 disabled:opacity-25 active:scale-95"
+                      className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-[#6B6B6B] disabled:opacity-25 active:scale-95"
                     >
                       <ChevronDown className="w-4 h-4" />
                     </button>
@@ -159,7 +159,7 @@ export default function ScenesEditor({
 
                 {/* Expanded body */}
                 {isExpanded && (
-                  <div className="border-t border-[#E8D5B5]/10 p-4 sm:p-5">
+                  <div className="border-t border-[#5B34FF]/10 p-4 sm:p-5">
                     <ScenePanel
                       shot={shot}
                       templateId={templateId}

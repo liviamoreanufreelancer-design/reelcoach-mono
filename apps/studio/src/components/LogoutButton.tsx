@@ -18,7 +18,7 @@ export default function LogoutButton() {
     <button
       onClick={handleLogout}
       aria-label="Ieșire"
-      className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-[#E8D5B5] hover:bg-white/[0.1] active:scale-95 transition"
+      className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-[#5B34FF] hover:bg-white/[0.1] active:scale-95 transition"
     >
       <LogOut className="w-4 h-4" />
     </button>

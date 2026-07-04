@@ -140,7 +140,7 @@ export default function ReelPlayer({
   if (withFootage.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-[13px] text-white/55 leading-relaxed max-w-[300px]">
+        <p className="text-[13px] text-[#6B6B6B] leading-relaxed max-w-[300px]">
           Adaugă cel puțin un clip pe o scenă ca să vezi reel-ul.
         </p>
       </div>
@@ -152,16 +152,16 @@ export default function ReelPlayer({
       {phase === "rendering" && (
         <div className="w-full max-w-[280px] py-10">
           <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden mb-3">
-            <div className="h-full bg-[#E8D5B5] transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-[#5B34FF] transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-[12px] text-white/55 text-center tabular-nums">{pct}% — {message}</p>
+          <p className="text-[12px] text-[#6B6B6B] text-center tabular-nums">{pct}% — {message}</p>
         </div>
       )}
 
       {phase === "done" && videoUrl && (
         <>
           <video src={videoUrl} controls autoPlay loop muted playsInline
-            className="rounded-2xl bg-black border border-[#E8D5B5]/15" style={{ width: "240px", aspectRatio: "9 / 16" }} />
+            className="rounded-2xl bg-black border border-[#5B34FF]/15" style={{ width: "240px", aspectRatio: "9 / 16" }} />
           {missingCount > 0 && (
             <p className="text-[11px] text-amber-300/80">{missingCount} {missingCount === 1 ? "scenă nu are" : "scene nu au"} clip — randate doar cele cu footage.</p>
           )}

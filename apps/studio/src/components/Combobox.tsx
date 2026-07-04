@@ -122,7 +122,7 @@ export default function Combobox({
               type="button"
               onClick={clear}
               aria-label="Șterge"
-              className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white/85 transition"
+              className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-[#6B6B6B] hover:text-[#1F1F1F] transition"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -134,7 +134,7 @@ export default function Combobox({
               if (!open) inputRef.current?.focus();
             }}
             aria-label="Deschide sugestiile"
-            className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white/85 transition"
+            className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-[#6B6B6B] hover:text-[#1F1F1F] transition"
           >
             <ChevronDown
               className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`}
@@ -144,9 +144,9 @@ export default function Combobox({
       </div>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-30 max-h-[260px] overflow-y-auto rounded-xl border border-[#E8D5B5]/22 bg-[#0F1419]/95 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        <div className="absolute left-0 right-0 top-full mt-1 z-30 max-h-[260px] overflow-y-auto rounded-xl border border-[#5B34FF]/22 bg-[#1F1F1F]/95 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
           {filtered.length === 0 ? (
-            <div className="px-3 py-2.5 text-[12px] text-white/50">
+            <div className="px-3 py-2.5 text-[12px] text-[#6B6B6B]">
               Niciun rezultat. Tot poți tasta ce vrei tu.
             </div>
           ) : (
@@ -158,9 +158,9 @@ export default function Combobox({
                     onClick={() => selectSuggestion(s)}
                     className="w-full text-left px-3 py-2 hover:bg-white/[0.06] transition flex flex-col gap-0.5"
                   >
-                    <span className="text-[13px] text-white">{s.label}</span>
+                    <span className="text-[13px] text-[#1F1F1F]">{s.label}</span>
                     {s.desc && (
-                      <span className="text-[10px] text-white/50 leading-snug">{s.desc}</span>
+                      <span className="text-[10px] text-[#6B6B6B] leading-snug">{s.desc}</span>
                     )}
                   </button>
                 </li>

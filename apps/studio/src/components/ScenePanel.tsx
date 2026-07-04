@@ -77,7 +77,7 @@ export default function ScenePanel({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label">
-            Pattern <span className="text-white/35 normal-case tracking-normal">(opțional, eticheta scenei)</span>
+            Pattern <span className="text-[#9A9A9A] normal-case tracking-normal">(opțional, eticheta scenei)</span>
           </label>
           <Combobox
             value={shot.pattern}
@@ -106,7 +106,7 @@ export default function ScenePanel({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label">
-            Overlay text <span className="text-white/35 normal-case tracking-normal">(pe video final)</span>
+            Overlay text <span className="text-[#9A9A9A] normal-case tracking-normal">(pe video final)</span>
           </label>
           <input
             type="text"
@@ -119,7 +119,7 @@ export default function ScenePanel({
 
         <div>
           <label className="label">
-            Hook <span className="text-white/35 normal-case tracking-normal">(legacy, în filmare)</span>
+            Hook <span className="text-[#9A9A9A] normal-case tracking-normal">(legacy, în filmare)</span>
           </label>
           <input
             type="text"
@@ -145,7 +145,7 @@ export default function ScenePanel({
               onBlur={(e) => saveField({ recording_duration: Number(e.target.value) })}
               className="input pr-10"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-white/45">s</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#9A9A9A]">s</span>
           </div>
         </div>
 
@@ -161,7 +161,7 @@ export default function ScenePanel({
               onBlur={(e) => saveField({ final_usage_duration: Number(e.target.value) })}
               className="input pr-10"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-white/45">s</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#9A9A9A]">s</span>
           </div>
         </div>
 
@@ -177,7 +177,7 @@ export default function ScenePanel({
               onBlur={(e) => saveField({ countdown: Number(e.target.value) })}
               className="input pr-10"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-white/45">s</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#9A9A9A]">s</span>
           </div>
         </div>
       </div>
@@ -191,10 +191,10 @@ export default function ScenePanel({
           type="checkbox"
           defaultChecked={shot.hands_busy}
           onChange={(e) => saveField({ hands_busy: e.target.checked })}
-          className="w-4 h-4 accent-[#E8D5B5]"
+          className="w-4 h-4 accent-[#5B34FF]"
         />
-        <span className="text-[13px] text-white/85">
-          Mâinile sunt ocupate cu clienta <span className="text-white/45">(stilista nu poate ține telefonul)</span>
+        <span className="text-[13px] text-[#1F1F1F]">
+          Mâinile sunt ocupate cu clienta <span className="text-[#9A9A9A]">(stilista nu poate ține telefonul)</span>
         </span>
       </label>
 
@@ -204,7 +204,7 @@ export default function ScenePanel({
       {/* Must see */}
       <div>
         <label className="label">
-          Ce trebuie să se vadă <span className="text-white/35 normal-case tracking-normal">(checklist, shot-first)</span>
+          Ce trebuie să se vadă <span className="text-[#9A9A9A] normal-case tracking-normal">(checklist, shot-first)</span>
         </label>
         <StringListEditor
           value={mustSee}
@@ -219,7 +219,7 @@ export default function ScenePanel({
       {/* How shoot */}
       <div>
         <label className="label">
-          Cum filmezi <span className="text-white/35 normal-case tracking-normal">(bullets compacte)</span>
+          Cum filmezi <span className="text-[#9A9A9A] normal-case tracking-normal">(bullets compacte)</span>
         </label>
         <div className="mb-4">
           <DiagramPicker
@@ -241,7 +241,7 @@ export default function ScenePanel({
       {/* Must show (legacy) */}
       <div>
         <label className="label">
-          Trebuie să se vadă <span className="text-white/35 normal-case tracking-normal">(legacy)</span>
+          Trebuie să se vadă <span className="text-[#9A9A9A] normal-case tracking-normal">(legacy)</span>
         </label>
         <StringListEditor
           value={mustShow}
@@ -256,7 +256,7 @@ export default function ScenePanel({
       {/* Instructions (legacy) */}
       <div>
         <label className="label">
-          Instrucțiuni pas cu pas <span className="text-white/35 normal-case tracking-normal">(legacy)</span>
+          Instrucțiuni pas cu pas <span className="text-[#9A9A9A] normal-case tracking-normal">(legacy)</span>
         </label>
         <StringListEditor
           value={instructions}
@@ -307,17 +307,17 @@ function StringListEditor({
           {value.map((item, i) => (
             <li
               key={i}
-              className="flex items-start gap-2 bg-white/[0.04] border border-[#E8D5B5]/12 rounded-lg px-3 py-2"
+              className="flex items-start gap-2 bg-white/[0.04] border border-[#5B34FF]/12 rounded-lg px-3 py-2"
             >
-              <span className="text-[10px] text-[#E8D5B5]/55 font-semibold tabular-nums pt-0.5 shrink-0">
+              <span className="text-[10px] text-[#5B34FF]/55 font-semibold tabular-nums pt-0.5 shrink-0">
                 {i + 1}.
               </span>
-              <span className="flex-1 text-[13px] text-white/85 leading-snug">{item}</span>
+              <span className="flex-1 text-[13px] text-[#1F1F1F] leading-snug">{item}</span>
               <button
                 type="button"
                 onClick={() => remove(i)}
                 aria-label="Șterge"
-                className="text-white/40 hover:text-rose-300 transition shrink-0"
+                className="text-[#9A9A9A] hover:text-rose-300 transition shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -400,18 +400,18 @@ function HowShootListEditor({
           {value.map((item, i) => (
             <li
               key={i}
-              className="flex items-center gap-2 bg-white/[0.04] border border-[#E8D5B5]/12 rounded-lg px-3 py-2"
+              className="flex items-center gap-2 bg-white/[0.04] border border-[#5B34FF]/12 rounded-lg px-3 py-2"
             >
-              <span className="text-[9px] tracking-[0.18em] uppercase text-[#E8D5B5]/65 bg-[#E8D5B5]/10 rounded px-2 py-0.5 shrink-0">
+              <span className="text-[9px] tracking-[0.18em] uppercase text-[#5B34FF]/65 bg-[#5B34FF]/10 rounded px-2 py-0.5 shrink-0">
                 {HOW_SHOOT_ICONS.find((i2) => i2.id === item.icon)?.label ?? item.icon}
               </span>
-              <span className="text-[13px] text-white font-semibold">{item.label}</span>
-              <span className="text-[12px] text-white/55 truncate">· {item.detail}</span>
+              <span className="text-[13px] text-[#1F1F1F] font-semibold">{item.label}</span>
+              <span className="text-[12px] text-[#6B6B6B] truncate">· {item.detail}</span>
               <button
                 type="button"
                 onClick={() => remove(i)}
                 aria-label="Șterge"
-                className="ml-auto text-white/40 hover:text-rose-300 transition shrink-0"
+                className="ml-auto text-[#9A9A9A] hover:text-rose-300 transition shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -468,10 +468,10 @@ function SaveIndicator({
   error: string | null;
 }) {
   if (error) return <span className="text-[11px] text-rose-300">{error}</span>;
-  if (pending) return <span className="text-[10px] tracking-[0.2em] uppercase text-white/45">Se salvează…</span>;
+  if (pending) return <span className="text-[10px] tracking-[0.2em] uppercase text-[#9A9A9A]">Se salvează…</span>;
   if (savedAt) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-[#E8D5B5]/65">
+      <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-[#5B34FF]/65">
         <Check className="w-3 h-3" />
         Salvat
       </span>

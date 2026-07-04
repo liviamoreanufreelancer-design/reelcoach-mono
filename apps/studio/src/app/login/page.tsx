@@ -69,8 +69,8 @@ export default function LoginPage() {
         {/* Brand block */}
         <div className="text-center mb-10">
           <p className="eyebrow mb-3">ReelCoach</p>
-          <h1 className="h-display text-[36px] text-white">Studio</h1>
-          <p className="text-sm text-white/55 mt-3">
+          <h1 className="h-display text-[36px] text-[#1F1F1F]">Studio</h1>
+          <p className="text-sm text-[#6B6B6B] mt-3">
             Editor de șabloane pentru ReelCoach.
           </p>
         </div>
@@ -130,7 +130,7 @@ export default function LoginPage() {
               setError(null);
               setInfo(null);
             }}
-            className="text-[11px] tracking-[0.18em] uppercase text-[#E8D5B5]/65 hover:text-[#E8D5B5] transition mt-1"
+            className="text-[11px] tracking-[0.18em] uppercase text-[#5B34FF]/65 hover:text-[#5B34FF] transition mt-1"
           >
             {mode === "signin" ? "Cont nou? Înregistrează-te" : "Ai cont? Intră în studio"}
           </button>

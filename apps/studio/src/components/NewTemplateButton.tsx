@@ -67,7 +67,7 @@ export default function NewTemplateButton({
             <button
               onClick={close}
               aria-label="Închide"
-              className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center text-white/60 active:scale-95"
+              className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center text-[#6B6B6B] active:scale-95"
             >
               <X className="w-4 h-4" />
             </button>

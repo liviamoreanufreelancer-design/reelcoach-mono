@@ -101,13 +101,13 @@ export default function TemplateSidebar({
     <div className="card p-5 flex flex-col gap-5 lg:sticky lg:top-6">
       {/* Cover */}
       <div>
-        <div className="text-[10px] tracking-[0.18em] uppercase text-white/40 mb-2.5">Imagine copertă</div>
-        <div className="relative w-full rounded-lg overflow-hidden bg-white/[0.04] border border-[#E8D5B5]/15 mb-2.5" style={{ aspectRatio: "9 / 16" }}>
+        <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2.5">Imagine copertă</div>
+        <div className="relative w-full rounded-lg overflow-hidden bg-white/[0.04] border border-[#5B34FF]/15 mb-2.5" style={{ aspectRatio: "9 / 16" }}>
           {coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={coverUrl} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-white/30 text-[10px]">fără copertă</div>
+            <div className="absolute inset-0 flex items-center justify-center text-[#B8B8B8] text-[10px]">fără copertă</div>
           )}
         </div>
         <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onCoverPick} disabled={!canEdit} className="hidden" />
@@ -119,13 +119,13 @@ export default function TemplateSidebar({
       </div>
 
       {/* Status + actions */}
-      <div className="border-t border-[#E8D5B5]/10 pt-4 flex flex-col gap-2.5">
-        <div className="text-[10px] tracking-[0.18em] uppercase text-white/40">
+      <div className="border-t border-[#5B34FF]/10 pt-4 flex flex-col gap-2.5">
+        <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A]">
           Stare: <span className={isPublished ? "text-emerald-300" : "text-amber-300"}>{isPublished ? "Publicat" : "Draft"}</span>
         </div>
 
         {!isAdmin && (
-          <p className="text-[10px] text-white/45 leading-relaxed">Publicare/ștergere sunt doar pentru admin.</p>
+          <p className="text-[10px] text-[#9A9A9A] leading-relaxed">Publicare/ștergere sunt doar pentru admin.</p>
         )}
 
         {!isPublished ? (

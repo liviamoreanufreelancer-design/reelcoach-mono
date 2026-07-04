@@ -53,7 +53,7 @@ export default function DiagramPicker({
 
   return (
     <div>
-      <label className="block text-[11px] tracking-[0.18em] uppercase text-[#E8D5B5]/65 font-semibold mb-2">
+      <label className="block text-[11px] tracking-[0.18em] uppercase text-[#5B34FF]/65 font-semibold mb-2">
         Diagramă de filmare
       </label>
 
@@ -63,15 +63,15 @@ export default function DiagramPicker({
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={current.image_url} alt={current.name}
-              className="w-12 h-12 rounded-lg object-cover border border-[#E8D5B5]/20 shrink-0" />
+              className="w-12 h-12 rounded-lg object-cover border border-[#5B34FF]/20 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] text-white truncate">{current.name}</p>
-              <p className="text-[10px] text-white/45 truncate">{current.category}</p>
+              <p className="text-[13px] text-[#1F1F1F] truncate">{current.name}</p>
+              <p className="text-[10px] text-[#9A9A9A] truncate">{current.category}</p>
             </div>
             <button type="button" onClick={() => setOpen(true)} disabled={disabled}
               className="btn-glass text-[11px] px-3 py-1.5 shrink-0">Schimbă</button>
             <button type="button" onClick={() => choose(null)} disabled={disabled || pending}
-              className="text-[11px] text-white/45 hover:text-white/80 px-2 shrink-0">Scoate</button>
+              className="text-[11px] text-[#9A9A9A] hover:text-[#1F1F1F] px-2 shrink-0">Scoate</button>
           </>
         ) : (
           <button type="button" onClick={() => setOpen(true)} disabled={disabled}
@@ -85,32 +85,32 @@ export default function DiagramPicker({
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
           onClick={() => setOpen(false)}>
-          <div className="bg-[#0F1419] border border-[#E8D5B5]/15 rounded-2xl p-5 max-w-2xl w-full max-h-[80vh] overflow-auto"
+          <div className="bg-[#1F1F1F] border border-[#5B34FF]/15 rounded-2xl p-5 max-w-2xl w-full max-h-[80vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="h-display text-[18px] text-white">Alege o diagramă</h3>
+              <h3 className="h-display text-[18px] text-[#1F1F1F]">Alege o diagramă</h3>
               <button type="button" onClick={() => setOpen(false)}
-                className="text-white/50 hover:text-white text-[20px] leading-none">×</button>
+                className="text-[#6B6B6B] hover:text-[#1F1F1F] text-[20px] leading-none">×</button>
             </div>
 
             {/* Filtru categorie */}
             <div className="flex flex-wrap gap-1.5 mb-4">
               <button type="button" onClick={() => setFCategory("")}
-                className={`text-[11px] px-2.5 py-1 rounded-lg ${!fCategory ? "bg-[#E8D5B5]/15 text-[#E8D5B5]" : "bg-white/5 text-white/55"}`}>
+                className={`text-[11px] px-2.5 py-1 rounded-lg ${!fCategory ? "bg-[#5B34FF]/15 text-[#5B34FF]" : "bg-white/5 text-[#6B6B6B]"}`}>
                 Toate
               </button>
               {DIAGRAM_CATEGORIES.map((c) => (
                 <button key={c} type="button" onClick={() => setFCategory(c)}
-                  className={`text-[11px] px-2.5 py-1 rounded-lg ${fCategory === c ? "bg-[#E8D5B5]/15 text-[#E8D5B5]" : "bg-white/5 text-white/55"}`}>
+                  className={`text-[11px] px-2.5 py-1 rounded-lg ${fCategory === c ? "bg-[#5B34FF]/15 text-[#5B34FF]" : "bg-white/5 text-[#6B6B6B]"}`}>
                   {c}
                 </button>
               ))}
             </div>
 
             {loading ? (
-              <p className="text-[12px] text-white/45 text-center py-8">Se încarcă…</p>
+              <p className="text-[12px] text-[#9A9A9A] text-center py-8">Se încarcă…</p>
             ) : shown.length === 0 ? (
-              <p className="text-[12px] text-white/45 text-center py-8">
+              <p className="text-[12px] text-[#9A9A9A] text-center py-8">
                 {diagrams.length === 0
                   ? "Biblioteca e goală. Adaugă diagrame din pagina Diagrame."
                   : "Nicio diagramă în această categorie."}
@@ -120,13 +120,13 @@ export default function DiagramPicker({
                 {shown.map((d) => (
                   <button key={d.id} type="button" onClick={() => choose(d.id)} disabled={pending}
                     className={`text-left rounded-lg overflow-hidden border transition-colors ${
-                      d.id === currentDiagramId ? "border-[#E8D5B5]" : "border-transparent hover:border-[#E8D5B5]/40"
+                      d.id === currentDiagramId ? "border-[#5B34FF]" : "border-transparent hover:border-[#5B34FF]/40"
                     }`}>
                     <div className="aspect-square bg-black/30">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={d.image_url} alt={d.name} className="w-full h-full object-cover" />
                     </div>
-                    <p className="text-[10px] text-white/70 truncate px-1.5 py-1">{d.name}</p>
+                    <p className="text-[10px] text-[#4B4B4B] truncate px-1.5 py-1">{d.name}</p>
                   </button>
                 ))}
               </div>

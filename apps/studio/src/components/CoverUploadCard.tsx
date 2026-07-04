@@ -42,12 +42,12 @@ export default function CoverUploadCard({
 
   return (
     <div className="card p-5">
-      <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/85 font-bold mb-3">
+      <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold mb-3">
         Cover image
       </h2>
 
       <div
-        className="relative w-full rounded-xl overflow-hidden bg-white/[0.04] border border-[#E8D5B5]/15 mb-3"
+        className="relative w-full rounded-xl overflow-hidden bg-white/[0.04] border border-[#5B34FF]/15 mb-3"
         style={{ aspectRatio: "16 / 10" }}
       >
         {coverUrl ? (
@@ -58,7 +58,7 @@ export default function CoverUploadCard({
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/35">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#9A9A9A]">
             <ImageIcon className="w-8 h-8" />
             <span className="text-[11px] tracking-[0.18em] uppercase">Fără imagine</span>
           </div>
@@ -83,7 +83,7 @@ export default function CoverUploadCard({
         {pending ? "Se urcă…" : coverUrl ? "Schimbă imaginea" : "Urcă imaginea"}
       </button>
 
-      <p className="text-[10px] text-white/40 mt-2 leading-relaxed">
+      <p className="text-[10px] text-[#9A9A9A] mt-2 leading-relaxed">
         JPG, PNG sau WEBP. Max 5 MB. Recomandat 16:13 (lățime mai mare ca înălțime).
       </p>
 

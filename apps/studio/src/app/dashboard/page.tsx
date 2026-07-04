@@ -49,8 +49,8 @@ export default async function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div>
           <p className="eyebrow mb-2">Șabloane</p>
-          <h1 className="h-display text-[26px] sm:text-[32px] text-white leading-tight">Toate șabloanele</h1>
-          <p className="text-sm text-white/55 mt-2">
+          <h1 className="h-display text-[26px] sm:text-[32px] text-[#1F1F1F] leading-tight">Toate șabloanele</h1>
+          <p className="text-sm text-[#6B6B6B] mt-2">
             {templates.length === 0
               ? "Niciun șablon încă. Creează primul șablon."
               : `${templates.length} șabloane în total · ${drafts.length} drafts · ${published.length} publicate`}
@@ -113,7 +113,7 @@ function Section({
 }) {
   return (
     <section>
-      <div className="flex items-center gap-2 mb-3 text-[#E8D5B5]/85">
+      <div className="flex items-center gap-2 mb-3 text-[#5B34FF]/85">
         {icon}
         <h2 className="text-[10px] tracking-[0.32em] uppercase font-bold">
           {title} · {count}
@@ -136,22 +136,22 @@ function TemplateCard({
   return (
     <Link
       href={`/dashboard/templates/${template.id}`}
-      className="card p-4 hover:border-[#E8D5B5]/30 transition cursor-pointer block"
+      className="card p-4 hover:border-[#5B34FF]/30 transition cursor-pointer block"
     >
       <div className="flex items-baseline justify-between mb-2 gap-2">
-        <p className="text-[9px] tracking-[0.25em] uppercase text-[#E8D5B5]/70 font-semibold truncate">
+        <p className="text-[9px] tracking-[0.25em] uppercase text-[#5B34FF]/70 font-semibold truncate">
           {categoryLabel}
         </p>
         {template.is_recommended && (
-          <span className="text-[9px] tracking-[0.2em] uppercase text-[#0F1419] bg-[#E8D5B5] px-2 py-0.5 rounded-full font-bold shrink-0">
+          <span className="text-[9px] tracking-[0.2em] uppercase text-[#1F1F1F] bg-[#5B34FF] px-2 py-0.5 rounded-full font-bold shrink-0">
             Recomandat
           </span>
         )}
       </div>
-      <h3 className="text-[15px] font-semibold text-white leading-tight mb-3 line-clamp-2">
+      <h3 className="text-[15px] font-semibold text-[#1F1F1F] leading-tight mb-3 line-clamp-2">
         {template.title}
       </h3>
-      <p className="text-[10px] text-white/40 tabular-nums">
+      <p className="text-[10px] text-[#9A9A9A] tabular-nums">
         Actualizat: {new Date(template.updated_at).toLocaleDateString("ro-RO")}
       </p>
     </Link>
@@ -161,8 +161,8 @@ function TemplateCard({
 function EmptyState() {
   return (
     <div className="card p-10 text-center">
-      <p className="h-display text-[22px] text-white mb-2">Niciun șablon încă.</p>
-      <p className="text-sm text-white/55 leading-relaxed max-w-[28rem] mx-auto">
+      <p className="h-display text-[22px] text-[#1F1F1F] mb-2">Niciun șablon încă.</p>
+      <p className="text-sm text-[#6B6B6B] leading-relaxed max-w-[28rem] mx-auto">
         Creează primul șablon apăsând „Șablon nou" sus dreapta.
       </p>
     </div>

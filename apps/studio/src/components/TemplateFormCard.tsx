@@ -44,7 +44,7 @@ export default function TemplateFormCard({
   return (
     <div className="card p-5 sm:p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/85 font-bold">
+        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold">
           Detalii șablon
         </h2>
         <SaveIndicator pending={pending} savedAt={savedAt} error={error} />
@@ -66,7 +66,7 @@ export default function TemplateFormCard({
 
           <div>
             <label htmlFor="promise" className="label">
-              Promise <span className="text-white/35 normal-case tracking-normal">(pitch scurt afișat în preview)</span>
+              Promise <span className="text-[#9A9A9A] normal-case tracking-normal">(pitch scurt afișat în preview)</span>
             </label>
             <textarea
               id="promise"
@@ -85,7 +85,7 @@ export default function TemplateFormCard({
 
           <div>
             <label htmlFor="emotional_pitch" className="label">
-              Senzația <span className="text-white/35 normal-case tracking-normal">(editorial italic, opțional)</span>
+              Senzația <span className="text-[#9A9A9A] normal-case tracking-normal">(editorial italic, opțional)</span>
             </label>
             <textarea
               id="emotional_pitch"
@@ -133,10 +133,10 @@ export default function TemplateFormCard({
               type="checkbox"
               name="is_recommended"
               defaultChecked={template.is_recommended}
-              className="w-4 h-4 accent-[#E8D5B5]"
+              className="w-4 h-4 accent-[#5B34FF]"
             />
-            <span className="text-[13px] text-white/85">
-              Recomandat pe Home <span className="text-white/45">(apare ca hero card)</span>
+            <span className="text-[13px] text-[#1F1F1F]">
+              Recomandat pe Home <span className="text-[#9A9A9A]">(apare ca hero card)</span>
             </span>
           </label>
         </fieldset>
@@ -158,11 +158,11 @@ function SaveIndicator({
     return <span className="text-[11px] text-rose-300">{error}</span>;
   }
   if (pending) {
-    return <span className="text-[10px] tracking-[0.2em] uppercase text-white/45">Se salvează…</span>;
+    return <span className="text-[10px] tracking-[0.2em] uppercase text-[#9A9A9A]">Se salvează…</span>;
   }
   if (savedAt) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-[#E8D5B5]/65">
+      <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-[#5B34FF]/65">
         <Check className="w-3 h-3" />
         Salvat
       </span>

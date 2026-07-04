@@ -49,8 +49,8 @@ export default function DiagramLibrary({ initialDiagrams }: { initialDiagrams: D
       <div className="flex items-center justify-between gap-3 mb-6">
         <div>
           <p className="eyebrow text-[10px] mb-1">Bibliotecă</p>
-          <h1 className="h-display text-[24px] text-white">Diagrame</h1>
-          <p className="text-[12px] text-white/45 mt-1">
+          <h1 className="h-display text-[24px] text-[#1F1F1F]">Diagrame</h1>
+          <p className="text-[12px] text-[#9A9A9A] mt-1">
             Încarci o diagramă o dată, o folosești în orice reel. {diagrams.length} în bibliotecă.
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function DiagramLibrary({ initialDiagrams }: { initialDiagrams: D
           <button
             type="button"
             onClick={() => { setFCategory(""); setFPosition(""); setFLighting(""); setFDistance(""); }}
-            className="text-[11px] text-[#E8D5B5]/70 hover:text-[#E8D5B5] px-2 py-1"
+            className="text-[11px] text-[#5B34FF]/70 hover:text-[#5B34FF] px-2 py-1"
           >
             Resetează filtrele
           </button>
@@ -86,7 +86,7 @@ export default function DiagramLibrary({ initialDiagrams }: { initialDiagrams: D
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="card p-10 text-center">
-          <p className="text-[13px] text-white/45">
+          <p className="text-[13px] text-[#9A9A9A]">
             {diagrams.length === 0
               ? "Încă nicio diagramă. Apasă „+ Diagramă nouă” ca să adaugi prima."
               : "Nicio diagramă nu se potrivește filtrelor."}
@@ -102,14 +102,14 @@ export default function DiagramLibrary({ initialDiagrams }: { initialDiagrams: D
                 <button
                   type="button"
                   onClick={() => onDelete(d.id)}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm text-white/80 hover:text-white hover:bg-red-500/70 flex items-center justify-center text-[14px] opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm text-[#1F1F1F] hover:text-[#1F1F1F] hover:bg-red-500/70 flex items-center justify-center text-[14px] opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Șterge diagrama"
                 >
                   ×
                 </button>
               </div>
               <div className="p-3">
-                <p className="text-[13px] text-white font-medium truncate">{d.name}</p>
+                <p className="text-[13px] text-[#1F1F1F] font-medium truncate">{d.name}</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   <Tag>{d.category}</Tag>
                   {d.position && <Tag>{d.position}</Tag>}
@@ -128,7 +128,7 @@ export default function DiagramLibrary({ initialDiagrams }: { initialDiagrams: D
 function Tag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
   return (
     <span className={`text-[9px] tracking-[0.05em] px-1.5 py-0.5 rounded ${
-      accent ? "bg-[#E8D5B5]/15 text-[#E8D5B5]" : "bg-white/8 text-white/55"
+      accent ? "bg-[#5B34FF]/15 text-[#5B34FF]" : "bg-white/8 text-[#6B6B6B]"
     }`}>
       {children}
     </span>
@@ -148,7 +148,7 @@ function FilterSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={`text-[12px] rounded-lg px-3 py-2 bg-white/[0.04] border outline-none ${
-        value ? "border-[#E8D5B5]/40 text-white" : "border-white/10 text-white/55"
+        value ? "border-[#5B34FF]/40 text-[#1F1F1F]" : "border-white/10 text-[#6B6B6B]"
       }`}
     >
       <option value="">{label}: toate</option>
@@ -184,34 +184,34 @@ function UploadForm({ pending }: { pending: boolean }) {
     <form onSubmit={onSubmit} className="card p-5 mb-6 space-y-4">
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[11px] text-white/60 mb-1.5">Imagine diagramă</label>
+          <label className="block text-[11px] text-[#6B6B6B] mb-1.5">Imagine diagramă</label>
           <input type="file" name="image" accept="image/*" required
-            className="text-[12px] text-white/70 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#E8D5B5]/15 file:text-[#E8D5B5] file:text-[12px]" />
+            className="text-[12px] text-[#4B4B4B] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#5B34FF]/15 file:text-[#5B34FF] file:text-[12px]" />
         </div>
         <div>
-          <label className="block text-[11px] text-white/60 mb-1.5">Nume</label>
+          <label className="block text-[11px] text-[#6B6B6B] mb-1.5">Nume</label>
           <input type="text" name="name" required placeholder="ex: Frontal machiaj naturală"
-            className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-white outline-none focus:border-[#E8D5B5]/40" />
+            className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-[#1F1F1F] outline-none focus:border-[#5B34FF]/40" />
         </div>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
         <div>
-          <label className="block text-[11px] text-white/60 mb-1.5">Categorie</label>
-          <select name="category" className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-white outline-none">
+          <label className="block text-[11px] text-[#6B6B6B] mb-1.5">Categorie</label>
+          <select name="category" className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-[#1F1F1F] outline-none">
             {DIAGRAM_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-[11px] text-white/60 mb-1.5">Poziție</label>
-          <select name="position" className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-white outline-none">
+          <label className="block text-[11px] text-[#6B6B6B] mb-1.5">Poziție</label>
+          <select name="position" className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-[#1F1F1F] outline-none">
             <option value="">—</option>
             {DIAGRAM_POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-[11px] text-white/60 mb-1.5">Distanță</label>
-          <select name="distance" className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-white outline-none">
+          <label className="block text-[11px] text-[#6B6B6B] mb-1.5">Distanță</label>
+          <select name="distance" className="w-full text-[13px] rounded-lg px-3 py-2 bg-white/[0.04] border border-white/10 text-[#1F1F1F] outline-none">
             <option value="">—</option>
             {DIAGRAM_DISTANCES.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
@@ -219,14 +219,14 @@ function UploadForm({ pending }: { pending: boolean }) {
       </div>
 
       <div>
-        <label className="block text-[11px] text-white/60 mb-1.5">Lumină (poți alege mai multe)</label>
+        <label className="block text-[11px] text-[#6B6B6B] mb-1.5">Lumină (poți alege mai multe)</label>
         <div className="flex flex-wrap gap-2">
           {DIAGRAM_LIGHTING.map((l) => (
             <button key={l} type="button" onClick={() => toggleLighting(l)}
               className={`text-[12px] px-3 py-1.5 rounded-lg border transition-colors ${
                 lighting.includes(l)
-                  ? "bg-[#E8D5B5]/15 border-[#E8D5B5]/40 text-[#E8D5B5]"
-                  : "bg-white/[0.04] border-white/10 text-white/55 hover:text-white/80"
+                  ? "bg-[#5B34FF]/15 border-[#5B34FF]/40 text-[#5B34FF]"
+                  : "bg-white/[0.04] border-white/10 text-[#6B6B6B] hover:text-[#1F1F1F]"
               }`}>
               {l}
             </button>

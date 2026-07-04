@@ -65,12 +65,12 @@ export default function TemplateActionsCard({
 
   return (
     <div className="card p-5">
-      <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#E8D5B5]/85 font-bold mb-3">
+      <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold mb-3">
         Acțiuni
       </h2>
 
       {!isAdmin && (
-        <p className="text-[11px] text-white/45 leading-relaxed mb-3">
+        <p className="text-[11px] text-[#9A9A9A] leading-relaxed mb-3">
           Publicare și ștergere sunt doar pentru admin. Cere unui admin să facă review.
         </p>
       )}
