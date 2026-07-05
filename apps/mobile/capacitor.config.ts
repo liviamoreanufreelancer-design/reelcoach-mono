@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.reelcoach.app",
-  appName: "ReelPilot",
+  appName: "Reel Coach",
   webDir: "dist-mobile",
   server: {
     androidScheme: "https",
@@ -31,12 +31,14 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchAutoHide: true,
       launchShowDuration: 800,
-      backgroundColor: "#0F1419",
+      backgroundColor: "#5B34FF",
       showSpinner: false,
-      spinnerColor: "#E8D5B5",
+      spinnerColor: "#FFFFFF",
+      androidScaleType: "CENTER_INSIDE",
+      resizeMode: "contain",
     },
     StatusBar: {
-      style: "DARK",
+      style: "LIGHT",
       backgroundColor: "#00000000",
       overlaysWebView: true,
     },
