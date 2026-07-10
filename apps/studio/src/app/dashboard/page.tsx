@@ -143,7 +143,7 @@ function TemplateCard({
           {categoryLabel}
         </p>
         {template.is_recommended && (
-          <span className="text-[9px] tracking-[0.2em] uppercase text-[#1F1F1F] bg-[#5B34FF] px-2 py-0.5 rounded-full font-bold shrink-0">
+          <span className="text-[9px] tracking-[0.2em] uppercase text-white bg-[#5B34FF] px-2 py-0.5 rounded-full font-bold shrink-0">
             Recomandat
           </span>
         )}

@@ -240,7 +240,7 @@ export default function PreviewPanel({
                     onClick={() => saveField({ playback_speed: p.v })}
                     className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition tabular-nums ${
                       active
-                        ? "bg-[#5B34FF] text-[#1F1F1F] border border-[#5B34FF]"
+                        ? "bg-[#5B34FF] text-white border border-[#5B34FF]"
                         : "bg-white/[0.04] text-[#4B4B4B] border border-[#5B34FF]/12 hover:border-[#5B34FF]/30 hover:text-[#1F1F1F]"
                     }`}
                   >
@@ -293,7 +293,7 @@ function DimTab({
       onClick={onClick}
       className={`px-1.5 py-1.5 rounded-lg text-[10px] font-medium transition flex flex-col items-center gap-1 ${
         active
-          ? "bg-[#5B34FF] text-[#1F1F1F]"
+          ? "bg-[#5B34FF] text-white"
           : "bg-white/[0.04] text-[#1F1F1F]/65 hover:bg-white/[0.08] hover:text-[#1F1F1F]"
       }`}
     >
