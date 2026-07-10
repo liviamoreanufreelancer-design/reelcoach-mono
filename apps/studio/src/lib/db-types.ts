@@ -62,6 +62,8 @@ export interface TemplateRow {
   concept_id: string | null;
   /** Migration 004: ONE filter for the whole reel (overrides per-scene). */
   global_filter: string | null;
+  /** Migration 009: daca e setat, acesta e un draft-copy al template-ului parinte. */
+  parent_id: string | null;
   status: TemplateStatus;
   is_recommended: boolean;
   difficulty: Difficulty;

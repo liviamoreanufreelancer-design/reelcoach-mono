@@ -21,13 +21,19 @@ export default async function DashboardPage() {
   const [templatesRes, categoriesRes] = await Promise.all([
     supabase
       .from("templates")
-      .select("id, title, status, is_recommended, category_id, updated_at, cover_url")
+      .select("id, title, status, is_recommended, category_id, updated_at, cover_url, parent_id")
       .order("updated_at", { ascending: false }),
     supabase.from("categories").select("id, label").order("sort_order"),
   ]);
 
-  const templates = (templatesRes.data ?? []) as TemplateRow[];
+  const all = (templatesRes.data ?? []) as TemplateRow[];
   const categories = (categoriesRes.data ?? []) as CategoryRow[];
+
+  // Draft-copy-urile (parent_id setat) nu apar separat in lista;
+  // marcheaza doar originalul ca avand modificari nepublicate.
+  const draftCopies = all.filter((t) => t.parent_id);
+  const parentsWithDraft = new Set(draftCopies.map((t) => t.parent_id as string));
+  const templates = all.filter((t) => !t.parent_id);
 
   // Map -> obiect simplu (serializabil catre client component)
   const categoryLabels: Record<string, string> = {};
@@ -52,7 +58,7 @@ export default async function DashboardPage() {
         <NewTemplateButton categories={categories} />
       </div>
 
-      <TemplateList templates={templates} categoryLabels={categoryLabels} />
+      <TemplateList templates={templates} categoryLabels={categoryLabels} parentsWithDraft={Array.from(parentsWithDraft)} />
     </div>
   );
 }

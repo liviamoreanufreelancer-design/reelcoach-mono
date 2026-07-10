@@ -18,9 +18,9 @@ import type { TemplateRow, ShotRow, Category } from "@/lib/db-types";
 import TemplateFormCard from "@/components/TemplateFormCard";
 import CoverUploadCard from "@/components/CoverUploadCard";
 import ScenesEditor from "@/components/ScenesEditor";
-import TemplateActionsCard from "@/components/TemplateActionsCard";
 import LiveScenePreview from "@/components/LiveScenePreview";
 import TemplateSidebar from "@/components/TemplateSidebar";
+import { getDraftFor } from "@/lib/template-actions";
 
 export default async function TemplateDetailPage({
   params,
@@ -55,7 +55,11 @@ export default async function TemplateDetailPage({
   const categories = (categoriesRes.data ?? []) as Pick<Category, "id" | "label">[];
 
   const isPublished = template.status === "published";
-  const canEdit = !isPublished || isAdmin;
+  const isDraftCopy = Boolean(template.parent_id);
+  // Publicatele NU se editeaza direct (nici de admin). Se creeaza o ciorna.
+  const canEdit = !isPublished;
+  // Are acest template publicat o ciorna in lucru?
+  const draftId = isDraftCopy ? null : await getDraftFor(template.id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -92,10 +96,10 @@ export default async function TemplateDetailPage({
       </div>
 
       {!canEdit && (
-        <div className="card p-4 border-amber-400/30 bg-amber-400/5">
-          <p className="text-[12px] text-amber-200 leading-relaxed">
-            Acest șablon este publicat. Doar adminii pot edita un șablon publicat.
-            Cere unui admin să-l treacă pe draft pentru a-l modifica.
+        <div className="rounded-xl border border-[#F5B228]/40 bg-[#FFF6E5] p-4">
+          <p className="text-[12px] text-[#7A5A10] leading-relaxed">
+            <span className="font-semibold">Șablon publicat — live în app.</span>{" "}
+            Ca să-l modifici fără să afectezi versiunea live, apasă „{draftId ? "Continuă ciorna" : "Editează (ciornă)"}" din dreapta.
           </p>
         </div>
       )}
@@ -127,6 +131,8 @@ export default async function TemplateDetailPage({
           status={template.status}
           isAdmin={isAdmin}
           canEdit={canEdit}
+          parentId={template.parent_id}
+          hasDraft={Boolean(draftId)}
         />
       </div>
     </div>

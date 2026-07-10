@@ -403,3 +403,93 @@ export async function setShotSampleUrl(shotId: string, templateId: string, url: 
   revalidatePath(`/dashboard/templates/${templateId}`);
   return url;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Sistem de ciornă (draft-copy) pentru template-uri publicate.
+ *
+ * Fluxul (ca la WordPress):
+ *   1. Template publicat → createDraftCopy() → copie draft cu parent_id
+ *   2. Partenera editează copia (toate acțiunile normale funcționează)
+ *   3. publishDraftChanges() → RPC atomic: copiază peste original, șterge draft
+ *   4. discardDraftChanges() → șterge draft, originalul rămâne neatins
+ *
+ * App-ul mobile nu vede draft-copy-urile (status 'draft') și originalul
+ * își păstrează ID-ul, deci favorite / preview_reel_url rămân valide.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/** Găsește draft-copy-ul unui template publicat (sau null). */
+export async function getDraftFor(templateId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { data } = await supabase
+    .from("templates")
+    .select("id")
+    .eq("parent_id", templateId)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+/** Creează o copie draft a unui template publicat (template + shots). */
+export async function createDraftCopy(templateId: string) {
+  const supabase = await getSupabaseServerClient();
+
+  // Daca exista deja un draft, il returnam (nu duplicam)
+  const existing = await getDraftFor(templateId);
+  if (existing) return existing;
+
+  const { data: orig, error: origErr } = await supabase
+    .from("templates").select("*").eq("id", templateId).single();
+  if (origErr || !orig) throw new Error(origErr?.message ?? "Template negăsit");
+
+  const draftId = `${templateId}__draft`;
+
+  const { error: insErr } = await supabase.from("templates").insert({
+    id: draftId,
+    parent_id: templateId,
+    status: "draft",
+    title: orig.title,
+    promise: orig.promise,
+    emotional_pitch: orig.emotional_pitch,
+    category_id: orig.category_id,
+    cover_url: orig.cover_url,
+    preview_reel_url: orig.preview_reel_url,
+    example_video_url: orig.example_video_url,
+    concept_id: orig.concept_id,
+    global_filter: orig.global_filter,
+    is_recommended: orig.is_recommended,
+    difficulty: orig.difficulty,
+    created_by: orig.created_by,
+  });
+  if (insErr) throw new Error(insErr.message);
+
+  // Copiaza shots-urile
+  const { data: shots } = await supabase
+    .from("shots").select("*").eq("template_id", templateId).order("sort_order");
+
+  if (shots && shots.length > 0) {
+    const copies = shots.map((s) => {
+      const { id: _id, template_id: _tid, created_at: _c, updated_at: _u, ...rest } = s;
+      return { ...rest, template_id: draftId };
+    });
+    const { error: shotsErr } = await supabase.from("shots").insert(copies);
+    if (shotsErr) throw new Error(shotsErr.message);
+  }
+
+  revalidatePath("/dashboard");
+  return draftId;
+}
+
+/** Publică modificările din draft peste originalul publicat (atomic, via RPC). */
+export async function publishDraftChanges(draftId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.rpc("publish_draft_changes", { draft_id: draftId });
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard");
+}
+
+/** Renunță la modificări: șterge draft-copy-ul (originalul rămâne neatins). */
+export async function discardDraftChanges(draftId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.from("templates").delete().eq("id", draftId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard");
+}

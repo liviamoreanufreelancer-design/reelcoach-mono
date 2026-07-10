@@ -16,15 +16,20 @@ export type TemplateRow = {
   category_id: string;
   updated_at: string;
   cover_url: string | null;
+  /** Migration 009: setat doar pe draft-copy-uri. */
+  parent_id?: string | null;
 };
 
 export default function TemplateList({
   templates,
   categoryLabels,
+  parentsWithDraft = [],
 }: {
   templates: TemplateRow[];
   categoryLabels: Record<string, string>;
+  parentsWithDraft?: string[];
 }) {
+  const draftSet = new Set(parentsWithDraft);
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -66,14 +71,14 @@ export default function TemplateList({
           {drafts.length > 0 && (
             <Section title="Drafts" count={drafts.length} icon={<FileText className="w-4 h-4" />}>
               {drafts.map((t) => (
-                <TemplateCard key={t.id} template={t} categoryLabel={categoryLabels[t.category_id] ?? t.category_id} />
+                <TemplateCard key={t.id} template={t} categoryLabel={categoryLabels[t.category_id] ?? t.category_id} hasDraft={draftSet.has(t.id)} />
               ))}
             </Section>
           )}
           {published.length > 0 && (
             <Section title="Publicate" count={published.length} icon={<CheckCircle2 className="w-4 h-4" />}>
               {published.map((t) => (
-                <TemplateCard key={t.id} template={t} categoryLabel={categoryLabels[t.category_id] ?? t.category_id} />
+                <TemplateCard key={t.id} template={t} categoryLabel={categoryLabels[t.category_id] ?? t.category_id} hasDraft={draftSet.has(t.id)} />
               ))}
             </Section>
           )}
@@ -95,7 +100,7 @@ function Section({ title, count, icon, children }: { title: string; count: numbe
   );
 }
 
-function TemplateCard({ template, categoryLabel }: { template: TemplateRow; categoryLabel: string; }) {
+function TemplateCard({ template, categoryLabel, hasDraft = false }: { template: TemplateRow; categoryLabel: string; hasDraft?: boolean; }) {
   return (
     <Link href={`/dashboard/templates/${template.id}`} className="card p-4 hover:border-[#5B34FF]/30 transition cursor-pointer block">
       <div className="flex items-baseline justify-between mb-2 gap-2">
@@ -105,6 +110,9 @@ function TemplateCard({ template, categoryLabel }: { template: TemplateRow; cate
         )}
       </div>
       <h3 className="text-[15px] font-semibold text-[#1F1F1F] leading-tight mb-3 line-clamp-2">{template.title}</h3>
+      {hasDraft && (
+        <p className="text-[10px] font-semibold text-[#F5B228] mb-1.5">● Modificări nepublicate</p>
+      )}
       <p className="text-[10px] text-[#9A9A9A] tabular-nums">Actualizat: {new Date(template.updated_at).toLocaleDateString("ro-RO")}</p>
     </Link>
   );
