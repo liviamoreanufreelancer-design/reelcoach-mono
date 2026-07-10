@@ -24,6 +24,21 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
+  const onForgotPassword = async () => {
+    setError(null);
+    setInfo(null);
+    if (!email) {
+      setError("Introdu emailul, apoi apasă din nou.");
+      return;
+    }
+    const supabase = getSupabaseBrowserClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) { setError(error.message); return; }
+    setInfo("Ți-am trimis un email cu link de resetare.");
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -134,6 +149,16 @@ export default function LoginPage() {
           >
             {mode === "signin" ? "Cont nou? Înregistrează-te" : "Ai cont? Intră în studio"}
           </button>
+
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-[11px] text-[#6B6B6B] hover:text-[#5B34FF] transition"
+            >
+              Ai uitat parola?
+            </button>
+          )}
         </form>
       </div>
     </main>
