@@ -98,7 +98,7 @@ export default function NewTemplateButton({
             </div>
 
             {error && (
-              <p className="text-[12px] text-rose-300 leading-relaxed">{error}</p>
+              <p className="text-[12px] text-rose-600 leading-relaxed">{error}</p>
             )}
 
             <div className="flex gap-2 mt-2">

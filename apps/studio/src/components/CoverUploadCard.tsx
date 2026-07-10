@@ -88,7 +88,7 @@ export default function CoverUploadCard({
       </p>
 
       {error && (
-        <p className="text-[11px] text-rose-300 mt-2">{error}</p>
+        <p className="text-[11px] text-rose-600 mt-2">{error}</p>
       )}
     </div>
   );

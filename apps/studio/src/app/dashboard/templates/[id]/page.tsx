@@ -76,8 +76,8 @@ export default async function TemplateDetailPage({
         <span
           className={`text-[9px] tracking-[0.25em] uppercase font-semibold px-2.5 py-1 rounded-full ${
             isPublished
-              ? "bg-emerald-400/15 text-emerald-300 border border-emerald-400/30"
-              : "bg-amber-400/15 text-amber-300 border border-amber-400/30"
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
+              : "bg-amber-50 text-amber-700 border border-amber-300"
           }`}
         >
           {isPublished ? "Publicat" : "Draft"}

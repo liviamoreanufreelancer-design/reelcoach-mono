@@ -317,7 +317,7 @@ function StringListEditor({
                 type="button"
                 onClick={() => remove(i)}
                 aria-label="Șterge"
-                className="text-[#9A9A9A] hover:text-rose-300 transition shrink-0"
+                className="text-[#9A9A9A] hover:text-rose-600 transition shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -411,7 +411,7 @@ function HowShootListEditor({
                 type="button"
                 onClick={() => remove(i)}
                 aria-label="Șterge"
-                className="ml-auto text-[#9A9A9A] hover:text-rose-300 transition shrink-0"
+                className="ml-auto text-[#9A9A9A] hover:text-rose-600 transition shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -467,7 +467,7 @@ function SaveIndicator({
   savedAt: Date | null;
   error: string | null;
 }) {
-  if (error) return <span className="text-[11px] text-rose-300">{error}</span>;
+  if (error) return <span className="text-[11px] text-rose-600">{error}</span>;
   if (pending) return <span className="text-[10px] tracking-[0.2em] uppercase text-[#9A9A9A]">Se salvează…</span>;
   if (savedAt) {
     return (

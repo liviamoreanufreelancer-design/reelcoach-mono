@@ -122,10 +122,10 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-[12px] text-rose-300 leading-relaxed">{error}</p>
+            <p className="text-[12px] text-rose-600 leading-relaxed">{error}</p>
           )}
           {info && (
-            <p className="text-[12px] text-emerald-300 leading-relaxed">{info}</p>
+            <p className="text-[12px] text-emerald-700 leading-relaxed">{info}</p>
           )}
 
           <button

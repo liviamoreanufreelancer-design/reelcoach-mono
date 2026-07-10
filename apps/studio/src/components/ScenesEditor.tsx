@@ -150,7 +150,7 @@ export default function ScenesEditor({
                       onClick={() => onDelete(shot.id)}
                       disabled={disabled || pending}
                       aria-label="Șterge scena"
-                      className="w-8 h-8 rounded-full bg-rose-400/[0.06] flex items-center justify-center text-rose-300/85 disabled:opacity-25 active:scale-95"
+                      className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 disabled:opacity-25 active:scale-95"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

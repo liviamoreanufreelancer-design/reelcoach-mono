@@ -155,7 +155,7 @@ function SaveIndicator({
   error: string | null;
 }) {
   if (error) {
-    return <span className="text-[11px] text-rose-300">{error}</span>;
+    return <span className="text-[11px] text-rose-600">{error}</span>;
   }
   if (pending) {
     return <span className="text-[10px] tracking-[0.2em] uppercase text-[#9A9A9A]">Se salvează…</span>;
