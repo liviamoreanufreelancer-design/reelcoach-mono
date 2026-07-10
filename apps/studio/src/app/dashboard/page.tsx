@@ -1,24 +1,14 @@
 /**
  * Dashboard — lists all templates with status (draft/published), category,
- * recommended flag, and last updated date.
+ * recommended flag, and last updated date. Rendering + live search live in
+ * the TemplateList client component.
  *
  * Click a card → opens the template edit page.
  * Click "+ Șablon nou" → opens dialog → creates draft → redirects to edit.
  */
-import Link from "next/link";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-import { FileText, CheckCircle2 } from "lucide-react";
 import NewTemplateButton from "@/components/NewTemplateButton";
-
-type TemplateRow = {
-  id: string;
-  title: string;
-  status: "draft" | "published";
-  is_recommended: boolean;
-  category_id: string;
-  updated_at: string;
-  cover_url: string | null;
-};
+import TemplateList, { type TemplateRow } from "@/components/TemplateList";
 
 type CategoryRow = {
   id: string;
@@ -38,7 +28,10 @@ export default async function DashboardPage() {
 
   const templates = (templatesRes.data ?? []) as TemplateRow[];
   const categories = (categoriesRes.data ?? []) as CategoryRow[];
-  const categoryById = new Map(categories.map((c) => [c.id, c.label]));
+
+  // Map -> obiect simplu (serializabil catre client component)
+  const categoryLabels: Record<string, string> = {};
+  for (const c of categories) categoryLabels[c.id] = c.label;
 
   const drafts = templates.filter((t) => t.status === "draft");
   const published = templates.filter((t) => t.status === "published");
@@ -59,112 +52,7 @@ export default async function DashboardPage() {
         <NewTemplateButton categories={categories} />
       </div>
 
-      {templates.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="flex flex-col gap-6">
-          {drafts.length > 0 && (
-            <Section
-              title="Drafts"
-              count={drafts.length}
-              icon={<FileText className="w-4 h-4" />}
-            >
-              {drafts.map((t) => (
-                <TemplateCard
-                  key={t.id}
-                  template={t}
-                  categoryLabel={categoryById.get(t.category_id) ?? t.category_id}
-                />
-              ))}
-            </Section>
-          )}
-
-          {published.length > 0 && (
-            <Section
-              title="Publicate"
-              count={published.length}
-              icon={<CheckCircle2 className="w-4 h-4" />}
-            >
-              {published.map((t) => (
-                <TemplateCard
-                  key={t.id}
-                  template={t}
-                  categoryLabel={categoryById.get(t.category_id) ?? t.category_id}
-                />
-              ))}
-            </Section>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Section({
-  title,
-  count,
-  icon,
-  children,
-}: {
-  title: string;
-  count: number;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-3 text-[#5B34FF]/85">
-        {icon}
-        <h2 className="text-[10px] tracking-[0.32em] uppercase font-bold">
-          {title} · {count}
-        </h2>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function TemplateCard({
-  template,
-  categoryLabel,
-}: {
-  template: TemplateRow;
-  categoryLabel: string;
-}) {
-  return (
-    <Link
-      href={`/dashboard/templates/${template.id}`}
-      className="card p-4 hover:border-[#5B34FF]/30 transition cursor-pointer block"
-    >
-      <div className="flex items-baseline justify-between mb-2 gap-2">
-        <p className="text-[9px] tracking-[0.25em] uppercase text-[#5B34FF]/70 font-semibold truncate">
-          {categoryLabel}
-        </p>
-        {template.is_recommended && (
-          <span className="text-[9px] tracking-[0.2em] uppercase text-white bg-[#5B34FF] px-2 py-0.5 rounded-full font-bold shrink-0">
-            Recomandat
-          </span>
-        )}
-      </div>
-      <h3 className="text-[15px] font-semibold text-[#1F1F1F] leading-tight mb-3 line-clamp-2">
-        {template.title}
-      </h3>
-      <p className="text-[10px] text-[#9A9A9A] tabular-nums">
-        Actualizat: {new Date(template.updated_at).toLocaleDateString("ro-RO")}
-      </p>
-    </Link>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="card p-10 text-center">
-      <p className="h-display text-[22px] text-[#1F1F1F] mb-2">Niciun șablon încă.</p>
-      <p className="text-sm text-[#6B6B6B] leading-relaxed max-w-[28rem] mx-auto">
-        Creează primul șablon apăsând „Șablon nou" sus dreapta.
-      </p>
+      <TemplateList templates={templates} categoryLabels={categoryLabels} />
     </div>
   );
 }
