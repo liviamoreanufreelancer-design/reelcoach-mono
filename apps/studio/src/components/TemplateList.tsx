@@ -51,7 +51,8 @@ export default function TemplateList({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Caută după titlu sau categorie…"
-          className="input pl-10"
+          className="input"
+          style={{ paddingLeft: "40px" }}
         />
       </div>
 
