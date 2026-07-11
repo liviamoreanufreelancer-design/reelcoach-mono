@@ -93,6 +93,13 @@ export default function LiveScenePreview({
   const layersRef = useRef<TextLayer[]>(layers);
   useEffect(() => { layersRef.current = layers; }, [layers]);
   useEffect(() => { setLayers((shot?.text_layers as TextLayer[] | null) ?? []); }, [shot?.id]);
+  // Faza 4: drag + grile de aliniere pe preview.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  // Ghidaje active in timpul drag-ului (linii care apar cand esti aproape de aliniere).
+  const [guides, setGuides] = useState<{ vCenter: boolean; hCenter: boolean; vLayers: number[]; hLayers: number[] }>(
+    { vCenter: false, hCenter: false, vLayers: [], hLayers: [] },
+  );
   useEffect(() => { setTextPos(shot?.caption_position ?? "bottom"); }, [shot?.id, shot?.caption_position]);
   useEffect(() => { setTextStyle(shot?.caption_preset ?? "hookBold"); }, [shot?.id, shot?.caption_preset]);
 
@@ -272,6 +279,57 @@ export default function LiveScenePreview({
     const next = layers.filter((l) => l.id !== id);
     setLayers(next);
     saveLayers(next);
+  };
+
+  // ── Faza 4: drag + snap + grile de aliniere ──
+  const SNAP = 0.02; // prag de lipire (2% din latime/inaltime)
+
+  const onLayerPointerDown = (e: React.PointerEvent, id: string) => {
+    if (disabled) return;
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setDragId(id);
+  };
+
+  const onStagePointerMove = (e: React.PointerEvent) => {
+    if (!dragId) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    let x = (e.clientX - rect.left) / rect.width;
+    let y = (e.clientY - rect.top) / rect.height;
+    x = Math.max(0, Math.min(1, x));
+    y = Math.max(0, Math.min(1, y));
+
+    // Ghidaje + snap: centru (0.5) si alinierea cu alte texte.
+    const others = layers.filter((l) => l.id !== dragId);
+    const vLayers: number[] = [];
+    const hLayers: number[] = [];
+    let vCenter = false;
+    let hCenter = false;
+
+    // snap la centru orizontal (x=0.5)
+    if (Math.abs(x - 0.5) < SNAP) { x = 0.5; vCenter = true; }
+    // snap la centru vertical (y=0.5)
+    if (Math.abs(y - 0.5) < SNAP) { y = 0.5; hCenter = true; }
+
+    // snap la x-ul altor texte (aliniere verticala intre corpuri)
+    for (const o of others) {
+      if (Math.abs(x - o.x) < SNAP) { x = o.x; if (!vLayers.includes(o.x)) vLayers.push(o.x); }
+      if (Math.abs(y - o.y) < SNAP) { y = o.y; if (!hLayers.includes(o.y)) hLayers.push(o.y); }
+    }
+
+    setGuides({ vCenter, hCenter, vLayers, hLayers });
+    updateLayer(dragId, { x, y });
+  };
+
+  const onStagePointerUp = (e: React.PointerEvent) => {
+    if (!dragId) return;
+    try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    setDragId(null);
+    setGuides({ vCenter: false, hCenter: false, vLayers: [], hLayers: [] });
+    // salvarea s-a facut deja prin updateLayer (debounced); fortam un save final.
+    saveLayers(layersRef.current);
   };
 
   const saveShot = (patch: Parameters<typeof updateShot>[2]) => {
@@ -463,9 +521,48 @@ export default function LiveScenePreview({
 
         {/* LEFT: preview + clip buttons */}
         <div className="flex flex-col gap-2">
-          <div className="relative w-full rounded-2xl overflow-hidden bg-black border border-[#EDE8FF]" style={{ aspectRatio: "9 / 16" }}>
+          <div
+            ref={stageRef}
+            className="relative w-full rounded-2xl overflow-hidden bg-black border border-[#EDE8FF]"
+            style={{ aspectRatio: "9 / 16", touchAction: "none" }}
+            onPointerMove={onStagePointerMove}
+            onPointerUp={onStagePointerUp}
+            onPointerLeave={onStagePointerUp}
+          >
             <canvas ref={canvasRef} width={W} height={H} className="absolute inset-0 w-full h-full object-cover" />
             <video ref={videoRef} className="hidden" playsInline muted onLoadedMetadata={onMeta} />
+
+            {/* Grile de aliniere (apar in timpul drag-ului) */}
+            {dragId && (
+              <div className="absolute inset-0 pointer-events-none z-20">
+                {guides.vCenter && <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-[#FF3D9A]" />}
+                {guides.hCenter && <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-[#FF3D9A]" />}
+                {guides.vLayers.map((gx, i) => (
+                  <div key={`v${i}`} className="absolute top-0 bottom-0 w-px bg-[#5B34FF]" style={{ left: `${gx * 100}%` }} />
+                ))}
+                {guides.hLayers.map((gy, i) => (
+                  <div key={`h${i}`} className="absolute left-0 right-0 h-px bg-[#5B34FF]" style={{ top: `${gy * 100}%` }} />
+                ))}
+              </div>
+            )}
+
+            {/* Handle-uri drag-abile per text (transparente, peste canvas) */}
+            {!disabled && layers.map((layer) => (
+              <button
+                key={layer.id}
+                type="button"
+                onPointerDown={(e) => onLayerPointerDown(e, layer.id)}
+                className={`absolute z-10 px-3 py-1.5 rounded-md text-[10px] font-medium whitespace-nowrap -translate-x-1/2 -translate-y-1/2 cursor-move transition ${
+                  dragId === layer.id
+                    ? "bg-[#5B34FF]/90 text-white ring-2 ring-white/70"
+                    : "bg-black/40 text-white/90 hover:bg-black/60 ring-1 ring-white/30"
+                }`}
+                style={{ left: `${layer.x * 100}%`, top: `${layer.y * 100}%` }}
+                title="Trage ca să muți textul"
+              >
+                {layer.text.trim().slice(0, 18) || "text"}
+              </button>
+            ))}
             {!hasVideo && (
               <div className="absolute inset-0 flex items-center justify-center text-[#9A9A9A]">
                 <span className="text-[12px]">Niciun clip</span>
