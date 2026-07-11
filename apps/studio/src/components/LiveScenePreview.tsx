@@ -284,11 +284,25 @@ export default function LiveScenePreview({
   // ── Faza 4: drag + snap + grile de aliniere ──
   const SNAP = 0.02; // prag de lipire (2% din latime/inaltime)
 
-  const onLayerPointerDown = (e: React.PointerEvent, id: string) => {
-    if (disabled) return;
-    e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    setDragId(id);
+  const onStagePointerDown = (e: React.PointerEvent) => {
+    if (disabled || layers.length === 0) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    let best: string | null = null;
+    let bestDist = Infinity;
+    for (const l of layers) {
+      const dx = l.x - px;
+      const dy = l.y - py;
+      const d = dx * dx + dy * dy;
+      if (d < bestDist) { bestDist = d; best = l.id; }
+    }
+    if (best && bestDist < 0.18 * 0.18) {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      setDragId(best);
+    }
   };
 
   const onStagePointerMove = (e: React.PointerEvent) => {
@@ -525,6 +539,7 @@ export default function LiveScenePreview({
             ref={stageRef}
             className="relative w-full rounded-2xl overflow-hidden bg-black border border-[#EDE8FF]"
             style={{ aspectRatio: "9 / 16", touchAction: "none" }}
+            onPointerDown={onStagePointerDown}
             onPointerMove={onStagePointerMove}
             onPointerUp={onStagePointerUp}
             onPointerLeave={onStagePointerUp}
@@ -546,23 +561,10 @@ export default function LiveScenePreview({
               </div>
             )}
 
-            {/* Handle-uri drag-abile per text (transparente, peste canvas) */}
-            {!disabled && layers.map((layer) => (
-              <button
-                key={layer.id}
-                type="button"
-                onPointerDown={(e) => onLayerPointerDown(e, layer.id)}
-                className={`absolute z-10 px-3 py-1.5 rounded-md text-[10px] font-medium whitespace-nowrap -translate-x-1/2 -translate-y-1/2 cursor-move transition ${
-                  dragId === layer.id
-                    ? "bg-[#5B34FF]/90 text-white ring-2 ring-white/70"
-                    : "bg-black/40 text-white/90 hover:bg-black/60 ring-1 ring-white/30"
-                }`}
-                style={{ left: `${layer.x * 100}%`, top: `${layer.y * 100}%` }}
-                title="Trage ca să muți textul"
-              >
-                {layer.text.trim().slice(0, 18) || "text"}
-              </button>
-            ))}
+            {/* Zona de drag: tragi direct de textul de pe canvas. */}
+            {!disabled && layers.length > 0 && (
+              <div className="absolute inset-0 z-10" style={{ cursor: dragId ? "grabbing" : "move" }} />
+            )}
             {!hasVideo && (
               <div className="absolute inset-0 flex items-center justify-center text-[#9A9A9A]">
                 <span className="text-[12px]">Niciun clip</span>
@@ -680,6 +682,33 @@ export default function LiveScenePreview({
                         </button>
                       );
                     })}
+                  </div>
+                  {/* Culoare font: swatch-uri rapide + selector liber */}
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    {["#FFFFFF", "#000000", "#5B34FF", "#F5B228", "#FF3D9A"].map((c) => {
+                      const activeColor = (layer.color ?? "#FFFFFF").toLowerCase() === c.toLowerCase();
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => updateLayer(layer.id, { color: c })}
+                          disabled={disabled}
+                          title={c}
+                          className={`w-6 h-6 rounded-full border transition disabled:opacity-40 ${activeColor ? "ring-2 ring-[#5B34FF] ring-offset-1 border-white" : "border-[#E7E3F5]"}`}
+                          style={{ background: c }}
+                        />
+                      );
+                    })}
+                    <label className="relative w-6 h-6 rounded-full border border-[#E7E3F5] overflow-hidden cursor-pointer" title="Altă culoare">
+                      <span className="absolute inset-0" style={{ background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)" }} />
+                      <input
+                        type="color"
+                        value={layer.color ?? "#FFFFFF"}
+                        onChange={(e) => updateLayer(layer.id, { color: e.target.value })}
+                        disabled={disabled}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </label>
                   </div>
                 </div>
               ))}
