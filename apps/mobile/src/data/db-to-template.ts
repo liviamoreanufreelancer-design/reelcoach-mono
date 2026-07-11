@@ -67,6 +67,50 @@ export function dbToReelTemplate(
 }
 
 /** Convert one DB shot row → mobile Shot. */
+// Etichete RO pentru variabilele de filmare (migrația 008).
+const HOLD_LABEL: Record<string, string> = { hand: "În mână", tripod: "Pe stativ" };
+const DIST_LABEL: Record<string, string> = { palm: "La o palmă", arm: "La un braț", step: "La un pas", two_steps: "La doi pași" };
+const MOVE_LABEL: Record<string, string> = { fixed: "Fix", follow: "Urmărire", pan: "Panoramare", zoom: "Zoom" };
+const LIGHT_LABEL: Record<string, string> = { natural: "Lumină naturală", ring: "Ring light", led: "LED-uri", reflector: "Reflector" };
+const LIGHT_POS_LABEL: Record<string, string> = { front: "Față", left: "Stânga", right: "Dreapta", back: "Spate", top: "Sus", bottom: "Jos" };
+
+type HowShootItem = { icon: string; label: string; detail: string };
+
+/**
+ * Construiește lista de instrucțiuni de filmare din variabilele structurate
+ * (migrația 008) pe care partenera le setează în Studio. Dacă scena nu are
+ * variabile 008, întoarce null și se folosește vechiul how_shoot.
+ */
+function buildHowShootFrom008(row: DbShotRow): HowShootItem[] | null {
+  const items: HowShootItem[] = [];
+
+  if (row.phone_hold) {
+    items.push({ icon: "phone-vertical", label: "Telefon", detail: HOLD_LABEL[row.phone_hold] ?? row.phone_hold });
+  }
+  if (row.shot_distance) {
+    items.push({ icon: "distance", label: "Distanță", detail: DIST_LABEL[row.shot_distance] ?? row.shot_distance });
+  }
+  // Mișcarea are sens doar când telefonul e ținut în mână.
+  if (row.phone_movement && row.phone_hold === "hand") {
+    items.push({ icon: "move", label: "Mișcare", detail: MOVE_LABEL[row.phone_movement] ?? row.phone_movement });
+  }
+  // Câte un rând pentru fiecare sursă de lumină.
+  if (row.light_sources && row.light_sources.length > 0) {
+    for (const l of row.light_sources) {
+      items.push({
+        icon: "light",
+        label: LIGHT_LABEL[l.type] ?? "Lumină",
+        detail: LIGHT_POS_LABEL[l.position ?? "front"] ?? "Față",
+      });
+    }
+  }
+  if (row.recording_duration) {
+    items.push({ icon: "duration", label: "Durată", detail: `${row.recording_duration} secunde` });
+  }
+
+  return items.length > 0 ? items : null;
+}
+
 function dbShotToShot(row: DbShotRow): Shot {
   return {
     id: row.id,
@@ -86,7 +130,7 @@ function dbShotToShot(row: DbShotRow): Shot {
     filterStyle: row.filter_style as FilterId,
     effect: row.effect as EffectId,
     mustSee: row.must_see ?? undefined,
-    howShoot: row.how_shoot ?? undefined,
+    howShoot: buildHowShootFrom008(row) ?? row.how_shoot ?? undefined,
     playbackSpeed: row.playback_speed ?? undefined,
     motionBlur: row.motion_blur ?? undefined,
     exampleImageUrl: row.example_image_url ?? undefined,

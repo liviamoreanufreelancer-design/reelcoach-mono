@@ -65,6 +65,12 @@ export interface DbTemplateRow {
   updated_at: string;
 }
 
+/** O sursă de lumină pe scenă (migrația 008). */
+export interface LightSource {
+  type: "natural" | "ring" | "led" | "reflector";
+  position: "front" | "left" | "right" | "back" | "top" | "bottom";
+}
+
 export interface DbShotRow {
   id: string;
   template_id: string;
@@ -92,4 +98,10 @@ export interface DbShotRow {
   playback_speed: number;
   motion_blur: boolean;
   caption_preset: string | null;
+  /** Migrația 008: variabile de filmare structurate. */
+  phone_hold: "hand" | "tripod" | null;
+  shot_distance: "palm" | "arm" | "step" | "two_steps" | null;
+  phone_movement: "fixed" | "follow" | "pan" | "zoom" | null;
+  light_sources: LightSource[] | null;
+  subject_type: string | null;
 }

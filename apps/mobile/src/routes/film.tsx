@@ -1127,6 +1127,10 @@ function HowShootIcon({ icon }: { icon: string }) {
     case "move":
     case "pan":
       return <MoveRight className="w-[21px] h-[21px]" strokeWidth={1.9} />;
+    case "duration":
+    case "clock":
+    case "timer":
+      return <Clock className="w-[21px] h-[21px]" strokeWidth={1.9} />;
     default:
       return <span className="w-1.5 h-1.5 rounded-full bg-current" />;
   }
