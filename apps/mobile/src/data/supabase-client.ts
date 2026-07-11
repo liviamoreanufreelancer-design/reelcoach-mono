@@ -1,3 +1,4 @@
+import type { TextLayer } from "@reelcoach/core";
 /**
  * Supabase client for the mobile reel app.
  *
@@ -79,6 +80,8 @@ export interface DbShotRow {
   title: string;
   hook: string | null;
   overlay_text: string | null;
+  /** Migrația 010: straturi de text overlay (multi-text). */
+  text_layers: TextLayer[] | null;
   recording_duration: number;
   final_usage_duration: number;
   countdown: number;

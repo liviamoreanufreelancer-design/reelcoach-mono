@@ -135,6 +135,8 @@ export interface ShotRow {
   title: string;
   hook: string | null;
   overlay_text: string | null;
+  /** Migrația 010: straturi de text overlay (multi-text). null = folosește overlay_text vechi. */
+  text_layers: unknown[] | null;
   recording_duration: number;
   final_usage_duration: number;
   countdown: number;
