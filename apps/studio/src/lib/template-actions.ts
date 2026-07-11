@@ -205,6 +205,7 @@ export async function updateShot(
     subject_type?: 'face' | 'hands' | 'hair' | 'product' | null;
     caption_position?: 'top' | 'center' | 'bottom';
     caption_preset?: string;
+    text_layers?: unknown[] | null;
     diagram_id?: string | null;
   },
 ) {

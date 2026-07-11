@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { renderPreviewFrame, FILTERS, type FilterId } from "@reelcoach/core";
+import { renderPreviewFrame, FILTERS, type FilterId, type TextLayer } from "@reelcoach/core";
 import { updateShot, updateGlobalFilter, setShotSampleUrl, uploadCover, uploadExampleImage } from "@/lib/template-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { TRANSITIONS, FILTERS as FILTER_OPTS, EFFECTS } from "@/lib/options";
@@ -23,6 +23,14 @@ const DISTANCES = [{ id: "palm", label: "La o palmă" }, { id: "arm", label: "Un
 const MOVEMENTS = [{ id: "fixed", label: "Fix" }, { id: "follow", label: "Urmărire" }, { id: "pan", label: "Panoramare" }, { id: "zoom", label: "Zoom" }] as const;
 const LIGHTS = [{ id: "natural", label: "Naturală" }, { id: "ring", label: "Ring light" }, { id: "led", label: "LED-uri" }, { id: "reflector", label: "Reflector" }] as const;
 const LIGHT_POSITIONS = [{ id: "front", label: "Față" }, { id: "left", label: "Stânga" }, { id: "right", label: "Dreapta" }, { id: "back", label: "Spate" }, { id: "top", label: "Sus" }, { id: "bottom", label: "Jos" }] as const;
+const TEXT_FONTS = [
+  { id: "hookBold", label: "Hook Bold" },
+  { id: "luxurySerif", label: "Luxury Serif" },
+  { id: "bubblePill", label: "Bubble Pill" },
+  { id: "subtitleOutline", label: "Subtitle" },
+  { id: "badgeGold", label: "Badge Gold" },
+  { id: "brandSoft", label: "Brand Soft" },
+] as const;
 const TEXT_POSITIONS = [
   { id: "top", label: "Sus" },
   { id: "center", label: "Centru" },
@@ -80,6 +88,11 @@ export default function LiveScenePreview({
   const [lights, setLights] = useState<LightSource[]>(shot?.light_sources ?? []);
   const [textPos, setTextPos] = useState<string>(shot?.caption_position ?? "bottom");
   const [textStyle, setTextStyle] = useState<string>(shot?.caption_preset ?? "hookBold");
+  // Text multi-strat (Faza 3). Inlocuieste sistemul unic overlay_text.
+  const [layers, setLayers] = useState<TextLayer[]>((shot?.text_layers as TextLayer[] | null) ?? []);
+  const layersRef = useRef<TextLayer[]>(layers);
+  useEffect(() => { layersRef.current = layers; }, [layers]);
+  useEffect(() => { setLayers((shot?.text_layers as TextLayer[] | null) ?? []); }, [shot?.id]);
   useEffect(() => { setTextPos(shot?.caption_position ?? "bottom"); }, [shot?.id, shot?.caption_position]);
   useEffect(() => { setTextStyle(shot?.caption_preset ?? "hookBold"); }, [shot?.id, shot?.caption_preset]);
 
@@ -132,7 +145,8 @@ export default function LiveScenePreview({
           tNorm,
           localMs: local * 1000,
           clipMs: win * 1000,
-          caption: textRef.current.trim()
+          textLayers: layersRef.current.length > 0 ? layersRef.current : undefined,
+          caption: layersRef.current.length === 0 && textRef.current.trim()
             ? { text: textRef.current, position: posRef.current as "top" | "center" | "bottom", presetId: styleRef.current }
             : undefined,
         });
@@ -224,6 +238,40 @@ export default function LiveScenePreview({
         setUploading(false);
       }
     });
+  };
+
+  // Salvare layere (debounced pentru editarea textului).
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveLayers = (next: TextLayer[]) => {
+    if (!shot) return;
+    updateShot(shot.id, templateId, { text_layers: next.length > 0 ? next : null }).catch(() => {});
+  };
+  const saveLayersDebounced = (next: TextLayer[]) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => saveLayers(next), 500);
+  };
+  const addLayer = () => {
+    const yStep = 0.2;
+    const n: TextLayer = {
+      id: (globalThis.crypto?.randomUUID?.() ?? String(Date.now())),
+      text: "Text nou",
+      presetId: "hookBold",
+      x: 0.5,
+      y: Math.min(0.9, 0.15 + layers.length * yStep),
+    };
+    const next = [...layers, n];
+    setLayers(next);
+    saveLayers(next);
+  };
+  const updateLayer = (id: string, patch: Partial<TextLayer>) => {
+    const next = layers.map((l) => (l.id === id ? { ...l, ...patch } : l));
+    setLayers(next);
+    saveLayersDebounced(next);
+  };
+  const removeLayer = (id: string) => {
+    const next = layers.filter((l) => l.id !== id);
+    setLayers(next);
+    saveLayers(next);
   };
 
   const saveShot = (patch: Parameters<typeof updateShot>[2]) => {
@@ -465,28 +513,79 @@ export default function LiveScenePreview({
             </div>
           </div>
 
-          {/* Text pe video */}
+          {/* Text pe video — multi-strat (Faza 3) */}
           <div className="rounded-xl bg-[#F6F4FE] border border-[#EDE8FF] p-3.5">
-            <div className="text-[10px] tracking-[0.18em] uppercase text-[#5B34FF]/85 mb-2.5">✦ Text pe video</div>
-            <input type="text" value={textValue} onChange={(e) => onTextChange(e.target.value)} placeholder="Scrie textul scenei…" className="input mb-2.5" />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">Poziție</label>
-                <div className="flex gap-1">
-                  {TEXT_POSITIONS.map((p) => (
-                    <button key={p.id} type="button" onClick={() => { setTextPos(p.id); saveShot({ caption_position: p.id as "top" | "center" | "bottom" }); }}
-                      className={`flex-1 py-1.5 rounded-lg text-[11px] transition ${textPos === p.id ? "bg-[#5B34FF] text-white font-medium" : "bg-white border border-[#E7E3F5] text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
-                      {p.label}
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="text-[10px] tracking-[0.18em] uppercase text-[#5B34FF]/85">✦ Text pe video</div>
+              <button type="button" onClick={addLayer} disabled={disabled}
+                className="text-[11px] font-medium text-[#5B34FF] hover:text-[#4826CC] disabled:opacity-40">
+                + Adaugă text
+              </button>
+            </div>
+
+            {layers.length === 0 && (
+              <p className="text-[11px] text-[#9A9A9A] py-2">Niciun text. Apasă „+ Adaugă text".</p>
+            )}
+
+            <div className="flex flex-col gap-2.5">
+              {layers.map((layer) => (
+                <div key={layer.id} className="rounded-lg bg-white border border-[#E7E3F5] p-2.5">
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={layer.text}
+                      onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
+                      placeholder="Scrie textul…"
+                      className="input flex-1 !mb-0"
+                      disabled={disabled}
+                    />
+                    <button type="button" onClick={() => removeLayer(layer.id)} disabled={disabled}
+                      className="shrink-0 w-9 rounded-lg text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 disabled:opacity-40 text-[15px]">
+                      ×
                     </button>
-                  ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <select
+                      value={layer.presetId}
+                      onChange={(e) => updateLayer(layer.id, { presetId: e.target.value })}
+                      className="input !mb-0 text-[12px]"
+                      disabled={disabled}
+                    >
+                      {TEXT_FONTS.map((f) => (<option key={f.id} value={f.id}>{f.label}</option>))}
+                    </select>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-[#9A9A9A] shrink-0">Mărime</span>
+                      <input
+                        type="range" min={0.5} max={2} step={0.1}
+                        value={layer.sizeScale ?? 1}
+                        onChange={(e) => updateLayer(layer.id, { sizeScale: Number(e.target.value) })}
+                        className="flex-1 accent-[#5B34FF]"
+                        disabled={disabled}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {([
+                      { key: "bold", label: "B", cls: "font-bold" },
+                      { key: "italic", label: "I", cls: "italic" },
+                      { key: "underline", label: "U", cls: "underline" },
+                    ] as const).map((b) => {
+                      const active = Boolean(layer[b.key]);
+                      return (
+                        <button
+                          key={b.key}
+                          type="button"
+                          onClick={() => updateLayer(layer.id, { [b.key]: !active })}
+                          disabled={disabled}
+                          className={`w-8 h-8 rounded-lg text-[13px] ${b.cls} transition disabled:opacity-40 ${active ? "bg-[#5B34FF] text-white" : "bg-white border border-[#E7E3F5] text-[#6B6B6B] hover:text-[#1F1F1F]"}`}
+                        >
+                          {b.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="label">Stil</label>
-                <select value={textStyle} onChange={(e) => { setTextStyle(e.target.value); saveShot({ caption_preset: e.target.value }); }} className="input">
-                  {TEXT_STYLES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
-                </select>
-              </div>
+              ))}
             </div>
           </div>
 
