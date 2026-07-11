@@ -2,7 +2,7 @@ import type { ConcatProgress } from "./render-progress";
 import type { FilterPreset } from "./filters";
 import { FILTERS } from "./filters";
 import type { TransitionId } from "./transitions";
-import { drawCaption, makeSurface, type Caption } from "./overlay-renderer";
+import { drawCaption, drawTextLayers, makeSurface, type Caption, type TextLayer } from "./overlay-renderer";
 import { TEXT_PRESETS } from "./text-presets";
 
 /**
@@ -1155,6 +1155,8 @@ export interface PreviewFrameOptions {
   kenBurns?: boolean;
   /** Optional caption overlay (text + position + preset id). Drawn last, same as export. */
   caption?: Caption;
+  /** Straturi de text libere (multi-text overlay). Daca setat, inlocuieste caption. */
+  textLayers?: TextLayer[];
 }
 
 export function renderPreviewFrame(
@@ -1182,11 +1184,21 @@ export function renderPreviewFrame(
   if (effectId && effectId !== "none") {
     drawPremiumEffect(ctx, effectId, opts.localMs ?? 0, opts.clipMs ?? 4000, width, height);
   }
-  // Caption overlay — same drawCaption + presets as export, so preview = export.
-  const caption = opts.caption;
-  if (caption && caption.text.trim()) {
-    const preset = TEXT_PRESETS[caption.presetId] ?? TEXT_PRESETS.hookBold;
-    const surface = makeSurface(width, height);
-    drawCaption(ctx, caption, preset, surface);
+  // Overlay text — textLayers (multi-text) au prioritate; altfel caption vechi.
+  // Aceleasi functii ca la export, deci preview = export.
+  const surface = makeSurface(width, height);
+  if (opts.textLayers && opts.textLayers.length > 0) {
+    drawTextLayers(
+      ctx,
+      opts.textLayers,
+      (id) => TEXT_PRESETS[id] ?? TEXT_PRESETS.hookBold,
+      surface,
+    );
+  } else {
+    const caption = opts.caption;
+    if (caption && caption.text.trim()) {
+      const preset = TEXT_PRESETS[caption.presetId] ?? TEXT_PRESETS.hookBold;
+      drawCaption(ctx, caption, preset, surface);
+    }
   }
 }

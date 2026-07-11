@@ -22,6 +22,28 @@ export interface Caption {
   color?: string;
 }
 
+/**
+ * Un strat de text liber pozitionabil pe scena (multi-text overlay).
+ * Pleaca de la un preset (font/size/stil de baza) si permite override-uri
+ * per instanta: pozitie libera (x/y in 0..1), bold/italic/underline, culoare.
+ */
+export interface TextLayer {
+  id: string;
+  text: string;
+  /** Presetul de baza (font, size, outline, shadow). */
+  presetId: string;
+  /** Pozitie libera, fractii din latime/inaltime (0..1). Centrul textului. */
+  x: number;
+  y: number;
+  /** Override-uri de stil per strat. */
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  /** Multiplicator de dimensiune fata de preset (1 = neschimbat). */
+  sizeScale?: number;
+}
+
 export interface OverlayInputs {
   caption?: Caption;
   preset: TextPreset;
@@ -177,6 +199,110 @@ export function drawCaption(
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
+}
+
+/**
+ * Deseneaza un singur TextLayer liber pozitionabil. Reutilizeaza logica din
+ * drawCaption (wrap, outline, shadow) dar cu pozitie x/y libera + suport
+ * bold/italic/underline per strat. Preview = export (aceeasi functie).
+ */
+export function drawTextLayer(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  layer: TextLayer,
+  basePreset: TextPreset,
+  surface: RenderSurface,
+) {
+  if (!layer.text.trim()) return;
+
+  // Override-uri per strat peste presetul de baza.
+  const weight = layer.bold ? Math.max(basePreset.weight, 800) : basePreset.weight;
+  const italic = layer.italic ?? basePreset.italic;
+  const sizeScale = layer.sizeScale ?? 1;
+
+  const preset: TextPreset = {
+    ...basePreset,
+    weight,
+    italic,
+    size: Math.max(12, Math.round(basePreset.size * sizeScale * surface.scale)),
+    maxWidth: Math.round((basePreset.maxWidth ?? 880) * surface.scaleX),
+    outline: basePreset.outline
+      ? { ...basePreset.outline, width: Math.max(1, Math.round(basePreset.outline.width * surface.scale)) }
+      : undefined,
+  };
+
+  const text = preset.uppercase ? layer.text.toUpperCase() : layer.text;
+  setFont(ctx, preset);
+  const maxW = preset.maxWidth ?? Math.round(880 * surface.scaleX);
+  const lines = wrapLines(ctx, text, maxW);
+  const lh = preset.size * 1.1;
+  const totalH = lh * lines.length;
+
+  // Pozitie libera: x/y sunt fractii 0..1 = centrul textului.
+  const cx = layer.x * surface.width;
+  const cy = layer.y * surface.height;
+
+  // Shadow
+  if (preset.shadow) {
+    ctx.shadowColor = "rgba(0,0,0,0.55)";
+    ctx.shadowBlur = 18 * surface.scale;
+    ctx.shadowOffsetY = 4 * surface.scale;
+  } else {
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+  }
+
+  // Outline
+  if (preset.outline) {
+    ctx.strokeStyle = preset.outline.color;
+    ctx.lineWidth = preset.outline.width;
+    ctx.lineJoin = "round";
+    lines.forEach((line, i) => {
+      const y = cy - totalH / 2 + lh / 2 + i * lh;
+      ctx.strokeText(line, cx, y);
+    });
+  }
+
+  // Fill
+  ctx.fillStyle = layer.color ?? preset.color;
+  lines.forEach((line, i) => {
+    const y = cy - totalH / 2 + lh / 2 + i * lh;
+    ctx.fillText(line, cx, y);
+  });
+
+  // Underline (canvas nu are nativ — desenam manual sub fiecare rand)
+  if (layer.underline) {
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = layer.color ?? preset.color;
+    ctx.lineWidth = Math.max(2, Math.round(preset.size * 0.06));
+    lines.forEach((line, i) => {
+      const w = ctx.measureText(line).width;
+      const y = cy - totalH / 2 + lh / 2 + i * lh + preset.size * 0.42;
+      ctx.beginPath();
+      ctx.moveTo(cx - w / 2, y);
+      ctx.lineTo(cx + w / 2, y);
+      ctx.stroke();
+    });
+  }
+
+  // reset shadow
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+}
+
+/**
+ * Deseneaza o lista de TextLayer-e in ordine (primul = cel mai jos).
+ */
+export function drawTextLayers(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  layers: TextLayer[],
+  presetFor: (presetId: string) => TextPreset,
+  surface: RenderSurface,
+) {
+  for (const layer of layers) {
+    drawTextLayer(ctx, layer, presetFor(layer.presetId), surface);
+  }
 }
 
 function roundRect(
