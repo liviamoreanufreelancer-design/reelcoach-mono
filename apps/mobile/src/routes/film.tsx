@@ -1050,8 +1050,11 @@ function PreShotScreen({
             </span>
           </div>
 
-          {/* Instructiuni — scene.howShoot */}
-          {scene.howShoot && scene.howShoot.length > 0 && (
+          {/* Instructiuni — scene.howShoot: ASCUNS temporar.
+              Datele (scene.howShoot, din migratia 008) raman disponibile;
+              instructiunile de filmare vor aparea in DIAGRAMA, nu ca lista.
+              Ca sa le readuci, decomenteaza blocul de mai jos. */}
+          {/* {scene.howShoot && scene.howShoot.length > 0 && (
             <div className="mt-3.5 bg-white border border-[#E6E6EA] rounded-[18px] overflow-hidden shadow-[0_8px_22px_-14px_rgba(40,24,110,0.28)] divide-y divide-[#E6E6EA]">
               {scene.howShoot.map((item, i) => (
                 <div key={i} className="flex items-center gap-3.5 px-4 py-[11px]">
@@ -1071,7 +1074,7 @@ function PreShotScreen({
                 </div>
               ))}
             </div>
-          )}
+          )} */}
         </div>
 
         {/* CTA sticky de filmare */}
