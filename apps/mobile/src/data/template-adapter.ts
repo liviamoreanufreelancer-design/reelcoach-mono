@@ -38,7 +38,8 @@ export function templateToScenario(t: ReelTemplate): Scenario {
       // Imaginea de exemplu specifică scenei; fallback la cover dacă lipsește.
       bg: shot.exampleImageUrl ?? t.cover,
       diagramUrl: shot.diagramUrl,
-      hook: shot.title,
+      // "Ce se intampla in scena" din Studio (shot.hook); fallback la titlu.
+      hook: shot.hook || shot.title,
       // The legacy Scene timer drives the in-app recording. Use the
       // shot's recording duration, NOT the final-usage duration.
       duration: shot.recordingDuration,

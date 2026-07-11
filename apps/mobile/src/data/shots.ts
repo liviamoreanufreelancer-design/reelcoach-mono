@@ -112,6 +112,8 @@ export interface Shot {
    */
   pattern: ShotPatternId | string;
   title: string;
+  /** Text mare pe ecranul de filmare (Studio: "Ce se intampla in scena"). */
+  hook?: string;
   instructions: string[];
   mustShow?: string[];
   handsBusy?: boolean;
@@ -153,7 +155,7 @@ export interface Shot {
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl">> {
+  extends Required<Omit<Shot, "hook" | "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -168,6 +170,8 @@ export interface ResolvedShot
   sampleVideoUrl?: string;
   /** Font/preset caption per scena (din Studio). */
   captionPreset?: string;
+  /** Text mare pe ecranul de filmare (din Studio). */
+  hook?: string;
 }
 
 /**
@@ -213,6 +217,7 @@ export function resolveShot(shot: Shot): ResolvedShot {
     mustSee: shot.mustSee ?? [],
     howShoot: shot.howShoot ?? [],
     captionPreset: shot.captionPreset,
+    hook: shot.hook,
     sampleVideoUrl: shot.sampleVideoUrl,
     // Per-scene playback speed + motion blur. Carried through so the choices
     // the partner makes in Studio actually reach the renderer (without this,

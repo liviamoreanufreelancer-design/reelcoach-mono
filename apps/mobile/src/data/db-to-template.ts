@@ -74,6 +74,7 @@ function dbShotToShot(row: DbShotRow): Shot {
     // to GENERIC_PATTERN defaults if it's not one of the well-known ids.
     pattern: (row.pattern ?? "before") as ShotPatternId,
     title: row.title,
+    hook: row.hook ?? undefined,
     instructions: row.instructions ?? [],
     mustShow: row.must_show ?? undefined,
     handsBusy: row.hands_busy,

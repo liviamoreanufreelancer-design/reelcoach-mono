@@ -943,7 +943,7 @@ function PreShotScreen({
   const rawPattern = scene.tag ?? scene.patternId;
   const patternLabel = rawPattern ? prettyPattern(rawPattern) : "";
   const sceneTitle =
-    scene.what?.trim() || scene.hook?.trim() || `Scena ${sceneIdx + 1}`;
+    scene.hook?.trim() || scene.what?.trim() || `Scena ${sceneIdx + 1}`;
 
   const hasInfo = (scene.mustSee && scene.mustSee.length > 0) || !isLast;
 
