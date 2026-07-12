@@ -20,6 +20,9 @@ import { layerCss } from "@/lib/layer-css";
  * ════════════════════════════════════════════════════════════════════
  */
 
+/** Limita de caractere pe un text (previne blocuri de text care ies din cadru). */
+const MAX_TEXT_LEN = 120;
+
 /** Un text editabil pe scena (fie un strat al partenerei, fie captionul vechi). */
 export interface EditableText {
   /** layerId pentru straturi; "caption" pentru sistemul vechi. */
@@ -176,8 +179,9 @@ export function SceneTextEditor({
                 autoFocus
                 ref={autoGrow}
                 value={draft}
+                maxLength={MAX_TEXT_LEN}
                 onChange={(e) => {
-                  setDraft(e.target.value);
+                  setDraft(e.target.value.slice(0, MAX_TEXT_LEN));
                   autoGrow(e.target);
                 }}
                 onBlur={commit}

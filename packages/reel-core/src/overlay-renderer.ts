@@ -90,6 +90,26 @@ async function canvasToBlob(c: HTMLCanvasElement | OffscreenCanvas): Promise<Blo
   });
 }
 
+/** Sparge un cuvant mai lat decat maxWidth in bucati la nivel de caracter. */
+function breakLongWord(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  word: string,
+  maxWidth: number,
+): string[] {
+  const parts: string[] = [];
+  let chunk = "";
+  for (const ch of word) {
+    if (chunk && ctx.measureText(chunk + ch).width > maxWidth) {
+      parts.push(chunk);
+      chunk = ch;
+    } else {
+      chunk += ch;
+    }
+  }
+  if (chunk) parts.push(chunk);
+  return parts;
+}
+
 function wrapLines(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   text: string,
@@ -97,9 +117,21 @@ function wrapLines(
 ): string[] {
   const out: string[] = [];
   for (const para of text.split(/\n/)) {
-    const words = para.split(/\s+/);
+    const words = para.split(/\s+/).filter(Boolean);
     let line = "";
     for (const w of words) {
+      // Cuvant mai lung decat un rand intreg: sparge-l pe caractere ca sa NU
+      // iasa din cadru (matcheaza word-break:break-word din preview-ul CSS).
+      if (ctx.measureText(w).width > maxWidth) {
+        if (line) {
+          out.push(line);
+          line = "";
+        }
+        const parts = breakLongWord(ctx, w, maxWidth);
+        for (let i = 0; i < parts.length - 1; i++) out.push(parts[i]);
+        line = parts[parts.length - 1] ?? "";
+        continue;
+      }
       const test = line ? `${line} ${w}` : w;
       if (ctx.measureText(test).width > maxWidth && line) {
         out.push(line);
