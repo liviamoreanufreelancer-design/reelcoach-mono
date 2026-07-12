@@ -244,6 +244,23 @@ export function drawTextLayer(
   const cx = layer.x * surface.width;
   const cy = layer.y * surface.height;
 
+  // Fundal pill (badge) — desenat in spatele TUTUROR randurilor, exact ca
+  // drawCaption. Doar presetele cu bg (bubblePill, badgeGold) il au. Fara
+  // asta, un strat cu font tip badge isi pierdea fundalul la export.
+  if (preset.bg) {
+    const widest = Math.max(0, ...lines.map((l) => ctx.measureText(l).width));
+    const padX = Math.round((basePreset.paddingX ?? 28) * surface.scaleX);
+    const padY = Math.round((basePreset.paddingY ?? 16) * surface.scaleY);
+    const bw = widest + padX * 2;
+    const bh = totalH + padY * 2;
+    const r = Math.round((basePreset.radius ?? 16) * surface.scale);
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = preset.bg;
+    roundRect(ctx, cx - bw / 2, cy - bh / 2, bw, bh, r);
+    ctx.fill();
+  }
+
   // Shadow
   if (preset.shadow) {
     ctx.shadowColor = "rgba(0,0,0,0.55)";

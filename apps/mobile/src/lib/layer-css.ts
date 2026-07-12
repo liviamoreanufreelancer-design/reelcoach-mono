@@ -40,6 +40,12 @@ export function layerCss(preset: TextPreset, o: LayerStyleInput, scale: number):
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
   };
+  // Fundal pill (badge) — oglindeste drawTextLayer/drawCaption (preview = export).
+  if (preset.bg) {
+    s.background = preset.bg;
+    s.padding = `${(preset.paddingY ?? 16) * scale}px ${(preset.paddingX ?? 28) * scale}px`;
+    s.borderRadius = `${(preset.radius ?? 16) * scale}px`;
+  }
   if (preset.shadow) s.textShadow = "0 2px 6px rgba(0,0,0,0.55)";
   if (preset.outline) {
     s.WebkitTextStroke = `${preset.outline.width * scale}px ${preset.outline.color}`;
