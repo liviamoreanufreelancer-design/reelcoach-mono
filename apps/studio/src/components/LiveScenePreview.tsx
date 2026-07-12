@@ -79,10 +79,12 @@ export default function LiveScenePreview({
   const [layers, setLayers] = useState<TextLayer[]>((shot?.text_layers as TextLayer[] | null) ?? []);
   const layersRef = useRef<TextLayer[]>(layers);
   useEffect(() => { layersRef.current = layers; }, [layers]);
-  useEffect(() => { setLayers((shot?.text_layers as TextLayer[] | null) ?? []); }, [shot?.id]);
+  useEffect(() => { setLayers((shot?.text_layers as TextLayer[] | null) ?? []); setEditingId(null); }, [shot?.id]);
   // Faza 4: drag + grile de aliniere pe preview.
   const stageRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  // Editare in-place: dublu-click pe un text de pe canvas => input peste el.
+  const [editingId, setEditingId] = useState<string | null>(null);
   // Ghidaje active in timpul drag-ului (linii care apar cand esti aproape de aliniere).
   const [guides, setGuides] = useState<{ vCenter: boolean; hCenter: boolean; vLayers: number[]; hLayers: number[] }>(
     { vCenter: false, hCenter: false, vLayers: [], hLayers: [] },
@@ -271,13 +273,8 @@ export default function LiveScenePreview({
   // ── Faza 4: drag + snap + grile de aliniere ──
   const SNAP = 0.02; // prag de lipire (2% din latime/inaltime)
 
-  const onStagePointerDown = (e: React.PointerEvent) => {
-    if (disabled || layers.length === 0) return;
-    const stage = stageRef.current;
-    if (!stage) return;
-    const rect = stage.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;
-    const py = (e.clientY - rect.top) / rect.height;
+  // Gaseste textul cel mai apropiat de un punct (fractii 0..1) in raza data.
+  const layerNear = (px: number, py: number, radius: number): string | null => {
     let best: string | null = null;
     let bestDist = Infinity;
     for (const l of layers) {
@@ -286,10 +283,34 @@ export default function LiveScenePreview({
       const d = dx * dx + dy * dy;
       if (d < bestDist) { bestDist = d; best = l.id; }
     }
-    if (best && bestDist < 0.18 * 0.18) {
+    return best && bestDist < radius * radius ? best : null;
+  };
+
+  const onStagePointerDown = (e: React.PointerEvent) => {
+    if (disabled || editingId || layers.length === 0) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    const best = layerNear(px, py, 0.18);
+    if (best) {
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       setDragId(best);
     }
+  };
+
+  // Dublu-click pe un text de pe canvas => editare in-place (input peste text).
+  // Single-drag ramane pentru mutare (ca in Canva/Figma).
+  const onStageDoubleClick = (e: React.MouseEvent) => {
+    if (disabled || layers.length === 0) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    const best = layerNear(px, py, 0.25);
+    if (best) { setDragId(null); setEditingId(best); }
   };
 
   const onStagePointerMove = (e: React.PointerEvent) => {
@@ -530,6 +551,7 @@ export default function LiveScenePreview({
             onPointerMove={onStagePointerMove}
             onPointerUp={onStagePointerUp}
             onPointerLeave={onStagePointerUp}
+            onDoubleClick={onStageDoubleClick}
           >
             <canvas ref={canvasRef} width={W} height={H} className="absolute inset-0 w-full h-full object-cover" />
             <video ref={videoRef} className="hidden" playsInline muted onLoadedMetadata={onMeta} />
@@ -552,6 +574,27 @@ export default function LiveScenePreview({
             {!disabled && layers.length > 0 && (
               <div className="absolute inset-0 z-10" style={{ cursor: dragId ? "grabbing" : "move" }} />
             )}
+
+            {/* Editare in-place: input peste textul dublu-clickat. Actualizeaza
+                layer-ul live (canvas se redeseneaza din layersRef in bucla RAF). */}
+            {editingId && (() => {
+              const l = layers.find((x) => x.id === editingId);
+              if (!l) return null;
+              return (
+                <input
+                  autoFocus
+                  value={l.text}
+                  onChange={(e) => updateLayer(l.id, { text: e.target.value })}
+                  onBlur={() => setEditingId(null)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === "Escape") { e.preventDefault(); setEditingId(null); }
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="absolute z-30 text-center rounded-md border-2 border-[#5B34FF] bg-white/95 px-2 py-1 text-[12px] text-[#1F1F1F] shadow-lg outline-none"
+                  style={{ left: `${l.x * 100}%`, top: `${l.y * 100}%`, transform: "translate(-50%, -50%)", width: "88%" }}
+                />
+              );
+            })()}
             {!hasVideo && (
               <div className="absolute inset-0 flex items-center justify-center text-[#9A9A9A]">
                 <span className="text-[12px]">Niciun clip</span>
@@ -568,6 +611,12 @@ export default function LiveScenePreview({
               {resolvedEffectId !== "none" && (<span className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-[10px] tracking-[0.1em] uppercase text-white/75">{resolvedEffectId}</span>)}
             </div>
           </div>
+
+          {!disabled && layers.length > 0 && (
+            <p className="text-[10px] text-[#9A9A9A] text-center leading-tight px-1">
+              Trage textul ca să-l muți · dublu-click ca să-l editezi
+            </p>
+          )}
 
           <input ref={fileInputRef} type="file" accept="video/*" onChange={onPickFile} disabled={disabled || uploading} className="hidden" />
           <button type="button" onClick={() => fileInputRef.current?.click()} disabled={disabled || uploading}
