@@ -7,7 +7,6 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Bookmark, Heart } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
-import { StatusBar } from "@/components/StatusBar";
 import { TabBar } from "@/components/TabBar";
 import { useTemplates } from "@/data/templates-context";
 import { getTemplatesForCategory, getCategoriesForProfession } from "@/data/catalog";
@@ -58,7 +57,7 @@ function SavedScreen() {
   return (
     <PhoneShell>
       <div className="relative z-10 flex flex-col h-full bg-[#F8F8FA]">
-        <StatusBar />
+        <div className="shrink-0" style={{ height: "max(env(safe-area-inset-top, 56px), 56px)" }} />
         {/* Header */}
         <header className="shrink-0 px-[22px] pt-1 pb-2.5">
           <h1 className="font-display font-bold text-[27px] leading-none text-[#1F1F1F]">

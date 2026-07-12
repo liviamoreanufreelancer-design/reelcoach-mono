@@ -549,7 +549,10 @@ function Edit() {
 
   return (
     <PhoneShell>
-      <div className="relative z-10 flex flex-col h-full bg-[#F8F8FA] text-[#1F1F1F] px-5 pt-12 pb-5">
+      <div
+        className="relative z-10 flex flex-col h-full bg-[#F8F8FA] text-[#1F1F1F] px-5 pb-5"
+        style={{ paddingTop: "max(env(safe-area-inset-top, 56px), 56px)" }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between">
           <BackButton confirm to="/" />

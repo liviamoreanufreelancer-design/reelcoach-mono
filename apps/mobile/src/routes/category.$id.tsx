@@ -42,7 +42,10 @@ function CategoryTemplates() {
     return (
       <PhoneShell>
         <div className="absolute inset-0 bg-[#0a0c0f]" />
-        <div className="relative z-10 flex flex-col h-full px-5 pt-12 pb-6">
+        <div
+          className="relative z-10 flex flex-col h-full px-5 pb-6"
+          style={{ paddingTop: "max(env(safe-area-inset-top, 56px), 56px)" }}
+        >
           <BackButton to="/" />
           <div className="flex-1 flex items-center justify-center text-center">
             <p className="text-white/60">Categorie inexistentă.</p>
@@ -70,7 +73,10 @@ function CategoryTemplates() {
         }}
       />
 
-      <div className="relative z-10 flex flex-col h-full pt-12 pb-6">
+      <div
+        className="relative z-10 flex flex-col h-full pb-6"
+        style={{ paddingTop: "max(env(safe-area-inset-top, 56px), 56px)" }}
+      >
         {/* Header — back + category label */}
         <div className="flex items-center justify-between px-5">
           <BackButton to="/" />

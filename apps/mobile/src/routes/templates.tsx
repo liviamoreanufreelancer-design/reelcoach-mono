@@ -50,7 +50,10 @@ function Templates() {
         <CinematicBg src={t.img} overlay={0.66} />
       </div>
 
-      <div className="relative z-10 flex flex-col h-full px-7 pt-14 pb-10">
+      <div
+        className="relative z-10 flex flex-col h-full px-7 pb-10"
+        style={{ paddingTop: "max(env(safe-area-inset-top, 56px), 56px)" }}
+      >
         <div className="flex items-center justify-between">
           <BackButton to="/" />
           <div className="flex gap-1.5">

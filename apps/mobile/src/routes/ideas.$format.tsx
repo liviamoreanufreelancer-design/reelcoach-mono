@@ -54,7 +54,10 @@ function Ideas() {
     <PhoneShell>
       <CinematicBg src={heroImg} blur overlay={0.80} kenBurns={false} />
 
-      <div className="relative z-10 flex flex-col h-full px-5 pt-12 pb-6">
+      <div
+        className="relative z-10 flex flex-col h-full px-5 pb-6"
+        style={{ paddingTop: "max(env(safe-area-inset-top, 56px), 56px)" }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-1">
           <BackButton to="/" />
