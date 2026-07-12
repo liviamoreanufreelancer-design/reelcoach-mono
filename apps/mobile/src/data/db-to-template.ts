@@ -137,6 +137,7 @@ function dbShotToShot(row: DbShotRow): Shot {
     sampleVideoUrl: row.sample_video_url ?? undefined,
     diagramUrl: row.diagram?.image_url ?? undefined,
     captionPreset: row.caption_preset ?? undefined,
+    textLayers: row.text_layers ?? undefined,
   };
 }
 

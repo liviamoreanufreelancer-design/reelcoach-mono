@@ -1,6 +1,7 @@
 import type { TransitionId } from "@reelcoach/core";
 import type { FilterId } from "@reelcoach/core";
 import type { EffectId } from "@reelcoach/core";
+import type { TextLayer } from "@reelcoach/core";
 import type { Profession } from "./scenarios";
 
 /**
@@ -152,10 +153,12 @@ export interface Shot {
   howShoot?: { icon: string; label: string; detail: string }[];
   /** Font/preset caption setat in Studio per scena (default reel-ului). */
   captionPreset?: string;
+  /** Straturi de text libere multi-strat (Studio, migratia 010). Null/undefined = foloseste overlayText vechi. */
+  textLayers?: TextLayer[];
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "hook" | "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl">> {
+  extends Required<Omit<Shot, "hook" | "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl" | "textLayers">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -172,6 +175,8 @@ export interface ResolvedShot
   captionPreset?: string;
   /** Text mare pe ecranul de filmare (din Studio). */
   hook?: string;
+  /** Straturi de text libere multi-strat (din Studio). */
+  textLayers?: TextLayer[];
 }
 
 /**
@@ -226,6 +231,7 @@ export function resolveShot(shot: Shot): ResolvedShot {
     motionBlur: shot.motionBlur,
     exampleImageUrl: shot.exampleImageUrl,
     diagramUrl: shot.diagramUrl,
+    textLayers: shot.textLayers,
   };
 }
 

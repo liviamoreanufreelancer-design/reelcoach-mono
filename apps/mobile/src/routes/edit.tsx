@@ -173,6 +173,9 @@ function Edit() {
       for (let i = 0; i < clips.length; i++) {
         const c = clips[i];
         const cap = state.captions[c.sceneIdx];
+        // Straturi de text libere (Studio) — au prioritate peste caption vechi,
+        // aceeasi regula ca in renderPreviewFrame (preview = export).
+        const textLayers = scenario.scenes[c.sceneIdx]?.textLayers;
         // Preset per scena: "original" => fontul scenei din Studio; vibe => fontul stilului.
         const preset = resolvePreset(state.styleId, scenario.scenes[c.sceneIdx]?.captionPreset);
         const overlayKey = JSON.stringify({
@@ -180,6 +183,7 @@ function Edit() {
           text: cap?.text?.trim() ?? "",
           position: cap?.position ?? "bottom",
           presetId: preset.id,
+          textLayers: textLayers ?? null,
           handle: brand?.handle ?? "",
           logoUpdatedAt: brand?.updatedAt ?? 0,
         });
@@ -194,6 +198,19 @@ function Edit() {
           continue;
         }
         let overlayBlob: Blob;
+        if (textLayers && textLayers.length > 0) {
+          overlayBlob = await renderOverlay({
+            textLayers,
+            preset,
+            handle: brand?.handle,
+            logoBitmap: logoBmp,
+            width: 1080,
+            height: 1920,
+          });
+          overlayCacheRef.current.set(overlayKey, overlayBlob);
+          overlays.push(overlayBlob);
+          continue;
+        }
         if (!cap || !cap.text.trim()) {
           overlayBlob = await renderOverlay({
             preset,

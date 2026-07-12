@@ -74,6 +74,9 @@ export function templateToScenario(t: ReelTemplate): Scenario {
       // Shot-first new fields — propagate to scene for the pre-shot screen.
       mustSee: shot.mustSee,
       howShoot: shot.howShoot,
+      // Straturi de text libere (Studio, multi-strat). Prioritate peste
+      // overlayText in renderOverlay/renderPreviewFrame — vezi drawTextLayers.
+      textLayers: shot.textLayers,
     };
   });
 

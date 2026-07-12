@@ -1,4 +1,5 @@
 import type { TextPreset, TextPosition } from "./text-presets";
+import { TEXT_PRESETS } from "./text-presets";
 
 const BASE_W = 1080;
 const BASE_H = 1920;
@@ -47,6 +48,8 @@ export interface TextLayer {
 export interface OverlayInputs {
   caption?: Caption;
   preset: TextPreset;
+  /** Straturi de text libere (multi-text). Daca setat, inlocuieste caption. */
+  textLayers?: TextLayer[];
   /** Optional brand watermark drawn bottom-right ("@handle"). */
   handle?: string;
   /** Optional logo (PNG blob) shown next to handle in watermark. */
@@ -355,7 +358,16 @@ export async function renderOverlay(input: OverlayInputs): Promise<Blob> {
   const surface = makeSurface(input.width, input.height);
   const { canvas, ctx } = makeCanvas(surface);
   ctx.clearRect(0, 0, surface.width, surface.height);
-  if (input.caption && input.caption.text.trim()) {
+  // textLayers (multi-text) au prioritate; altfel caption vechi. Aceeasi
+  // regula ca in renderPreviewFrame (browser-renderer.ts) — preview = export.
+  if (input.textLayers && input.textLayers.length > 0) {
+    drawTextLayers(
+      ctx,
+      input.textLayers,
+      (id) => TEXT_PRESETS[id] ?? TEXT_PRESETS.hookBold,
+      surface,
+    );
+  } else if (input.caption && input.caption.text.trim()) {
     drawCaption(ctx, input.caption, input.preset, surface);
   }
   drawWatermark(ctx, surface, input.handle, input.logoBitmap);

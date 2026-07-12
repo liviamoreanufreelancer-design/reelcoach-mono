@@ -64,6 +64,7 @@ import phBridal from "@/assets/par-cat/bridal.jpg";
 import phTrends from "@/assets/par-cat/trends.jpg";
 import phSatisfying from "@/assets/par-cat/satisfying.jpg";
 import phSalonPov from "@/assets/par-cat/salon-pov.jpg";
+import type { TextLayer } from "@reelcoach/core";
 
 
 export type Format =
@@ -176,6 +177,8 @@ export interface Scene {
    * Mirrors Shot.motionBlur.
    */
   motionBlur?: boolean;
+  /** Straturi de text libere multi-strat (din Studio). Mirrors Shot.textLayers. */
+  textLayers?: TextLayer[];
 }
 
 export type Difficulty = "easy" | "medium" | "hard";
