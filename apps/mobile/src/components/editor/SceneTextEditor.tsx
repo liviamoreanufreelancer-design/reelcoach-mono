@@ -210,12 +210,14 @@ export function SceneTextEditor({
               }}
             >
               <span className="pointer-events-none">{show}</span>
-              {/* Indiciu de editare — pastila mica sub text */}
+              {/* Indiciu de editare — pastila mica sub text. whitespace-nowrap +
+                  normal-case + tracking-normal ca sa NU mosteneasca pre-wrap/
+                  break-word din textul-parinte (altfel "editează" se rupea). */}
               <span
-                className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/80 bg-[#5B34FF]/80 rounded-full px-1.5 py-0.5 pointer-events-none"
-                style={{ WebkitTextStroke: "0", textShadow: "none" }}
+                className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-0.5 whitespace-nowrap normal-case tracking-normal text-[8px] leading-none font-semibold text-white/90 bg-[#5B34FF]/85 rounded-full px-1.5 py-0.5 pointer-events-none"
+                style={{ WebkitTextStroke: "0", textShadow: "none", wordBreak: "normal" }}
               >
-                <Pencil className="w-2 h-2" /> editează
+                <Pencil className="w-2 h-2 shrink-0" /> Editează
               </span>
             </button>
           );
