@@ -573,7 +573,7 @@ function Edit() {
             ecranul e curat (fara editare jos) => preview-ul e mai mare. */}
         {phase !== "idle" && (
           <div
-            className={`mx-auto rounded-xl overflow-hidden border border-[#5B34FF]/20 shadow-[0_8px_24px_-8px_rgba(91,52,255,0.3)] bg-black shrink-0 relative ${phase === "processing" ? "my-auto" : "mt-3"}`}
+            className={`mx-auto rounded-xl overflow-hidden border border-[#5B34FF]/20 shadow-[0_8px_24px_-8px_rgba(91,52,255,0.3)] bg-black shrink-0 relative ${phase === "processing" ? "mt-auto" : "mt-3"}`}
             style={{
               aspectRatio: "9/16",
               width: phase === "processing" ? "min(78vw, 320px)" : "min(42vw, 165px)",
@@ -643,23 +643,6 @@ function Edit() {
                     <FilmIcon className="w-8 h-8 text-[#EDE8FF] animate-pulse" />
                   </div>
                 )}
-                <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 via-black/55 to-transparent">
-                  <p className="text-[9px] tracking-[0.25em] uppercase text-[#EDE8FF]/90 text-center mb-1.5">
-                    Preview live · randez calitate finală
-                  </p>
-                  <div className="h-[3px] bg-white/10 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#5B34FF] transition-all duration-200"
-                      style={{ width: `${Math.min(100, Math.max(2, Math.round(progress.pct)))}%` }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-center text-white/85 text-[10px]">
-                    {progress.message ?? "Procesez…"}
-                  </p>
-                  <p className="mt-0.5 text-center text-[9px] tracking-widest uppercase text-white/45 tabular-nums">
-                    {Math.round(progress.pct)}% · {elapsed.toFixed(0)}s
-                  </p>
-                </div>
               </div>
             ) : phase === "error" ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-rose-300 text-xs gap-2 p-3 text-center">
@@ -702,6 +685,27 @@ function Edit() {
                 <span>Se încarcă…</span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Bara de progres — COMPLET sub video (nu peste el), la randare. */}
+        {phase === "processing" && (
+          <div className="mx-auto mt-4 mb-auto w-full max-w-[320px] shrink-0">
+            <p className="text-[9px] tracking-[0.25em] uppercase text-[#5B34FF]/80 text-center mb-2 font-semibold">
+              Preview live · randez calitate finală
+            </p>
+            <div className="h-[4px] bg-[#EDE8FF] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#5B34FF] transition-all duration-200"
+                style={{ width: `${Math.min(100, Math.max(2, Math.round(progress.pct)))}%` }}
+              />
+            </div>
+            <p className="mt-2 text-center text-[#1F1F1F]/85 text-[11px]">
+              {progress.message ?? "Procesez…"}
+            </p>
+            <p className="mt-0.5 text-center text-[9px] tracking-widest uppercase text-[#6B6B6B] tabular-nums">
+              {Math.round(progress.pct)}% · {elapsed.toFixed(0)}s
+            </p>
           </div>
         )}
 

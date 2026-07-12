@@ -129,6 +129,12 @@ export function SceneTextEditor({
     if (item) onCommit(clip, item, draft);
     setEditing(null);
   };
+  // Creste casuta de editare cat sa incapa tot textul (fara scroll intern).
+  const autoGrow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -168,8 +174,12 @@ export function SceneTextEditor({
               <textarea
                 key={item.id}
                 autoFocus
+                ref={autoGrow}
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => {
+                  setDraft(e.target.value);
+                  autoGrow(e.target);
+                }}
                 onBlur={commit}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -182,7 +192,7 @@ export function SceneTextEditor({
                   }
                 }}
                 rows={1}
-                className="absolute bg-black/35 rounded-lg outline-none resize-none px-1"
+                className="absolute bg-black/35 rounded-lg outline-none resize-none overflow-hidden px-1"
                 style={{
                   ...textCss(item, scale),
                   left,
