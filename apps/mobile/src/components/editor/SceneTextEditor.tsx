@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import type { TextPreset, FilterPreset } from "@reelcoach/core";
 import type { StoredClip } from "@/lib/clip-store";
+import { layerCss } from "@/lib/layer-css";
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -53,30 +54,9 @@ interface Props {
   onSceneChange: (idx: number) => void;
 }
 
-/** Construieste stilul CSS al unui text din presetul lui + override-uri. */
+/** Stilul CSS al unui text editabil = presetul lui + override-urile per strat. */
 function textCss(item: EditableText, scale: number): React.CSSProperties {
-  const p = item.preset;
-  const s: React.CSSProperties = {
-    fontFamily: p.font,
-    fontWeight: item.bold ? Math.max(p.weight, 800) : p.weight,
-    fontStyle: (item.italic ?? p.italic) ? "italic" : "normal",
-    fontSize: `${p.size * (item.sizeScale ?? 1) * scale}px`,
-    lineHeight: 1.1,
-    color: item.color ?? p.color,
-    letterSpacing: p.letterSpacing ? `${p.letterSpacing * scale}px` : undefined,
-    textTransform: p.uppercase ? "uppercase" : "none",
-    textAlign: "center",
-    textDecoration: item.underline ? "underline" : "none",
-    maxWidth: `${(p.maxWidth ?? 880) * scale}px`,
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-  };
-  if (p.shadow) s.textShadow = "0 2px 6px rgba(0,0,0,0.55)";
-  if (p.outline) {
-    s.WebkitTextStroke = `${p.outline.width * scale}px ${p.outline.color}`;
-    (s as React.CSSProperties & { paintOrder?: string }).paintOrder = "stroke fill";
-  }
-  return s;
+  return layerCss(item.preset, item, scale);
 }
 
 export function SceneTextEditor({

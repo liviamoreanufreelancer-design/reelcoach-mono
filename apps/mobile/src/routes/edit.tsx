@@ -626,6 +626,12 @@ function Edit() {
                       logoUrl={logoUrl}
                       activeIdx={Math.min(activeScene, clips.length - 1)}
                       onSceneChange={(i) => setActiveScene(clips[i]?.sceneIdx ?? i)}
+                      layersPerClip={clips.map((c) => {
+                        const sc = scenario.scenes[c.sceneIdx];
+                        return sc && sceneHasLayers(sc)
+                          ? effectiveLayers(sc, state.layerTextEdits?.[c.sceneIdx])
+                          : undefined;
+                      })}
                     />
                   </div>
                 ) : (
@@ -679,6 +685,12 @@ function Edit() {
                 logoUrl={logoUrl}
                 activeIdx={Math.min(activeScene, clips.length - 1)}
                 onSceneChange={(i) => setActiveScene(clips[i]?.sceneIdx ?? i)}
+                layersPerClip={clips.map((c) => {
+                  const sc = scenario.scenes[c.sceneIdx];
+                  return sc && sceneHasLayers(sc)
+                    ? effectiveLayers(sc, state.layerTextEdits?.[c.sceneIdx])
+                    : undefined;
+                })}
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-white/45 text-[11px] tracking-widest uppercase gap-2 p-3 text-center">

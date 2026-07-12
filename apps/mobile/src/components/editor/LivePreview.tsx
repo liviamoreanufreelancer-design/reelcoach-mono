@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CaptionState } from "@/hooks/useEditor";
-import type { TextPreset, TransitionId, FilterPreset } from "@reelcoach/core";
+import type { TextPreset, TransitionId, FilterPreset, TextLayer } from "@reelcoach/core";
+import { TEXT_PRESETS } from "@reelcoach/core";
 import type { StoredClip } from "@/lib/clip-store";
+import { layerCss } from "@/lib/layer-css";
 
 interface Props {
   clips: StoredClip[];
@@ -33,6 +35,12 @@ interface Props {
   /** Controlled scene index (e.g. when user taps a scene in the list). */
   activeIdx?: number;
   onSceneChange?: (idx: number) => void;
+  /**
+   * Straturi de text libere per clip (multi-strat, din Studio + editarile
+   * stilistei). Cand un clip are straturi, se deseneaza ELE (pozitie libera
+   * x/y), nu captionul vechi — aceeasi prioritate ca la export.
+   */
+  layersPerClip?: (TextLayer[] | undefined)[];
 }
 
 /**
@@ -42,14 +50,38 @@ interface Props {
  * effects/transitions are reproduced in CSS to stay smooth on-device.
  */
 export function LivePreview({
-  clips, captions, preset, presets, transition, filter, effectIds, effectsEnabled = true,
-  transitionTypes, playbackSpeeds, motionBlurs,
-  handle, logoUrl,
-  activeIdx, onSceneChange,
+  clips,
+  captions,
+  preset,
+  presets,
+  transition,
+  filter,
+  effectIds,
+  effectsEnabled = true,
+  transitionTypes,
+  playbackSpeeds,
+  motionBlurs,
+  handle,
+  logoUrl,
+  activeIdx,
+  onSceneChange,
+  layersPerClip,
 }: Props) {
   const [idx, setIdx] = useState(activeIdx ?? 0);
   const [playing, setPlaying] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Latimea reala a preview-ului (px) — pt. scalarea fonturilor straturilor.
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const update = () => setMeasuredWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Sync external scene selection.
   useEffect(() => {
@@ -59,7 +91,12 @@ export function LivePreview({
 
   const clip = clips[idx];
   const url = useMemo(() => (clip ? URL.createObjectURL(clip.blob) : null), [clip]);
-  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+  useEffect(
+    () => () => {
+      if (url) URL.revokeObjectURL(url);
+    },
+    [url],
+  );
 
   // Per-scene playback speed (slow-mo / fast-mo). Undefined or <=0 → 1×.
   const speed = (() => {
@@ -86,10 +123,18 @@ export function LivePreview({
   // and we also surface a "tap to play" affordance below via a click handler
   // on the wrapper.
   useEffect(() => {
-    const v = videoRef.current; if (!v || !url) return;
-    try { v.load(); } catch { /* ignore */ }
+    const v = videoRef.current;
+    if (!v || !url) return;
+    try {
+      v.load();
+    } catch {
+      /* ignore */
+    }
     if (!playing) return;
-    const tryPlay = () => v.play().catch(() => { /* will retry on user tap */ });
+    const tryPlay = () =>
+      v.play().catch(() => {
+        /* will retry on user tap */
+      });
     tryPlay();
     // Retry once after a short delay — first attempt often happens before
     // the DOM has fully settled after the URL change, second one tends to
@@ -101,13 +146,19 @@ export function LivePreview({
   // Apply per-scene playback speed. load() resets playbackRate to 1, so this
   // must run after the source swap (hence the `url` dependency).
   useEffect(() => {
-    const v = videoRef.current; if (!v) return;
-    try { v.playbackRate = speed; } catch { /* ignore */ }
+    const v = videoRef.current;
+    if (!v) return;
+    try {
+      v.playbackRate = speed;
+    } catch {
+      /* ignore */
+    }
   }, [speed, url]);
 
   // Pause when toggled off.
   useEffect(() => {
-    const v = videoRef.current; if (!v) return;
+    const v = videoRef.current;
+    if (!v) return;
     if (!playing) v.pause();
   }, [playing]);
 
@@ -117,11 +168,11 @@ export function LivePreview({
   const handleWrapperTap = () => {
     const v = videoRef.current;
     if (v && v.paused && playing) {
-      v.play().catch(() => { /* still blocked, nothing more we can do */ });
+      v.play().catch(() => {
+        /* still blocked, nothing more we can do */
+      });
     }
   };
-
-
 
   const cap = captions[idx];
   const captionText = cap?.text?.trim();
@@ -138,7 +189,9 @@ export function LivePreview({
       fontSize: `${activePreset.size * scale}px`,
       lineHeight: 1.1,
       color: cap?.color ?? activePreset.color,
-      letterSpacing: activePreset.letterSpacing ? `${activePreset.letterSpacing * scale}px` : undefined,
+      letterSpacing: activePreset.letterSpacing
+        ? `${activePreset.letterSpacing * scale}px`
+        : undefined,
       textTransform: activePreset.uppercase ? "uppercase" : "none",
       textAlign: "center",
       maxWidth: `${(activePreset.maxWidth ?? 880) * scale}px`,
@@ -166,30 +219,42 @@ export function LivePreview({
   }, [activePreset, cap?.color]);
 
   const positionClass =
-    cap?.position === "top"    ? "items-start pt-8"   :
-    cap?.position === "center" ? "items-center"        :
-                                 "items-end pb-12";
+    cap?.position === "top"
+      ? "items-start pt-8"
+      : cap?.position === "center"
+        ? "items-center"
+        : "items-end pb-12";
 
   // Per-scene transition: prefer the scene's own transition (Studio) over the
   // global one, so the preview matches the per-clip export. Re-mounts on idx
   // change so the animation re-fires. Durations match the canvas renderer.
   const activeTransition = (transitionTypes?.[idx] ?? transition) as string;
   const sceneAnimClass =
-    activeTransition === "fade"   ? "animate-[fadeIn_300ms_ease-out]"   :
-    activeTransition === "zoom"   ? "animate-[zoomIn_300ms_ease-out]"   :
-    activeTransition === "flash"  ? "animate-[fadeIn_120ms_ease-out]"   :
-    activeTransition === "glitch" ? "animate-[glitchIn_280ms_ease-out]" :
-    activeTransition === "blur"   ? "animate-[blurIn_380ms_ease-out]"   :
-    activeTransition === "slide"  ? "animate-[slideIn_340ms_cubic-bezier(0.22,1,0.36,1)]" :
-    activeTransition === "spin"   ? "animate-[spinIn_380ms_cubic-bezier(0.22,1,0.36,1)]"  :
-                                    "";
+    activeTransition === "fade"
+      ? "animate-[fadeIn_300ms_ease-out]"
+      : activeTransition === "zoom"
+        ? "animate-[zoomIn_300ms_ease-out]"
+        : activeTransition === "flash"
+          ? "animate-[fadeIn_120ms_ease-out]"
+          : activeTransition === "glitch"
+            ? "animate-[glitchIn_280ms_ease-out]"
+            : activeTransition === "blur"
+              ? "animate-[blurIn_380ms_ease-out]"
+              : activeTransition === "slide"
+                ? "animate-[slideIn_340ms_cubic-bezier(0.22,1,0.36,1)]"
+                : activeTransition === "spin"
+                  ? "animate-[spinIn_380ms_cubic-bezier(0.22,1,0.36,1)]"
+                  : "";
   // New transitions (whipPan / smoothZoom / motionBlur) use inline keyframes
   // defined in the <style> block below — keeps the whole change in one file.
   const sceneAnimStyle: React.CSSProperties =
-    activeTransition === "whipPan"    ? { animation: "rdp-whippan 340ms cubic-bezier(0.5,0,0.2,1)" } :
-    activeTransition === "smoothZoom" ? { animation: "rdp-smoothzoom 460ms ease-out" } :
-    activeTransition === "motionBlur" ? { animation: "rdp-motionblur 360ms ease-out" } :
-                                        {};
+    activeTransition === "whipPan"
+      ? { animation: "rdp-whippan 340ms cubic-bezier(0.5,0,0.2,1)" }
+      : activeTransition === "smoothZoom"
+        ? { animation: "rdp-smoothzoom 460ms ease-out" }
+        : activeTransition === "motionBlur"
+          ? { animation: "rdp-motionblur 360ms ease-out" }
+          : {};
   // Flash transition uses an overlay sibling — see render below.
   const showFlash = activeTransition === "flash";
 
@@ -207,8 +272,15 @@ export function LivePreview({
     );
   }
 
+  const layers = layersPerClip?.[idx];
+  const layerScale = (measuredWidth || 165) / 1080;
+
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden group" onPointerDown={handleWrapperTap}>
+    <div
+      ref={rootRef}
+      className="relative w-full h-full bg-black overflow-hidden group"
+      onPointerDown={handleWrapperTap}
+    >
       {/* Inline keyframes for the newer transitions, mirroring the canvas
           renderer's whipPan / smoothZoom / motionBlur. */}
       <style>{`
@@ -238,7 +310,10 @@ export function LivePreview({
           autoPlay={playing}
           muted
           playsInline
-          {...{ "webkit-playsinline": "true", "x5-playsinline": "true" } as Record<string, string>}
+          {...({ "webkit-playsinline": "true", "x5-playsinline": "true" } as Record<
+            string,
+            string
+          >)}
           controls={false}
           disablePictureInPicture
           disableRemotePlayback
@@ -278,9 +353,7 @@ export function LivePreview({
         )}
         {/* Premium per-shot effect. Echoes drawPremiumEffect in
             browser-renderer.ts (gold palette, timing, density). */}
-        {effectsEnabled && effectIds && (
-          <PremiumEffect kind={effectIds[idx]} />
-        )}
+        {effectsEnabled && effectIds && <PremiumEffect kind={effectIds[idx]} />}
       </div>
       {/* White flash overlay — fires per scene change. */}
       {showFlash && (
@@ -290,18 +363,41 @@ export function LivePreview({
         />
       )}
 
-
-      {/* Caption overlay */}
-      {captionText && (
-        <div className={`absolute inset-0 flex justify-center px-3 ${positionClass}`}>
-          <span
-            key={`c-${idx}-${captionText}`}
-            style={captionStyle}
-            className="animate-[fadeIn_280ms_ease-out]"
-          >
-            {captionText}
-          </span>
+      {/* Overlay text — straturile (pozitie libera) au prioritate peste
+          captionul vechi, aceeasi regula ca la export (preview = export). */}
+      {layers && layers.length > 0 ? (
+        <div className="absolute inset-0 pointer-events-none">
+          {layers.map((l) => {
+            if (!l.text.trim()) return null;
+            const preset = TEXT_PRESETS[l.presetId] ?? TEXT_PRESETS.hookBold;
+            return (
+              <span
+                key={`l-${idx}-${l.id}`}
+                className="absolute animate-[fadeIn_280ms_ease-out]"
+                style={{
+                  ...layerCss(preset, l, layerScale),
+                  left: `${l.x * 100}%`,
+                  top: `${l.y * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                {l.text}
+              </span>
+            );
+          })}
         </div>
+      ) : (
+        captionText && (
+          <div className={`absolute inset-0 flex justify-center px-3 ${positionClass}`}>
+            <span
+              key={`c-${idx}-${captionText}`}
+              style={captionStyle}
+              className="animate-[fadeIn_280ms_ease-out]"
+            >
+              {captionText}
+            </span>
+          </div>
+        )
       )}
 
       {/* Watermark */}
@@ -324,7 +420,10 @@ export function LivePreview({
         {clips.map((_, i) => (
           <button
             key={i}
-            onClick={() => { setIdx(i); onSceneChange?.(i); }}
+            onClick={() => {
+              setIdx(i);
+              onSceneChange?.(i);
+            }}
             className={`h-[3px] rounded-full transition-all ${i === idx ? "w-5 bg-[#5B34FF]" : "w-2 bg-white/35"}`}
             aria-label={`Scena ${i + 1}`}
           />
@@ -333,14 +432,22 @@ export function LivePreview({
 
       {/* Side controls */}
       <button
-        onClick={() => { const n = (idx - 1 + clips.length) % clips.length; setIdx(n); onSceneChange?.(n); }}
+        onClick={() => {
+          const n = (idx - 1 + clips.length) % clips.length;
+          setIdx(n);
+          onSceneChange?.(n);
+        }}
         className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 text-white/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
         aria-label="Anterior"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
       <button
-        onClick={() => { const n = (idx + 1) % clips.length; setIdx(n); onSceneChange?.(n); }}
+        onClick={() => {
+          const n = (idx + 1) % clips.length;
+          setIdx(n);
+          onSceneChange?.(n);
+        }}
         className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 text-white/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
         aria-label="Următor"
       >
@@ -356,7 +463,6 @@ export function LivePreview({
         >
           {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
         </button>
-
       </div>
     </div>
   );
@@ -373,14 +479,22 @@ export function LivePreview({
 function PremiumEffect({ kind }: { kind?: string }) {
   if (!kind || kind === "none") return null;
   switch (kind) {
-    case "sparkle":   return <SparkleEffect />;
-    case "leak":      return <LightLeakEffect />;
-    case "bokeh":     return <BokehEffect />;
-    case "dust":      return <GoldDustEffect />;
-    case "glow":      return <GlowEffect />;
-    case "softLight": return <SoftLightEffect />;
-    case "lensFlare": return <LensFlareEffect />;
-    default:          return null;
+    case "sparkle":
+      return <SparkleEffect />;
+    case "leak":
+      return <LightLeakEffect />;
+    case "bokeh":
+      return <BokehEffect />;
+    case "dust":
+      return <GoldDustEffect />;
+    case "glow":
+      return <GlowEffect />;
+    case "softLight":
+      return <SoftLightEffect />;
+    case "lensFlare":
+      return <LensFlareEffect />;
+    default:
+      return null;
   }
 }
 
@@ -435,7 +549,8 @@ function LightLeakEffect() {
           left: "-15%",
           width: "45%",
           height: "55%",
-          background: "radial-gradient(ellipse, rgba(244,220,170,0.55) 0%, rgba(232,180,110,0.25) 40%, transparent 70%)",
+          background:
+            "radial-gradient(ellipse, rgba(244,220,170,0.55) 0%, rgba(232,180,110,0.25) 40%, transparent 70%)",
           animation: "rdp-leak 4s ease-in-out infinite",
         }}
       />
@@ -446,7 +561,8 @@ function LightLeakEffect() {
           left: "60%",
           width: "50%",
           height: "55%",
-          background: "radial-gradient(ellipse, rgba(255,200,140,0.5) 0%, rgba(232,150,90,0.22) 50%, transparent 75%)",
+          background:
+            "radial-gradient(ellipse, rgba(255,200,140,0.5) 0%, rgba(232,150,90,0.22) 50%, transparent 75%)",
           animation: "rdp-leak 4s ease-in-out infinite",
           animationDelay: "2s",
         }}
@@ -463,7 +579,7 @@ function LightLeakEffect() {
 
 function BokehEffect() {
   const circles = [
-    { top: "8%",  left: "5%",  size: "26%", delay: 0 },
+    { top: "8%", left: "5%", size: "26%", delay: 0 },
     { top: "60%", left: "75%", size: "32%", delay: 800 },
     { top: "18%", left: "82%", size: "18%", delay: 1600 },
     { top: "78%", left: "15%", size: "22%", delay: 2400 },
@@ -479,7 +595,8 @@ function BokehEffect() {
             left: c.left,
             width: c.size,
             aspectRatio: "1",
-            background: "radial-gradient(circle, rgba(244,228,193,0.55) 0%, rgba(232,180,120,0.22) 55%, transparent 80%)",
+            background:
+              "radial-gradient(circle, rgba(244,228,193,0.55) 0%, rgba(232,180,120,0.22) 55%, transparent 80%)",
             borderRadius: "50%",
             animation: "rdp-bokeh 3s ease-in-out infinite",
             animationDelay: `${c.delay}ms`,
@@ -601,7 +718,13 @@ function LensFlareEffect() {
       className="absolute inset-0 pointer-events-none overflow-hidden"
       style={{ mixBlendMode: "screen" }}
     >
-      <div style={{ position: "absolute", inset: 0, animation: "rdp-flare-drift 6s ease-in-out infinite" }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          animation: "rdp-flare-drift 6s ease-in-out infinite",
+        }}
+      >
         {/* hot core */}
         <div
           style={{
@@ -625,7 +748,8 @@ function LensFlareEffect() {
             width: "100%",
             height: "2.5%",
             transform: "translateY(-50%)",
-            background: "linear-gradient(90deg, transparent 0%, rgba(150,195,255,0.4) 50%, transparent 100%)",
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(150,195,255,0.4) 50%, transparent 100%)",
           }}
         />
         {/* coloured ghosts toward centre */}
