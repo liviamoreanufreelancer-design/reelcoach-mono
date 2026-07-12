@@ -93,7 +93,9 @@ export function templateToScenario(t: ReelTemplate): Scenario {
     keywords: [],
     scenes,
     source: "seed",
-    difficulty: "easy",
+    // Dificultatea aleasa in Studio (Usor/Mediu/Avansat); fallback "easy" doar
+    // daca template-ul n-o are setata. Inainte era hardcodat => se pierdea.
+    difficulty: t.difficulty ?? "easy",
     goal: t.promise,
   };
 }
