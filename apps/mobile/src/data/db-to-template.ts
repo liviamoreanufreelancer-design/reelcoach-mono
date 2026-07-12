@@ -28,6 +28,9 @@ import type { FilterId } from "@reelcoach/core";
 import type { TransitionId } from "@reelcoach/core";
 import type { EffectId } from "./shots";
 import type { DbTemplateRow, DbShotRow } from "./supabase-client";
+// Cover fallback bundlat (offline-safe). Inainte era un URL catre bucket-ul
+// Supabase (`covers/_fallback.jpg`) care lipsea => 404 in consola.
+import fallbackCover from "@/assets/template-luxury.jpg";
 
 /**
  * Convert one template row + its shot rows into a ReelTemplate.
@@ -141,10 +144,5 @@ function dbShotToShot(row: DbShotRow): Shot {
   };
 }
 
-/**
- * Fallback cover image URL used when a template in the DB has no cover.
- * Could be a generic gradient or the home-bg image hosted on Supabase Storage.
- * For now we leave it pointing at a placeholder — TODO: bundle a default.
- */
-const FALLBACK_COVER =
-  "https://qzbknlkxpteliocwjwvm.supabase.co/storage/v1/object/public/covers/_fallback.jpg";
+/** Cover folosit cand un template din DB n-are cover_url — asset bundlat. */
+const FALLBACK_COVER = fallbackCover;

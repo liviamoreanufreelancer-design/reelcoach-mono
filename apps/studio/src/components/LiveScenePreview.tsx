@@ -31,19 +31,6 @@ const TEXT_FONTS = [
   { id: "badgeGold", label: "Badge Gold" },
   { id: "brandSoft", label: "Brand Soft" },
 ] as const;
-const TEXT_POSITIONS = [
-  { id: "top", label: "Sus" },
-  { id: "center", label: "Centru" },
-  { id: "bottom", label: "Jos" },
-];
-const TEXT_STYLES = [
-  { id: "hookBold", label: "Hook Bold" },
-  { id: "luxurySerif", label: "Luxury Serif" },
-  { id: "bubblePill", label: "Bubble Pill" },
-  { id: "subtitleOutline", label: "Subtitrare" },
-  { id: "badgeGold", label: "Badge Gold" },
-  { id: "brandSoft", label: "Soft Pink" },
-];
 
 export default function LiveScenePreview({
   templateId,
