@@ -28,15 +28,21 @@ function CategoryTemplates() {
   const { id } = Route.useParams();
   const nav = useNavigate();
   const [ready, setReady] = useState(false);
+  // Hook-ul TREBUIE apelat neconditionat, inaintea oricarui return timpuriu
+  // (altfel ordinea hook-urilor se schimba intre render-e => crash React).
+  const templates = useTemplatesForCategory(id);
+  const category = getCategory(id);
 
   useEffect(() => {
     setReady(true);
   }, []);
 
-  if (!ready) return <PhoneShell><div /></PhoneShell>;
-
-  const category = getCategory(id);
-  const templates = useTemplatesForCategory(id);
+  if (!ready)
+    return (
+      <PhoneShell>
+        <div />
+      </PhoneShell>
+    );
 
   if (!category) {
     return (
@@ -92,9 +98,7 @@ function CategoryTemplates() {
             Idei de reel
           </p>
           <h1 className="h1-lux text-[36px] text-white">{category.label}</h1>
-          <p className="section-sub mt-2 text-sm max-w-[20rem]">
-            {category.blurb}
-          </p>
+          <p className="section-sub mt-2 text-sm max-w-[20rem]">{category.blurb}</p>
         </div>
 
         {/* Scrollable list of reel cards */}
