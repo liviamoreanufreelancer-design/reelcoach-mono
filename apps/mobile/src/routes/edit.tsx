@@ -569,11 +569,15 @@ function Edit() {
         </div>
 
         {/* Preview — doar la randare/rezultat. In editare (idle) hero-ul e
-            editorul in-place per-scena (SceneTextEditor) de mai jos. */}
+            editorul in-place per-scena (SceneTextEditor) de mai jos. La randare
+            ecranul e curat (fara editare jos) => preview-ul e mai mare. */}
         {phase !== "idle" && (
           <div
-            className="mt-3 mx-auto rounded-xl overflow-hidden border border-[#5B34FF]/20 shadow-[0_8px_24px_-8px_rgba(91,52,255,0.3)] bg-black shrink-0 relative"
-            style={{ aspectRatio: "9/16", width: "min(42vw, 165px)" }}
+            className={`mx-auto rounded-xl overflow-hidden border border-[#5B34FF]/20 shadow-[0_8px_24px_-8px_rgba(91,52,255,0.3)] bg-black shrink-0 relative ${phase === "processing" ? "my-auto" : "mt-3"}`}
+            style={{
+              aspectRatio: "9/16",
+              width: phase === "processing" ? "min(78vw, 320px)" : "min(42vw, 165px)",
+            }}
           >
             {phase === "done" && videoUrl ? (
               <>
@@ -701,10 +705,8 @@ function Edit() {
           </div>
         )}
 
-        {/* Tabs — only shown in editing mode (not when phase is "done").
-            Only the "Texte" tab is available now; filters/effects/transitions
-            are set by the template author in Studio, not editable here. */}
-        {phase !== "done" && (
+        {/* Tabs — doar in editare (idle). La randare/rezultat ecranul e curat. */}
+        {phase === "idle" && (
           <div className="mt-3 flex gap-2 p-1 bg-[#EDE8FF] rounded-full shrink-0">
             <TabBtn
               active={tab === "text"}
@@ -715,8 +717,8 @@ function Edit() {
           </div>
         )}
 
-        {/* Tab content — only shown in editing mode */}
-        {phase !== "done" && (
+        {/* Continut editare — doar in editare (idle). La randare/rezultat dispare. */}
+        {phase === "idle" && (
           <div className="flex-1 min-h-0 overflow-y-auto mt-2.5 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {state && tab === "text" && clips && clips.length > 0 && (
               <div className="space-y-3 pt-1">
