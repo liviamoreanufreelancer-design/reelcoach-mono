@@ -37,6 +37,8 @@ import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { LivePreview } from "@/components/editor/LivePreview";
+import { SceneTextEditor, type EditableText } from "@/components/editor/SceneTextEditor";
+import { effectiveLayers, sceneHasLayers } from "@/lib/scene-layers";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/edit")({
@@ -60,7 +62,15 @@ function Edit() {
       })),
     [scenario],
   );
-  const { state, updateCaption, setStyle, setFilter, setTransition, setEffectsEnabled } = useEditor(scenarioId, {
+  const {
+    state,
+    updateCaption,
+    updateLayerText,
+    setStyle,
+    setFilter,
+    setTransition,
+    setEffectsEnabled,
+  } = useEditor(scenarioId, {
     captions: defaultCaptions,
     vibe: brand?.vibe ?? "luxury",
   });
@@ -83,7 +93,9 @@ function Edit() {
       // @ts-expect-error — Safari iOS-specific API
       v.webkitEnterFullscreen?.bind(v);
     if (req) {
-      Promise.resolve(req()).catch(() => { /* user cancelled / not supported */ });
+      Promise.resolve(req()).catch(() => {
+        /* user cancelled / not supported */
+      });
     }
     // Strip controls again once the user exits fullscreen.
     const onExit = () => {
@@ -98,6 +110,8 @@ function Edit() {
   const [tab, setTab] = useState<Tab>("text");
   const [clips, setClips] = useState<StoredClip[] | null>(null);
   const [activeScene, setActiveScene] = useState(0);
+  // Index-ul de CLIP pentru editorul in-place (vederea per-scena statica).
+  const [editClipIdx, setEditClipIdx] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const renderStartRef = useRef<number>(0);
   const blobRef = useRef<Blob | null>(null);
@@ -120,7 +134,6 @@ function Edit() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenarioId]);
 
-
   // Music removed — users add audio from TikTok / Instagram / Facebook when posting.
 
   // Precedenta font: "original" = fontul setat in Studio per scena (scene.captionPreset);
@@ -134,7 +147,8 @@ function Edit() {
   // Pentru fallback-ul de tranzitie avem nevoie de un stylePack; "original" nu e
   // in STYLE_PACKS, asa ca folosim luxury doar ca sursa de default (tranzitia e
   // oricum suprascrisa per scena mai jos).
-  const stylePack = state && state.styleId !== "original" ? STYLE_PACKS[state.styleId] : STYLE_PACKS.luxury;
+  const stylePack =
+    state && state.styleId !== "original" ? STYLE_PACKS[state.styleId] : STYLE_PACKS.luxury;
   const effectiveTransitionId = (state?.transitionId ?? stylePack.transitionId) as TransitionId;
   // Preset per scena pentru preview (preview = export). Cand e "original", fiecare
   // scena foloseste fontul ei din Studio; altfel toate folosesc fontul stilului.
@@ -142,6 +156,65 @@ function Edit() {
     ? scenario.scenes.map((sc) => resolvePreset(state.styleId, sc.captionPreset))
     : [];
   const livePreset = livePresets[0] ?? TEXT_PRESETS.hookBold;
+
+  // ─── Editor in-place (SceneTextEditor) ────────────────────────────────
+  // Textele editabile pentru o scena filmata. Scenele cu straturi (Studio)
+  // => cate un text per strat (editeaza .text). Scenele vechi (caption)
+  // => un singur text din sistemul caption. Randare/pozitie = ale partenerei.
+  function editableItemsFor(clip: StoredClip): EditableText[] {
+    if (!state) return [];
+    const scene = scenario.scenes[clip.sceneIdx];
+    if (scene && sceneHasLayers(scene)) {
+      const layers = effectiveLayers(scene, state.layerTextEdits?.[clip.sceneIdx]);
+      return layers.map((l) => ({
+        id: l.id,
+        kind: "layer" as const,
+        text: l.text,
+        x: l.x,
+        y: l.y,
+        preset: TEXT_PRESETS[l.presetId] ?? TEXT_PRESETS.hookBold,
+        color: l.color,
+        bold: l.bold,
+        italic: l.italic,
+        underline: l.underline,
+        sizeScale: l.sizeScale,
+      }));
+    }
+    // Scena veche pe caption — un singur text editabil.
+    const cap = state.captions[clip.sceneIdx];
+    const preset = resolvePreset(state.styleId, scene?.captionPreset);
+    const y = cap?.position === "top" ? 0.18 : cap?.position === "center" ? 0.5 : 0.82;
+    return [
+      {
+        id: "caption",
+        kind: "caption" as const,
+        text: cap?.text ?? "",
+        placeholder: (scene?.overlayText ?? scene?.hook ?? "").replace(/\n/g, " "),
+        x: 0.5,
+        y,
+        preset,
+        color: cap?.color ?? brand?.primary,
+      },
+    ];
+  }
+
+  // Commit editare in-place: straturile -> updateLayerText (doar .text);
+  // captionul vechi -> updateCaption. Salvat LOCAL (nu atinge Studio).
+  function commitEditableText(clip: StoredClip, item: EditableText, text: string) {
+    if (item.kind === "layer") updateLayerText(clip.sceneIdx, item.id, text);
+    else updateCaption(clip.sceneIdx, { text });
+  }
+
+  function editorFilterFor(clip: StoredClip) {
+    const fid = scenario.scenes[clip.sceneIdx]?.filterId ?? state?.filterId;
+    return fid ? (FILTERS[fid as keyof typeof FILTERS] ?? undefined) : undefined;
+  }
+
+  // Selectorul global de font e relevant doar pentru scenele vechi (caption);
+  // scenele cu straturi isi pastreaza fontul partenerei.
+  const hasLegacyCaptionScene = !!clips?.some(
+    (c) => !sceneHasLayers(scenario.scenes[c.sceneIdx] ?? ({} as never)),
+  );
 
   async function generate() {
     if (!state) return;
@@ -174,8 +247,13 @@ function Edit() {
         const c = clips[i];
         const cap = state.captions[c.sceneIdx];
         // Straturi de text libere (Studio) — au prioritate peste caption vechi,
-        // aceeasi regula ca in renderPreviewFrame (preview = export).
-        const textLayers = scenario.scenes[c.sceneIdx]?.textLayers;
+        // aceeasi regula ca in renderPreviewFrame (preview = export). Aplic
+        // editarile in-place ale stilistei (doar .text) prin effectiveLayers.
+        const _scene = scenario.scenes[c.sceneIdx];
+        const textLayers =
+          _scene && sceneHasLayers(_scene)
+            ? effectiveLayers(_scene, state.layerTextEdits?.[c.sceneIdx])
+            : undefined;
         // Preset per scena: "original" => fontul scenei din Studio; vibe => fontul stilului.
         const preset = resolvePreset(state.styleId, scenario.scenes[c.sceneIdx]?.captionPreset);
         const overlayKey = JSON.stringify({
@@ -224,7 +302,12 @@ function Edit() {
           continue;
         }
         overlayBlob = await renderOverlay({
-          caption: { text: cap.text, position: cap.position, presetId: preset.id, color: cap.color ?? brand?.primary },
+          caption: {
+            text: cap.text,
+            position: cap.position,
+            presetId: preset.id,
+            color: cap.color ?? brand?.primary,
+          },
           preset,
           handle: brand?.handle,
           logoBitmap: logoBmp,
@@ -267,7 +350,7 @@ function Edit() {
           })
         : undefined;
 
-const blob = await renderReelInBrowser(
+      const blob = await renderReelInBrowser(
         clips,
         {
           overlays,
@@ -283,8 +366,7 @@ const blob = await renderReelInBrowser(
             kenBurns: true,
             intro: true,
           },
-          transitionDuration:
-            (TRANSITIONS[effectiveTransitionId]?.durationMs ?? 250) / 1000,
+          transitionDuration: (TRANSITIONS[effectiveTransitionId]?.durationMs ?? 250) / 1000,
           transitionType: effectiveTransitionId,
           filter: FILTERS[state.filterId] ?? FILTERS.none,
           // Per-clip dimensions — each scene carries its own filter, effect,
@@ -379,7 +461,10 @@ const blob = await renderReelInBrowser(
    * the website opens as fallback. Custom schemes are increasingly blocked
    * by Safari and modern Android browsers as a security measure.
    */
-  const APP_LINKS: Record<"tiktok" | "instagram" | "facebook", { url: string; label: string; hint: string }> = {
+  const APP_LINKS: Record<
+    "tiktok" | "instagram" | "facebook",
+    { url: string; label: string; hint: string }
+  > = {
     tiktok: {
       url: "https://www.tiktok.com/upload",
       label: "TikTok",
@@ -483,108 +568,126 @@ const blob = await renderReelInBrowser(
           </Link>
         </div>
 
-        {/* Preview */}
-        <div
-          className="mt-3 mx-auto rounded-xl overflow-hidden border border-[#5B34FF]/20 shadow-[0_8px_24px_-8px_rgba(91,52,255,0.3)] bg-black shrink-0 relative"
-          style={{ aspectRatio: "9/16", width: "min(42vw, 165px)" }}
-        >
-          {phase === "done" && videoUrl ? (
-            <>
-              <video ref={doneVideoRef} src={videoUrl} autoPlay muted loop playsInline disablePictureInPicture disableRemotePlayback controlsList="nodownload nofullscreen noremoteplayback" className="w-full h-full object-cover" />
-              {/* Fullscreen icon overlay — top right corner of the video */}
-              <button
-                onClick={enterFullscreen}
-                aria-label="Vezi pe tot ecranul"
-                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/55 backdrop-blur-md border border-white/15 flex items-center justify-center text-white active:scale-95 transition"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            </>
-          ) : phase === "processing" ? (
-            <div className="relative w-full h-full bg-black">
-              {clips && clips.length > 0 && state ? (
-                <div className="absolute inset-0">
-                  <LivePreview
-                    clips={clips}
-                    captions={clips.map(
-                      (c) => {
-                        const _cap = state.captions[c.sceneIdx] ?? { text: "", position: "bottom" as const };
+        {/* Preview — doar la randare/rezultat. In editare (idle) hero-ul e
+            editorul in-place per-scena (SceneTextEditor) de mai jos. */}
+        {phase !== "idle" && (
+          <div
+            className="mt-3 mx-auto rounded-xl overflow-hidden border border-[#5B34FF]/20 shadow-[0_8px_24px_-8px_rgba(91,52,255,0.3)] bg-black shrink-0 relative"
+            style={{ aspectRatio: "9/16", width: "min(42vw, 165px)" }}
+          >
+            {phase === "done" && videoUrl ? (
+              <>
+                <video
+                  ref={doneVideoRef}
+                  src={videoUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  disablePictureInPicture
+                  disableRemotePlayback
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                  className="w-full h-full object-cover"
+                />
+                {/* Fullscreen icon overlay — top right corner of the video */}
+                <button
+                  onClick={enterFullscreen}
+                  aria-label="Vezi pe tot ecranul"
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/55 backdrop-blur-md border border-white/15 flex items-center justify-center text-white active:scale-95 transition"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : phase === "processing" ? (
+              <div className="relative w-full h-full bg-black">
+                {clips && clips.length > 0 && state ? (
+                  <div className="absolute inset-0">
+                    <LivePreview
+                      clips={clips}
+                      captions={clips.map((c) => {
+                        const _cap = state.captions[c.sceneIdx] ?? {
+                          text: "",
+                          position: "bottom" as const,
+                        };
                         return { ..._cap, color: _cap.color ?? brand?.primary };
-                      },
-                    )}
-                    preset={livePreset}
-                    presets={livePresets}
-                    transition={effectiveTransitionId}
-                    filter={FILTERS[state.filterId] ?? FILTERS.none}
-                    effectIds={clips.map((c) => scenario.scenes[c.sceneIdx]?.effectId)}
-                    transitionTypes={clips.map((c) => scenario.scenes[c.sceneIdx]?.transitionType)}
-playbackSpeeds={clips.map((c) => scenario.scenes[c.sceneIdx]?.playbackSpeed)}
-motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
-                    effectsEnabled={state.effectsEnabled}
-                    handle={brand?.handle}
-                    logoUrl={logoUrl}
-                    activeIdx={Math.min(activeScene, clips.length - 1)}
-                    onSceneChange={(i) => setActiveScene(clips[i]?.sceneIdx ?? i)}
-                  />
+                      })}
+                      preset={livePreset}
+                      presets={livePresets}
+                      transition={effectiveTransitionId}
+                      filter={FILTERS[state.filterId] ?? FILTERS.none}
+                      effectIds={clips.map((c) => scenario.scenes[c.sceneIdx]?.effectId)}
+                      transitionTypes={clips.map(
+                        (c) => scenario.scenes[c.sceneIdx]?.transitionType,
+                      )}
+                      playbackSpeeds={clips.map((c) => scenario.scenes[c.sceneIdx]?.playbackSpeed)}
+                      motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
+                      effectsEnabled={state.effectsEnabled}
+                      handle={brand?.handle}
+                      logoUrl={logoUrl}
+                      activeIdx={Math.min(activeScene, clips.length - 1)}
+                      onSceneChange={(i) => setActiveScene(clips[i]?.sceneIdx ?? i)}
+                    />
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <FilmIcon className="w-8 h-8 text-[#EDE8FF] animate-pulse" />
+                  </div>
+                )}
+                <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 via-black/55 to-transparent">
+                  <p className="text-[9px] tracking-[0.25em] uppercase text-[#EDE8FF]/90 text-center mb-1.5">
+                    Preview live · randez calitate finală
+                  </p>
+                  <div className="h-[3px] bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#5B34FF] transition-all duration-200"
+                      style={{ width: `${Math.min(100, Math.max(2, Math.round(progress.pct)))}%` }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-center text-white/85 text-[10px]">
+                    {progress.message ?? "Procesez…"}
+                  </p>
+                  <p className="mt-0.5 text-center text-[9px] tracking-widest uppercase text-white/45 tabular-nums">
+                    {Math.round(progress.pct)}% · {elapsed.toFixed(0)}s
+                  </p>
                 </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <FilmIcon className="w-8 h-8 text-[#EDE8FF] animate-pulse" />
-                </div>
-              )}
-              <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 via-black/55 to-transparent">
-                <p className="text-[9px] tracking-[0.25em] uppercase text-[#EDE8FF]/90 text-center mb-1.5">
-                  Preview live · randez calitate finală
-                </p>
-                <div className="h-[3px] bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#5B34FF] transition-all duration-200"
-                    style={{ width: `${Math.min(100, Math.max(2, Math.round(progress.pct)))}%` }}
-                  />
-                </div>
-                <p className="mt-1.5 text-center text-white/85 text-[10px]">
-                  {progress.message ?? "Procesez…"}
-                </p>
-                <p className="mt-0.5 text-center text-[9px] tracking-widest uppercase text-white/45 tabular-nums">
-                  {Math.round(progress.pct)}% · {elapsed.toFixed(0)}s
-                </p>
               </div>
-            </div>
-          ) : phase === "error" ? (
-            <div className="w-full h-full flex flex-col items-center justify-center text-rose-300 text-xs gap-2 p-3 text-center">
-              <AlertCircle className="w-6 h-6" />
-              <p>{errorMsg}</p>
-            </div>
-          ) : clips && clips.length > 0 && state ? (
-            <LivePreview
-              clips={clips}
-              captions={clips.map(
-                (c) => {
-                        const _cap = state.captions[c.sceneIdx] ?? { text: "", position: "bottom" as const };
-                        return { ..._cap, color: _cap.color ?? brand?.primary };
-                      },
-              )}
-              preset={livePreset}
-                    presets={livePresets}
-              transition={effectiveTransitionId}
-              filter={FILTERS[state.filterId] ?? FILTERS.none}
-              effectIds={clips?.map((c) => scenario.scenes[c.sceneIdx]?.effectId)}
-              transitionTypes={clips.map((c) => scenario.scenes[c.sceneIdx]?.transitionType)}
-playbackSpeeds={clips.map((c) => scenario.scenes[c.sceneIdx]?.playbackSpeed)}
-motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
-              effectsEnabled={state.effectsEnabled}
-              handle={brand?.handle}
-              logoUrl={logoUrl}
-              activeIdx={Math.min(activeScene, clips.length - 1)}
-              onSceneChange={(i) => setActiveScene(clips[i]?.sceneIdx ?? i)}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-white/45 text-[11px] tracking-widest uppercase gap-2 p-3 text-center">
-              <FilmIcon className="w-7 h-7 text-[#EDE8FF]/70" />
-              <span>Se încarcă…</span>
-            </div>
-          )}
-        </div>
+            ) : phase === "error" ? (
+              <div className="w-full h-full flex flex-col items-center justify-center text-rose-300 text-xs gap-2 p-3 text-center">
+                <AlertCircle className="w-6 h-6" />
+                <p>{errorMsg}</p>
+              </div>
+            ) : clips && clips.length > 0 && state ? (
+              <LivePreview
+                clips={clips}
+                captions={clips.map((c) => {
+                  const _cap = state.captions[c.sceneIdx] ?? {
+                    text: "",
+                    position: "bottom" as const,
+                  };
+                  return { ..._cap, color: _cap.color ?? brand?.primary };
+                })}
+                preset={livePreset}
+                presets={livePresets}
+                transition={effectiveTransitionId}
+                filter={FILTERS[state.filterId] ?? FILTERS.none}
+                effectIds={clips?.map((c) => scenario.scenes[c.sceneIdx]?.effectId)}
+                transitionTypes={clips.map((c) => scenario.scenes[c.sceneIdx]?.transitionType)}
+                playbackSpeeds={clips.map((c) => scenario.scenes[c.sceneIdx]?.playbackSpeed)}
+                motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
+                effectsEnabled={state.effectsEnabled}
+                handle={brand?.handle}
+                logoUrl={logoUrl}
+                activeIdx={Math.min(activeScene, clips.length - 1)}
+                onSceneChange={(i) => setActiveScene(clips[i]?.sceneIdx ?? i)}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-white/45 text-[11px] tracking-widest uppercase gap-2 p-3 text-center">
+                <FilmIcon className="w-7 h-7 text-[#EDE8FF]/70" />
+                <span>Se încarcă…</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tabs — only shown in editing mode (not when phase is "done").
             Only the "Texte" tab is available now; filters/effects/transitions
@@ -602,250 +705,237 @@ motionBlurs={clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur)}
 
         {/* Tab content — only shown in editing mode */}
         {phase !== "done" && (
-        <div className="flex-1 min-h-0 overflow-y-auto mt-2.5 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {state && tab === "text" && (
-            <div className="space-y-2">
-              {/* Selector global de stil pentru tot reel-ul */}
-              <div className="bg-white rounded-2xl border border-[#E6E6EA] p-3 shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)]">
-                <p className="text-[10px] tracking-widest uppercase text-[#5B34FF]/80 font-semibold mb-2 px-1">
-                  Stilul reel-ului
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["original", "luxury", "soft", "bold"] as StyleId[]).map((v) => {
-                    const sp = v === "original" ? null : STYLE_PACKS[v];
-                    const active = state.styleId === v;
-                    return (
-                      <button
-                        key={v}
-                        onClick={() => setStyle(v)}
-                        className={`rounded-xl p-3 border text-center transition active:scale-[0.98] ${active ? "border-[#5B34FF] bg-[#EDE8FF]" : "border-[#E6E6EA] bg-white"}`}
-                      >
-                        <span className={`block font-display text-lg leading-none ${active ? "text-[#5B34FF]" : "text-[#1F1F1F]"}`}>
-                          {v === "original" ? "Original" : sp!.label}
-                        </span>
-                        <span className="block text-[10px] text-[#6B6B6B] mt-1 leading-tight">{v === "original" ? "Fontul din exemplu" : sp!.desc}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {scenario.scenes.map((sc, i) => {
-                const cap = state.captions[i] ?? { text: "", position: "bottom" as const };
-                return (
-                  <div
-                    key={i}
-                    onClick={() => setActiveScene(i)}
-                    className={`bg-white rounded-2xl border p-3 transition cursor-pointer shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)] ${activeScene === i ? "border-[#5B34FF] ring-1 ring-[#5B34FF]/30" : "border-[#E6E6EA]"}`}
+          <div className="flex-1 min-h-0 overflow-y-auto mt-2.5 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {state && tab === "text" && clips && clips.length > 0 && (
+              <div className="space-y-3 pt-1">
+                {/* Editor in-place per-scena (vedere statica). Stilista atinge
+                  textul direct pe cadru si schimba doar cuvintele. */}
+                <SceneTextEditor
+                  clips={clips}
+                  frameWidth={Math.min(
+                    typeof window !== "undefined" ? window.innerWidth * 0.66 : 260,
+                    260,
+                  )}
+                  itemsFor={editableItemsFor}
+                  filterFor={editorFilterFor}
+                  onCommit={commitEditableText}
+                  activeIdx={Math.min(editClipIdx, clips.length - 1)}
+                  onSceneChange={(i) => {
+                    setEditClipIdx(i);
+                    setActiveScene(clips[i]?.sceneIdx ?? i);
+                  }}
+                />
+
+                {/* Refilmare scena curenta */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => {
+                      light();
+                      playTap();
+                      const sceneIdx =
+                        clips[Math.min(editClipIdx, clips.length - 1)]?.sceneIdx ?? 0;
+                      nav({ to: "/film", search: { scene: sceneIdx, single: true } });
+                    }}
+                    className="flex items-center gap-1.5 text-[11px] text-[#5B34FF] font-medium px-3 py-1.5 rounded-full bg-[#EDE8FF] active:scale-95 transition"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] tracking-widest uppercase text-[#5B34FF]/80 font-semibold">
-                        Scena {i + 1}
-                      </span>
-                      <div className="flex gap-1">
-                        {(["top", "center", "bottom"] as const).map((pos) => (
-                          <button
-                            key={pos}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateCaption(i, { position: pos });
-                              setActiveScene(i);
-                            }}
-                            className={`text-[10px] px-2 py-1 rounded-full font-medium transition ${cap.position === pos ? "bg-[#5B34FF] text-white" : "bg-[#EDE8FF] text-[#5B34FF]"}`}
-                          >
-                            {pos === "top" ? "sus" : pos === "center" ? "centru" : "jos"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] tracking-widest uppercase text-[#5B34FF]/60 font-semibold">Culoare</span>
-                      <div className="flex gap-1.5">
-                        {[
-                          { id: "brand", val: brand?.primary ?? "#5B34FF", label: "Brand" },
-                          { id: "white", val: "#FFFFFF", label: "Alb" },
-                          { id: "black", val: "#000000", label: "Negru" },
-                        ].map((sw) => {
-                          const current = cap.color ?? brand?.primary ?? "#5B34FF";
-                          const active = current.toUpperCase() === sw.val.toUpperCase();
-                          return (
-                            <button
-                              key={sw.id}
-                              onClick={(e) => { e.stopPropagation(); updateCaption(i, { color: sw.val }); setActiveScene(i); }}
-                              aria-label={sw.label}
-                              className={`w-6 h-6 rounded-full border-2 transition ${active ? "border-[#5B34FF] scale-110" : "border-[#E6E6EA]"}`}
-                              style={{ background: sw.val }}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <SceneTextarea
-                      value={cap.text}
-                      placeholder={(sc.overlayText ?? sc.hook).replace(/\n/g, " ")}
-                      onCommit={(text) => updateCaption(i, { text })}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        light();
-                        playTap();
-                        nav({ to: "/film", search: { scene: i, single: true } });
-                      }}
-                      className="mt-2 flex items-center gap-1.5 text-[11px] text-[#5B34FF] font-medium px-3 py-1.5 rounded-full bg-[#EDE8FF] active:scale-95 transition"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Refilmează scena
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {state && tab === "style" && (
-            <div className="space-y-4">
-              <div>
-                <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
-                  Pachet stil
-                </p>
-                <div className="space-y-2">
-                  {(["luxury", "soft", "bold"] as Vibe[]).map((v) => {
-                    const sp = STYLE_PACKS[v];
-                    const active = state.styleId === v;
-                    return (
-                      <button
-                        key={v}
-                        onClick={() => setStyle(v)}
-                        className={`w-full text-left rounded-2xl p-4 border transition ${active ? "border-[#5B34FF] bg-white/[0.06]" : "border-white/10 bg-white/[0.02]"}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`font-display text-2xl ${active ? "text-purple-gradient" : "text-white"}`}
-                          >
-                            {sp.label}
-                          </span>
-                          {active && <Check className="w-4 h-4 text-[#EDE8FF]" />}
-                        </div>
-                        <p className="text-white/55 text-xs mt-1">{sp.desc}</p>
-                      </button>
-                    );
-                  })}
+                    <RefreshCw className="w-3 h-3" /> Refilmează scena
+                  </button>
                 </div>
-              </div>
 
-              <div>
-                <button
-                  onClick={() => { playSelect(); setEffectsEnabled(!state.effectsEnabled); }}
-                  className="w-full flex items-center justify-between gap-3 rounded-2xl p-3 border border-white/10 bg-white/[0.02] active:scale-[0.99] transition"
-                >
-                  <div className="text-left">
-                    <p className="text-white text-sm font-medium flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#EDE8FF]" />
-                      Efecte premium
+                {/* Selector global de font — relevant doar pentru scenele vechi
+                  pe caption; scenele cu straturi isi pastreaza fontul partenerei. */}
+                {hasLegacyCaptionScene && (
+                  <div className="bg-white rounded-2xl border border-[#E6E6EA] p-3 shadow-[0_4px_16px_-14px_rgba(40,24,110,0.2)]">
+                    <p className="text-[10px] tracking-widest uppercase text-[#5B34FF]/80 font-semibold mb-2 px-1">
+                      Stilul textului
                     </p>
-                    <p className="text-white/55 text-[11px] mt-0.5 leading-snug">
-                      Sclipiri, lumini și bokeh aplicate automat pe scenele potrivite.
-                    </p>
-                  </div>
-                  <span className={`relative w-10 h-6 rounded-full transition shrink-0 ${state.effectsEnabled ? "bg-[#5B34FF]" : "bg-white/15"}`}>
-                    <span
-                      className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${state.effectsEnabled ? "left-[18px]" : "left-0.5"}`}
-                    />
-                  </span>
-                </button>
-              </div>
-
-              <div>
-                <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
-                  Tranziție între scene
-                </p>
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {TRANSITION_LIST.map((tr) => {
-                    const active = effectiveTransitionId === tr.id;
-                    const isOverride = state.transitionId === tr.id;
-                    return (
-                      <button
-                        key={tr.id}
-                        onClick={() => { playSelect(); setTransition(isOverride ? null : tr.id); }}
-                        className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#5B34FF] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
-                      >
-                        <div className="w-full h-12 rounded-md mb-1.5 border border-white/10 overflow-hidden relative flex items-center justify-center bg-[linear-gradient(135deg,#3a2a1c_0%,#7a5638_50%,#2a1f12_100%)]">
-                          <TransitionGlyph id={tr.id} />
-                        </div>
-                        <div className="flex items-center justify-between gap-1">
-                          <span className={`text-xs font-medium ${active ? "text-[#EDE8FF]" : "text-white/85"}`}>
-                            {tr.label}
-                          </span>
-                          {active && <Check className="w-3 h-3 text-[#EDE8FF]" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-white/45 text-[10px] mt-2 px-1 leading-relaxed">
-                  {TRANSITIONS[effectiveTransitionId]?.desc}
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                {FILTER_GROUPS.map((group) => (
-                  <div key={group.id}>
-                    <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
-                      {group.label}
-                    </p>
-                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      {group.filters.map((f) => {
-                        const active = state.filterId === f.id;
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["original", "luxury", "soft", "bold"] as StyleId[]).map((v) => {
+                        const sp = v === "original" ? null : STYLE_PACKS[v];
+                        const active = state.styleId === v;
                         return (
                           <button
-                            key={f.id}
-                            onClick={() => { playSelect(); setFilter(f.id); }}
-                            className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#5B34FF] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
+                            key={v}
+                            onClick={() => setStyle(v)}
+                            className={`rounded-xl p-3 border text-center transition active:scale-[0.98] ${active ? "border-[#5B34FF] bg-[#EDE8FF]" : "border-[#E6E6EA] bg-white"}`}
                           >
-                            <div className="relative w-full h-12 rounded-md mb-1.5 border border-white/10 overflow-hidden">
-                              <div
-                                className="absolute inset-0"
-                                style={{
-                                  background:
-                                    "linear-gradient(135deg, #d4a87a 0%, #7a5638 45%, #2a1f12 100%)",
-                                  filter: f.cssFilter,
-                                }}
-                              />
-                              {f.tint && (
-                                <div
-                                  className="absolute inset-0"
-                                  style={{ background: f.tint.color, opacity: f.tint.alpha }}
-                                />
-                              )}
-                              {f.highlightBoost && f.highlightBoost > 0 && (
-                                <div
-                                  className="absolute inset-0"
-                                  style={{
-                                    background: "rgba(255, 250, 240, 1)",
-                                    opacity: f.highlightBoost,
-                                    mixBlendMode: "screen",
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between gap-1">
-                              <span className={`text-xs font-medium ${active ? "text-[#EDE8FF]" : "text-white/85"}`}>
-                                {f.label}
-                              </span>
-                              {active && <Check className="w-3 h-3 text-[#EDE8FF]" />}
-                            </div>
+                            <span
+                              className={`block font-display text-lg leading-none ${active ? "text-[#5B34FF]" : "text-[#1F1F1F]"}`}
+                            >
+                              {v === "original" ? "Original" : sp!.label}
+                            </span>
+                            <span className="block text-[10px] text-[#6B6B6B] mt-1 leading-tight">
+                              {v === "original" ? "Fontul din exemplu" : sp!.desc}
+                            </span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
-                ))}
-                <p className="text-white/45 text-[10px] mt-2 px-1 leading-relaxed">
-                  {FILTERS[state.filterId]?.desc ?? "Fără filtru."}
-                </p>
+                )}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {state && tab === "style" && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
+                    Pachet stil
+                  </p>
+                  <div className="space-y-2">
+                    {(["luxury", "soft", "bold"] as Vibe[]).map((v) => {
+                      const sp = STYLE_PACKS[v];
+                      const active = state.styleId === v;
+                      return (
+                        <button
+                          key={v}
+                          onClick={() => setStyle(v)}
+                          className={`w-full text-left rounded-2xl p-4 border transition ${active ? "border-[#5B34FF] bg-white/[0.06]" : "border-white/10 bg-white/[0.02]"}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`font-display text-2xl ${active ? "text-purple-gradient" : "text-white"}`}
+                            >
+                              {sp.label}
+                            </span>
+                            {active && <Check className="w-4 h-4 text-[#EDE8FF]" />}
+                          </div>
+                          <p className="text-white/55 text-xs mt-1">{sp.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    onClick={() => {
+                      playSelect();
+                      setEffectsEnabled(!state.effectsEnabled);
+                    }}
+                    className="w-full flex items-center justify-between gap-3 rounded-2xl p-3 border border-white/10 bg-white/[0.02] active:scale-[0.99] transition"
+                  >
+                    <div className="text-left">
+                      <p className="text-white text-sm font-medium flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#EDE8FF]" />
+                        Efecte premium
+                      </p>
+                      <p className="text-white/55 text-[11px] mt-0.5 leading-snug">
+                        Sclipiri, lumini și bokeh aplicate automat pe scenele potrivite.
+                      </p>
+                    </div>
+                    <span
+                      className={`relative w-10 h-6 rounded-full transition shrink-0 ${state.effectsEnabled ? "bg-[#5B34FF]" : "bg-white/15"}`}
+                    >
+                      <span
+                        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${state.effectsEnabled ? "left-[18px]" : "left-0.5"}`}
+                      />
+                    </span>
+                  </button>
+                </div>
+
+                <div>
+                  <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
+                    Tranziție între scene
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {TRANSITION_LIST.map((tr) => {
+                      const active = effectiveTransitionId === tr.id;
+                      const isOverride = state.transitionId === tr.id;
+                      return (
+                        <button
+                          key={tr.id}
+                          onClick={() => {
+                            playSelect();
+                            setTransition(isOverride ? null : tr.id);
+                          }}
+                          className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#5B34FF] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
+                        >
+                          <div className="w-full h-12 rounded-md mb-1.5 border border-white/10 overflow-hidden relative flex items-center justify-center bg-[linear-gradient(135deg,#3a2a1c_0%,#7a5638_50%,#2a1f12_100%)]">
+                            <TransitionGlyph id={tr.id} />
+                          </div>
+                          <div className="flex items-center justify-between gap-1">
+                            <span
+                              className={`text-xs font-medium ${active ? "text-[#EDE8FF]" : "text-white/85"}`}
+                            >
+                              {tr.label}
+                            </span>
+                            {active && <Check className="w-3 h-3 text-[#EDE8FF]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-white/45 text-[10px] mt-2 px-1 leading-relaxed">
+                    {TRANSITIONS[effectiveTransitionId]?.desc}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {FILTER_GROUPS.map((group) => (
+                    <div key={group.id}>
+                      <p className="text-[10px] tracking-widest uppercase text-[#EDE8FF]/80 mb-2 px-1">
+                        {group.label}
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {group.filters.map((f) => {
+                          const active = state.filterId === f.id;
+                          return (
+                            <button
+                              key={f.id}
+                              onClick={() => {
+                                playSelect();
+                                setFilter(f.id);
+                              }}
+                              className={`flex-shrink-0 rounded-xl px-3 py-2 border transition text-left min-w-[88px] ${active ? "border-[#5B34FF] bg-white/[0.07]" : "border-white/10 bg-white/[0.02]"}`}
+                            >
+                              <div className="relative w-full h-12 rounded-md mb-1.5 border border-white/10 overflow-hidden">
+                                <div
+                                  className="absolute inset-0"
+                                  style={{
+                                    background:
+                                      "linear-gradient(135deg, #d4a87a 0%, #7a5638 45%, #2a1f12 100%)",
+                                    filter: f.cssFilter,
+                                  }}
+                                />
+                                {f.tint && (
+                                  <div
+                                    className="absolute inset-0"
+                                    style={{ background: f.tint.color, opacity: f.tint.alpha }}
+                                  />
+                                )}
+                                {f.highlightBoost && f.highlightBoost > 0 && (
+                                  <div
+                                    className="absolute inset-0"
+                                    style={{
+                                      background: "rgba(255, 250, 240, 1)",
+                                      opacity: f.highlightBoost,
+                                      mixBlendMode: "screen",
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                <span
+                                  className={`text-xs font-medium ${active ? "text-[#EDE8FF]" : "text-white/85"}`}
+                                >
+                                  {f.label}
+                                </span>
+                                {active && <Check className="w-3 h-3 text-[#EDE8FF]" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-white/45 text-[10px] mt-2 px-1 leading-relaxed">
+                    {FILTERS[state.filterId]?.desc ?? "Fără filtru."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Bottom actions */}
@@ -960,13 +1050,23 @@ function TransitionGlyph({ id }: { id: string }) {
   const base = "absolute inset-0 flex items-center justify-center";
   switch (id) {
     case "cut":
-      return <div className={base}><div className="w-full h-px bg-white/60" /></div>;
+      return (
+        <div className={base}>
+          <div className="w-full h-px bg-white/60" />
+        </div>
+      );
     case "fade":
-      return <div className={`${base} bg-gradient-to-r from-transparent via-white/40 to-transparent`} />;
+      return (
+        <div className={`${base} bg-gradient-to-r from-transparent via-white/40 to-transparent`} />
+      );
     case "flash":
       return <div className={`${base} bg-white/70`} />;
     case "zoom":
-      return <div className={base}><div className="w-7 h-7 rounded-full border-2 border-white/70" /></div>;
+      return (
+        <div className={base}>
+          <div className="w-7 h-7 rounded-full border-2 border-white/70" />
+        </div>
+      );
     case "glitch":
       return (
         <div className={base}>
@@ -975,7 +1075,11 @@ function TransitionGlyph({ id }: { id: string }) {
         </div>
       );
     case "blur":
-      return <div className={`${base} backdrop-blur-md bg-white/10`}><div className="w-6 h-6 rounded-full bg-white/40 blur-sm" /></div>;
+      return (
+        <div className={`${base} backdrop-blur-md bg-white/10`}>
+          <div className="w-6 h-6 rounded-full bg-white/40 blur-sm" />
+        </div>
+      );
     case "slide":
       return (
         <div className={base}>
@@ -984,48 +1088,14 @@ function TransitionGlyph({ id }: { id: string }) {
         </div>
       );
     case "spin":
-      return <div className={base}><div className="w-6 h-6 border-2 border-white/70 border-t-transparent rounded-full" /></div>;
+      return (
+        <div className={base}>
+          <div className="w-6 h-6 border-2 border-white/70 border-t-transparent rounded-full" />
+        </div>
+      );
     default:
       return null;
   }
-}
-
-// Textarea cu state local + salvare debounced. Tastarea e instant (state
-// local), iar persistarea/redraw-ul preview-ului se intampla o singura data
-// la 400ms dupa ultima tasta, ca sa nu se blocheze scrisul.
-function SceneTextarea({
-  value,
-  placeholder,
-  onCommit,
-}: {
-  value: string;
-  placeholder: string;
-  onCommit: (text: string) => void;
-}) {
-  const [local, setLocal] = useState(value);
-  const focusedRef = useRef(false);
-  useEffect(() => {
-    if (!focusedRef.current) setLocal(value);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-  useEffect(() => {
-    if (local === value) return;
-    const id = window.setTimeout(() => onCommit(local), 500);
-    return () => window.clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [local]);
-  return (
-    <textarea
-      value={local}
-      onFocus={() => { focusedRef.current = true; }}
-      onBlur={() => { focusedRef.current = false; }}
-      onChange={(e) => setLocal(e.target.value.slice(0, 120))}
-      rows={2}
-      placeholder={placeholder}
-      style={{ fontSize: 16 }}
-      className="w-full bg-[#F8F8FA] rounded-[10px] border border-[#E6E6EA] px-3 py-2 outline-none text-[#1F1F1F] resize-none placeholder:text-[#6B6B6B]/50 focus:border-[#5B34FF] focus:bg-white transition"
-    />
-  );
 }
 
 function TabBtn({
@@ -1054,7 +1124,9 @@ function NoClips() {
     <PhoneShell>
       <div className="relative z-10 flex flex-col h-full items-center justify-center px-6 text-center bg-[#F8F8FA]">
         <AlertCircle className="w-8 h-8 text-[#5B34FF]" />
-        <p className="text-[#1F1F1F] text-sm mt-4">Nu există clipuri salvate pentru acest scenariu.</p>
+        <p className="text-[#1F1F1F] text-sm mt-4">
+          Nu există clipuri salvate pentru acest scenariu.
+        </p>
         <Link
           to="/film"
           className="mt-5 inline-flex h-12 px-6 rounded-full bg-[#5B34FF] text-white text-sm font-semibold items-center shadow-[0_12px_26px_-12px_rgba(91,52,255,0.8)]"
