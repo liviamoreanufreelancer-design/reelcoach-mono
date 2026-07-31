@@ -541,6 +541,14 @@ function Edit() {
   };
 
   const restart = async () => {
+    // Singura cale de stergere fara confirmare din tot appul, si e chiar
+    // sub "Genereaza Reel". Aliniat cu "Sterge reel" din my-reels.tsx.
+    const ok = window.confirm(
+      "Reiei filmările de la zero? Toate clipurile filmate până acum se șterg definitiv.",
+    );
+    if (!ok) return;
+    light();
+    playTap();
     await clearScenario(scenarioId);
     nav({ to: "/film" });
   };
