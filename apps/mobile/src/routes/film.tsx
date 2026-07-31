@@ -300,8 +300,6 @@ function Film() {
     // Mod refilmare o singura scena: dupa ce ai filmat scena tinta, revino
     // la editare (nu continua secvential la urmatoarea).
     if (singleMode) {
-      // Regenereaza reel-ul cu clipul nou la revenire in editare.
-      try { sessionStorage.setItem("reelcoach:autoGenerate", scenarioId); } catch { /* ignore */ }
       nav({ to: "/edit" });
       return;
     }

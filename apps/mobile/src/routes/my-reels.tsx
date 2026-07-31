@@ -52,16 +52,11 @@ function MyReels() {
     light();
     playTap();
     setSelectedIdeaId(r.scenarioId);
-    // draft -> editare normala (idle, la scene).
-    // completed -> editare cu auto-generare (vezi reel-ul final direct).
-    // posted -> detalii (reel inchis, deja publicat).
-    if (r.status === "completed") {
-      try { sessionStorage.setItem("reelcoach:autoGenerate", r.scenarioId); } catch { /* ignore */ }
-      nav({ to: "/edit" });
-    } else if (r.status === "draft") {
-      nav({ to: "/edit" });
-    } else {
+    // draft / completed -> editare. posted -> detalii (reel inchis, publicat).
+    if (r.status === "posted") {
       nav({ to: "/reel/$id", params: { id: r.scenarioId } });
+    } else {
+      nav({ to: "/edit" });
     }
   };
 
