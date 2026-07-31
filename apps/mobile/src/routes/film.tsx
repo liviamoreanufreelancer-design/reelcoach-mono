@@ -17,8 +17,9 @@ import type { ShotPatternId } from "@/data/shots";
 import { useCamera } from "@/hooks/useCamera";
 import { useRecorder } from "@/hooks/useRecorder";
 import { saveClip, listClips } from "@/lib/clip-store";
-import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavForward, playTap } from "@/lib/ui-sound";
+import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavForward, playTap, playError } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/film")({
   validateSearch: (search: Record<string, unknown>): { scene?: number; single?: boolean } => ({
@@ -209,31 +210,66 @@ function Film() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countdown]);
 
+  /**
+   * Salveaza clipul in IndexedDB si marcheaza scena ca filmata.
+   *
+   * CRITIC: marcarea (bifa verde) si sunetul de succes se fac DOAR daca
+   * salvarea a reusit. Inainte rulau neconditionat, deci la IDB plin
+   * stilista vedea bifa verde pe o scena care nu exista pe disc si
+   * descoperea lipsa abia la final — pierdere silentioasa de munca.
+   */
+  const persistClip = async (blob: Blob, mimeType: string, duration: number) => {
+    try {
+      await saveClip({
+        scenarioId,
+        sceneIdx: idx,
+        blob,
+        mimeType,
+        duration,
+        finalUsageDuration: scene.finalUsageDuration,
+        createdAt: Date.now(),
+      });
+      console.log("[film] saveClip OK for", scenarioId, idx);
+      setCaptured((s) => new Set(s).add(idx));
+      playSuccess();
+    } catch (err) {
+      console.error("[film] saveClip FAILED:", err);
+      // Sunet distinct (mainile ocupate = nu se uita la ecran) + mesaj
+      // vizibil. Scena ramane FARA bifa — starea onesta, persistenta.
+      playError();
+      toast.error("Scena NU s-a salvat", {
+        description:
+          "Probabil s-a umplut memoria telefonului. Eliberează spațiu din „Reelurile mele”, apoi încearcă din nou.",
+        duration: 12000,
+        action: {
+          label: "Încearcă din nou",
+          onClick: () => { void persistClip(blob, mimeType, duration); },
+        },
+      });
+    }
+  };
+
   const handleStop = async () => {
     console.log("[film] handleStop: scenarioId=", scenarioId, "sceneIdx=", idx);
     const result = await rec.stop();
     console.log("[film] rec.stop result:", result ? `blob ${result.blob.size}B` : "null");
-    if (result) {
-      try {
-        await saveClip({
-          scenarioId,
-          sceneIdx: idx,
-          blob: result.blob,
-          mimeType: result.mimeType,
-          duration: t || scene.duration,
-          finalUsageDuration: scene.finalUsageDuration,
-          createdAt: Date.now(),
-        });
-        console.log("[film] saveClip OK for", scenarioId, idx);
-      } catch (err) {
-        console.error("[film] saveClip FAILED:", err);
-      }
-    }
     playRecordStop();
-    setCaptured((s) => new Set(s).add(idx));
-    playSuccess();
     setT(0);
     setShowGuide(true);
+
+    if (!result) {
+      // Recorderul n-a produs niciun blob. Scena ramane nefilmata —
+      // inainte se marca oricum ca filmata.
+      console.error("[film] rec.stop a intors null — nimic de salvat");
+      playError();
+      toast.error("Scena NU s-a înregistrat", {
+        description: "Camera nu a produs niciun clip. Apasă din nou pe înregistrare.",
+        duration: 12000,
+      });
+      return;
+    }
+
+    await persistClip(result.blob, result.mimeType, t || scene.duration);
   };
 
   const handleFallbackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
