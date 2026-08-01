@@ -15,6 +15,8 @@ export type ConceptType =
   | "before_after" | "tutorial" | "other";
 export type ConceptStatus = "draft" | "in_review" | "published";
 export type SlotRole = "hook" | "tip" | "step" | "reveal" | "cta" | "context";
+/** Migrația 012. Cum se capturează un moment: filmat sau fotografiat. */
+export type CaptureKind = "video" | "photo";
 /**
  * Legacy enum of well-known patterns. Kept as a suggestion list only —
  * shots.pattern is now a free-form `string | null` and editors can type
@@ -137,6 +139,19 @@ export interface ShotRow {
   overlay_text: string | null;
   /** Migrația 010: straturi de text overlay (multi-text). null = folosește overlay_text vechi. */
   text_layers: unknown[] | null;
+  /**
+   * Migrația 012. Cum se capturează momentul: filmat sau fotografiat.
+   * Pozele sunt momente de sine stătătoare (before, after, detaliu) — un cadru
+   * extras dintr-un video iese neclar.
+   */
+  capture_kind: CaptureKind;
+  /**
+   * Migrația 012. Identitatea STABILĂ a momentului în sesiune ("before",
+   * "clatire"). Outputurile referă momentele prin cheia asta, NU prin `id`:
+   * publicarea recreează rândurile din `shots` cu id-uri noi.
+   * Auto-generată din pattern/poziție, editabilă de parteneră.
+   */
+  slot_key: string | null;
   recording_duration: number;
   final_usage_duration: number;
   countdown: number;

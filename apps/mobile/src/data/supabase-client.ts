@@ -66,6 +66,9 @@ export interface DbTemplateRow {
   updated_at: string;
 }
 
+/** Migrația 012. Cum se capturează un moment: filmat sau fotografiat. */
+export type CaptureKind = "video" | "photo";
+
 /** O sursă de lumină pe scenă (migrația 008). */
 export interface LightSource {
   type: "natural" | "ring" | "led" | "reflector";
@@ -82,6 +85,13 @@ export interface DbShotRow {
   overlay_text: string | null;
   /** Migrația 010: straturi de text overlay (multi-text). */
   text_layers: TextLayer[] | null;
+  /**
+   * Migrația 012: momentul se filmează sau se fotografiază. Pozele au propria
+   * cale de captură pe ecranul de filmare și intră în render ca imagine.
+   */
+  capture_kind: CaptureKind;
+  /** Migrația 012: identitatea stabilă a momentului în sesiune. */
+  slot_key: string | null;
   recording_duration: number;
   final_usage_duration: number;
   countdown: number;
