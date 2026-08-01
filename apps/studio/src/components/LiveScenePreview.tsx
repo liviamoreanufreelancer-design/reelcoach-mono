@@ -57,6 +57,8 @@ export default function LiveScenePreview({
   const [reelMode, setReelMode] = useState(false);
   const [reelMounted, setReelMounted] = useState(false);
   const [uploading, setUploading] = useState(false);
+  /** Eroare la urcarea clipului scenei — vizibila, nu doar in consola. */
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [clipDuration, setClipDuration] = useState(0);
   const [paused, setPaused] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -215,6 +217,7 @@ export default function LiveScenePreview({
     setPaused(false);
 
     setUploading(true);
+    setUploadError(null);
     startTransition(async () => {
       try {
         // Upload DIRECT din browser (footage real de iPhone e prea mare pentru
@@ -228,8 +231,18 @@ export default function LiveScenePreview({
         if (upErr) throw upErr;
         const { data: pub } = sb.storage.from("samples").getPublicUrl(path);
         await setShotSampleUrl(shot.id, templateId, pub.publicUrl);
-        if (localUrlRef.current) { URL.revokeObjectURL(localUrlRef.current); localUrlRef.current = null; }
+        // NU revocam blob-ul local aici: pana cand router.refresh() propaga
+        // URL-ul salvat, video.src ar ramane un blob mort => preview negru.
+        // Revocarea se face la schimbarea scenei / unmount, unde oricum era.
         router.refresh();
+      } catch (err) {
+        // Fara asta, esecul murea ca unhandled rejection: spinnerul disparea
+        // si atat. Scena parea incarcata, dar sample_video_url nu se salva
+        // niciodata — iar reel-ul o sarea in tacere.
+        console.error("[scene-upload] urcare esuata:", err);
+        setUploadError(
+          "Clipul NU s-a salvat. Scena rămâne fără footage și nu va intra în reel. Încearcă din nou.",
+        );
       } finally {
         setUploading(false);
       }
@@ -554,7 +567,24 @@ export default function LiveScenePreview({
             onDoubleClick={onStageDoubleClick}
           >
             <canvas ref={canvasRef} width={W} height={H} className="absolute inset-0 w-full h-full object-cover" />
-            <video ref={videoRef} className="hidden" playsInline muted onLoadedMetadata={onMeta} />
+            {/* NU display:none — WebKit nu decodeaza cadre pentru un video
+                ascuns, deci canvas-ul ar ramane negru. Acelasi truc ca in
+                reel-core/browser-renderer.ts: in layout, dar in afara ecranului. */}
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              onLoadedMetadata={onMeta}
+              style={{
+                position: "fixed",
+                left: "-9999px",
+                top: 0,
+                width: "1px",
+                height: "1px",
+                opacity: 0.001,
+                pointerEvents: "none",
+              }}
+            />
 
             {/* Grile de aliniere (apar in timpul drag-ului) */}
             {dragId && (
@@ -628,6 +658,12 @@ export default function LiveScenePreview({
             className="btn-glass w-full text-[12px] py-2 disabled:opacity-40">
             📷 Salvează cover
           </button>
+
+          {uploadError && (
+            <p className="text-[11.5px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 leading-snug">
+              {uploadError}
+            </p>
+          )}
         </div>
 
         {/* RIGHT: grouped controls */}
