@@ -171,13 +171,29 @@ Opțiune deschisă, nu bug: bitrate-ul din `useRecorder.ts` e nesetat (~9 Mbps,
 profil Baseline). Un plafon la 5–6 Mbps ar tăia ~40% din mărime la calitate
 practic identică pentru 1080p. Decizie de calitate, neluată.
 
-### 5. Restul listei de lansare
+### 5. Restul listei de lansare — COD FĂCUT, rămâne testul pe device
 
-- Faza 5 text overlay: cablează `text_layers` prin lanțul mobile la
-  `renderReelInBrowser`
-- `difficulty` hardcodat "easy" în `template-adapter.ts:92`
-- Upload `_fallback.jpg` în bucket-ul covers
-- Test end-to-end pe device: Studio text → publish → cap sync → reinstalare app
+**Faza 5 text overlay — FĂCUT.** Lanțul complet, verificat verigă cu verigă:
+`supabase-client.ts:84` (`text_layers`) → `db-to-template.ts:143` →
+`shots.ts:157/161/179/234` (Shot → Omit → ResolvedShot → resolveShot) →
+`scenarios.ts:181` (`Scene.textLayers`) → `template-adapter.ts:79` →
+`edit.tsx:253-291` → `overlay-renderer.ts:412` (`drawTextLayers`, prioritate
+peste caption) → `renderReelInBrowser` prin `overlays`.
+Include și editarea in-place a stilistei (`lib/scene-layers.ts` →
+`effectiveLayers`, `state.layerTextEdits`). `textLayers` e parte din cheia de
+cache a overlay-ului — fără asta, editările ar fi servit cadre vechi.
+
+**`difficulty` — FĂCUT.** `template-adapter.ts:98` = `t.difficulty ?? "easy"`.
+
+**Cover fallback — FĂCUT, altfel decât se plănuise.** NU se urcă nimic în
+bucket. `db-to-template.ts:33` importă un asset bundlat (`template-luxury.jpg`)
+ca `FALLBACK_COVER`. 404-ul devine imposibil, merge offline, zero dependență de
+Supabase. **Decizie confirmată: rămâne bundlat.** Dacă cineva urcă
+`covers/_fallback.jpg`, fișierul NU va fi folosit.
+
+**RĂMÂNE: test end-to-end pe device.** Studio text → publish → `cap sync` →
+reinstalare app → verifici pe ecranul de filmare și pe reelul exportat că
+textele partenerei apar.
 
 ---
 
@@ -408,6 +424,12 @@ Alte măsuri (fără cod):
   Dacă vreodată se automatizează: story-urile primele (nu depind de audio trending).
 - **Chef's choice rămâne.** Stilista nu primește controale de stil.
 - **Export fără audio rămâne.**
+- **Cover fallback bundlat, NU în bucket.** `db-to-template.ts` importă un asset
+  local. Nu "repara" 404-ul vechi urcând `covers/_fallback.jpg` — n-ar fi folosit,
+  și ai reintroduce o dependență de rețea unde nu mai e nevoie de una.
+- **NU muta clipurile pe `Directory.Data`.** Măsurat pe device (§4): supraviețuiesc
+  19,8 zile cu `persist()` fals. Contingența rămâne scrisă, dar nu se execută fără
+  o dovadă nouă (ex. eșec pe telefon aproape plin).
 - **Rule-based, nu AI, pentru structura outputurilor.** Slot-matching: fiecare
   output cere un set de sloturi; dat fiind ce s-a capturat, ce outputuri au toate
   sloturile pline.
