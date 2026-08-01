@@ -11,6 +11,8 @@ import {
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { TemplatesProvider } from "@/data/templates-context";
+// TEMPORAR — masuratori pe device (CLAUDE.md §4). Sterge linia + lib/diag.ts dupa.
+import "@/lib/diag";
 
 function NotFoundComponent() {
   return (
