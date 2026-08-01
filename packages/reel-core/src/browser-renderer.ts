@@ -566,8 +566,6 @@ export async function renderReelInBrowser(
   }
 
   let frameIdx = 0;
-  /** TEMPORAR: o singură linie de diagnostic per scenă, la prima desenare. */
-  const dbgLogged = loadedClips.map(() => false);
 
   // Prima scenă nu are "scenă anterioară" în care să fie pre-rolată. Dacă nu
   // există intro, o pornim exact înainte de buclă, ca să nu înceapă înghețată.
@@ -606,24 +604,6 @@ export async function renderReelInBrowser(
           const tMs = performance.now() - t0;
           if (tMs >= totalMs) {
             drawAt(totalMs - 1);
-            // TEMPORAR: starea ULTIMEI scene la ultimul cadru. Dacă videoul ei
-            // s-a terminat (`ended`) înainte de finalul timeline-ului, sursa e
-            // mai scurtă decât fereastra de trim cerută — altă cauză decât
-            // decodarea, și singura care ar explica negru doar la final.
-            const lastIdx = loadedClips.length - 1;
-            if (lastIdx >= 0) {
-              const lv = loadedClips[lastIdx].video;
-              const lastStart = clipStarts[lastIdx];
-              console.log(
-                `[render:dbg] FINAL la ${Math.round(tMs)}ms (total ${Math.round(totalMs)}ms) · ` +
-                `ultima scena ${lastIdx}: t=${lv.currentTime.toFixed(2)}s ` +
-                `durataSursa=${(lv.duration || 0).toFixed(2)}s ended=${lv.ended} ` +
-                `paused=${lv.paused} readyState=${lv.readyState} · ` +
-                `start=${Math.round(lastStart)}ms durata=${Math.round(clipDursMs[lastIdx])}ms ` +
-                `trimStart=${(clipStartOffsetMs[lastIdx] / 1000).toFixed(2)}s ` +
-                `fereastra=${(sourceWindowMs[lastIdx] / 1000).toFixed(2)}s`,
-              );
-            }
             resolve();
             return;
           }
@@ -673,28 +653,6 @@ export async function renderReelInBrowser(
 
   function drawClipWithOverlay(idx: number, localMs: number, target: CanvasRenderingContext2D) {
     const lc = loadedClips[idx];
-
-    // ── TEMPORAR: diagnostic pentru cadrul negru ────────────────────────
-    // Starea REALĂ a videoului la prima desenare a fiecărei scene.
-    //   readyState: 0=nimic · 1=doar metadata (FĂRĂ cadru) · 2=are cadru
-    //               curent · 3=are și cadre viitoare · 4=buffer suficient
-    // Dacă readyState >= 2 și dimensiunea nu e 0x0, videoul ARE cadru — deci
-    // negrul vine din altceva (compunere, overlay, motion blur), nu din
-    // decodare, iar toate încercările de până acum au atacat cauza greșită.
-    if (!dbgLogged[idx]) {
-      dbgLogged[idx] = true;
-      const v = lc.video;
-      console.log(
-        `[render:dbg] scena ${idx} · readyState=${v.readyState} ` +
-        `t=${v.currentTime.toFixed(2)}s dim=${v.videoWidth}x${v.videoHeight} ` +
-        `paused=${v.paused} | trim start=${(clipStartOffsetMs[idx] / 1000).toFixed(2)}s ` +
-        `fereastra=${(sourceWindowMs[idx] / 1000).toFixed(2)}s ` +
-        `preroll=${Math.round(prerollLeadMs(idx))}ms | ` +
-        `tranzitie=${perClipTransitions[idx] ?? transitionType} ` +
-        `efect=${effectIds[idx] ?? "none"} blur=${!!perClipMotionBlurs[idx]}`,
-      );
-    }
-
     const tNorm = clamp01(localMs / clipDursMs[idx]);
     // Use per-clip filter if provided, otherwise fall back to the global one.
     // This is the seam that lets each scene have its own filter (champagne

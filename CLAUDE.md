@@ -466,6 +466,16 @@ privire. Nu adăuga elemente vizuale care cer conținut recurent.
   datele pot fi evacuate — exact scenariul "revine după 40 de minute", repetat.
 - **Bitrate de înregistrare nesetat** (`useRecorder.ts`) — n-ai control pe mărime.
 - **Randare în timp real** — multiplicare liniară cu numărul de outputuri.
+- **Footage 4K în Studio sufocă randarea. 🔴 Măsurat.** Sursele partenerei la
+  2160×3840 / 2160×4096 au dus randarea la **9 fps efectiv din 24** — 37% din
+  viteza necesară. Randarea fiind în timp real, cadrele pierdute NU se recuperează:
+  rezultatul e sacadat, iar la margini apare negru. Cu surse 1080p, aceeași
+  scenă merge curat. Reel-ul final e 1080×1920, deci cei 4K se aruncă integral,
+  dar costă de 4× munca per cadru.
+  **Partenera trebuie să încarce 1080p** (telefon: Settings → Camera → Record
+  Video → 1080p). Scade și timpul de upload, și spațiul din bucket.
+  `renderReelInBrowser` loghează la final `[render] N cadre in Xs = Y fps efectiv`
+  — dacă Y e mult sub țintă, întâi verifică rezoluția surselor.
 - **Repetitivitate percepută:** 4 postări cu aceeași clientă într-o săptămână.
   Contează cât de DISTINCTE sunt, nu câte. Problemă de design de conținut
   (parteneră), nu de cod.
