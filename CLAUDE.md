@@ -57,7 +57,7 @@ minute, fișiere fantomă " 2.", bus errors.
 - `packages/reel-core` — engine framework-agnostic (canvas / video /
   MediaRecorder, **zero React**)
 
-Backend: Supabase `qzbknlkxpteliocwjwvm` (eu-central-1). Migrații până la 010.
+Backend: Supabase `qzbknlkxpteliocwjwvm` (eu-central-1). Migrații până la 012.
 Buckets: `previews`, `samples`, `covers`, `examples`.
 
 ### Principii (nu le încălca)
@@ -501,7 +501,7 @@ privire. Nu adăuga elemente vizuale care cer conținut recurent.
 - Refactorizări necerute
 - Dependințe noi
 - Modificări în `packages/reel-core` fără să verifici impactul pe ambele apps
-- Migrații Supabase fără discuție (ultima e 011)
+- Migrații Supabase fără discuție (ultima e 012)
 - Commit fără `npx tsc --noEmit` curat
 
 ### CAPCANĂ: coloane noi în `shots` se pierd la publicare
