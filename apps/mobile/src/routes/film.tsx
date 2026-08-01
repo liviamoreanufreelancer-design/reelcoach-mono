@@ -16,7 +16,7 @@ import { useTemplate } from "@/data/templates-context";
 import type { ShotPatternId } from "@/data/shots";
 import { useCamera } from "@/hooks/useCamera";
 import { useRecorder } from "@/hooks/useRecorder";
-import { saveClip, listClips } from "@/lib/clip-store";
+import { saveClip, listClips, savePhoto, listPhotos } from "@/lib/clip-store";
 import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavForward, playTap, playError } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
 import { toast } from "sonner";
@@ -66,6 +66,8 @@ function Film() {
   const [idx, setIdx] = useState(targetScene ?? 0);
   const [t, setT] = useState(0);
   const [captured, setCaptured] = useState<Set<number>>(new Set());
+  /** Momentele care au deja POZA. Separat de `captured` (filmarile). */
+  const [photoCaptured, setPhotoCaptured] = useState<Set<number>>(new Set());
   const [showGuide, setShowGuide] = useState(true);
   /** 3-2-1 countdown before recording. null = inactive. */
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -86,6 +88,9 @@ function Film() {
 
   // Initial load: which scenes already have clips?
   useEffect(() => {
+    listPhotos(scenarioId).then((ps) => {
+      setPhotoCaptured(new Set(ps.map((p) => p.sceneIdx)));
+    });
     listClips(scenarioId).then((cs) => {
       const done = new Set(cs.map((c) => c.sceneIdx));
       setCaptured(done);
@@ -272,6 +277,62 @@ function Film() {
     await persistClip(result.blob, result.mimeType, t || scene.duration);
   };
 
+  /**
+   * Fotografiaza cadrul curent din stream-ul camerei.
+   *
+   * Folosim acelasi stream ca filmarea — fara permisiuni noi, fara dependinte.
+   * Aceeasi disciplina ca la salvarea clipurilor: momentul se marcheaza DOAR
+   * daca salvarea a reusit, iar esecul e vizibil, nu doar in consola.
+   */
+  const takePhoto = async () => {
+    const video = cam.videoRef.current;
+    if (!video || cam.state !== "ready") return;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, w, h);
+
+    const blob = await new Promise<Blob | null>((res) =>
+      canvas.toBlob(res, "image/jpeg", 0.92),
+    );
+    if (!blob) {
+      playError();
+      toast.error("Poza nu s-a putut face", {
+        description: "Încearcă din nou.",
+        duration: 8000,
+      });
+      return;
+    }
+
+    try {
+      await savePhoto({
+        scenarioId,
+        sceneIdx: idx,
+        blob,
+        mimeType: "image/jpeg",
+        createdAt: Date.now(),
+      });
+      setPhotoCaptured((s) => new Set(s).add(idx));
+      playSuccess();
+      light();
+    } catch (err) {
+      console.error("[film] savePhoto FAILED:", err);
+      playError();
+      toast.error("Poza NU s-a salvat", {
+        description:
+          "Probabil s-a umplut memoria telefonului. Eliberează spațiu din „Reelurile mele”, apoi încearcă din nou.",
+        duration: 12000,
+        action: { label: "Încearcă din nou", onClick: () => { void takePhoto(); } },
+      });
+    }
+  };
+
   const handleFallbackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -307,7 +368,19 @@ function Film() {
 
   const isRecording = rec.state === "recording";
   const sceneCaptured = captured.has(idx);
-  const allDone = scenes.every((_, i) => captured.has(i));
+
+  // Ce cere momentul curent. Implicit filmare — asa se comporta tot ce exista
+  // deja, deci scenele fara `captureKind` nu-si schimba comportamentul.
+  const kindOf = (i: number) => scenes[i]?.captureKind ?? "video";
+  const needsVideo = kindOf(idx) !== "photo";
+  const needsPhoto = kindOf(idx) !== "video";
+  const hasPhoto = photoCaptured.has(idx);
+  /** Momentul e gata doar cand are TOT ce cere (la "both", si filmare, si poza). */
+  const isSceneDone = (i: number) =>
+    (kindOf(i) === "photo" || captured.has(i)) &&
+    (kindOf(i) === "video" || photoCaptured.has(i));
+  const sceneDone = isSceneDone(idx);
+  const allDone = scenes.every((_, i) => isSceneDone(i));
 
   // ---------- Pre-shot: shot-first card (what to see + how to film + example) ----------
   if (phase === "preshot") {
@@ -449,11 +522,11 @@ function Film() {
               <div key={i} className="relative flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-300 ${
-                    i === idx && isRecording ? "shimmer-gold" : captured.has(i) ? "bg-[#5B34FF]" : i < idx ? "bg-[#5B34FF]" : ""
+                    i === idx && isRecording ? "shimmer-gold" : isSceneDone(i) ? "bg-[#5B34FF]" : i < idx ? "bg-[#5B34FF]" : ""
                   }`}
                   style={{
                     width:
-                      captured.has(i) ? "100%"
+                      isSceneDone(i) ? "100%"
                       : i === idx && isRecording ? `${(t / scene.duration) * 100}%`
                       : i < idx ? "100%"
                       : "0%",
@@ -566,12 +639,18 @@ function Film() {
             <span className="text-white/55 text-sm tracking-[0.35em] uppercase">sec</span>
           </div>
 
-          {sceneCaptured && !isRecording && (
+          {!isRecording && (sceneCaptured || hasPhoto) && (
             <p className="mt-2 text-center text-[11px] tracking-widest uppercase text-emerald-300/90 flex items-center justify-center gap-1.5">
-              <Check className="w-3.5 h-3.5" /> Scenă salvată
+              <Check className="w-3.5 h-3.5" />
+              {sceneDone
+                ? "Moment complet"
+                : needsPhoto && !hasPhoto
+                  ? "Filmare salvată · mai e poza"
+                  : "Poză salvată · mai e filmarea"}
             </p>
           )}
 
+          {needsVideo && (
           <button
             onClick={isRecording ? handleStop : handleStart}
             disabled={cam.state !== "ready" || countdown !== null}
@@ -596,6 +675,25 @@ function Film() {
               </>
             )}
           </button>
+          )}
+
+          {/* Poza: la momentele marcate „poză" sau „amândouă" in Studio. */}
+          {needsPhoto && !isRecording && (
+            <button
+              onClick={() => { void takePhoto(); }}
+              disabled={cam.state !== "ready" || countdown !== null}
+              className={`w-full h-16 rounded-full font-semibold text-base flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 ${
+                needsVideo ? "mt-3" : "mt-4"
+              } ${
+                hasPhoto
+                  ? "glass-lux text-white"
+                  : "bg-[#5B34FF] text-white shadow-[0_8px_26px_-8px_rgba(91,52,255,0.7)]"
+              }`}
+            >
+              <Camera className="w-5 h-5" />
+              {hasPhoto ? "Refă poza" : needsVideo ? "Și fă poza" : "Fă poza"}
+            </button>
+          )}
 
           {/* Fallback upload (visible if camera not ready) */}
           {(cam.state === "denied" || cam.state === "unsupported" || cam.state === "error" || cam.state === "disconnected") && (
