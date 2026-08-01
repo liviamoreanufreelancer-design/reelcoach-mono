@@ -457,9 +457,22 @@ export async function renderReelInBrowser(
   const PREROLL_MS = 500;
   const prerolled = loadedClips.map(() => false);
 
-  /** Cu cât timp real putem porni clipul mai devreme (0 = fără spațiu). */
+  /**
+   * Cu cât timp real putem porni clipul mai devreme (0 = fără spațiu).
+   * Limitat de DOUĂ resurse: cât material există înaintea ferestrei de trim,
+   * și cât timp real există înainte ca scena să intre pe ecran (pentru prima
+   * scenă fără intro, al doilea e zero — nu ai unde s-o pornești mai devreme).
+   */
   const prerollLeadMs = (idx: number) =>
-    Math.min(PREROLL_MS, clipStartOffsetMs[idx] / speedOf(idx));
+    Math.max(0, Math.min(
+      PREROLL_MS,
+      clipStartOffsetMs[idx] / speedOf(idx),
+      clipStarts[idx],
+    ));
+
+  /** Poziția din sursă (sec) de unde începe redarea clipului, cu tot cu pre-roll. */
+  const startPosSec = (idx: number) =>
+    Math.max(0, clipStartOffsetMs[idx] - prerollLeadMs(idx) * speedOf(idx)) / 1000;
 
   /**
    * Clipul aflat ACUM în fereastra lui de pre-roll (-1 dacă niciunul).
@@ -478,30 +491,34 @@ export async function renderReelInBrowser(
     return -1;
   };
 
-  const startPreroll = (idx: number, tMs: number) => {
+  /**
+   * Pornește redarea în avans. NU caută nimic: poziția e deja cea corectă,
+   * fixată de pre-încălzire (`startPosSec`). Un seek aici ar arunca exact
+   * cadrul decodat pe care ne bazăm.
+   */
+  const startPreroll = (idx: number) => {
     if (idx < 0 || prerolled[idx]) return;
     prerolled[idx] = true;
     const lc = loadedClips[idx];
-    const speed = speedOf(idx);
-    const leadMs = Math.max(0, clipStarts[idx] - tMs);
-    // Pornim din urmă cu exact cât va consuma redarea până intră pe ecran.
-    const fromSec = Math.max(0, clipStartOffsetMs[idx] - leadMs * speed) / 1000;
-    try { lc.video.currentTime = fromSec; } catch { /* ignore */ }
-    try { lc.video.playbackRate = speed; } catch { /* ignore */ }
+    try { lc.video.playbackRate = speedOf(idx); } catch { /* ignore */ }
     lc.video.play().catch(() => { /* ignore */ });
   };
 
   /**
-   * Pre-încălzește un clip (cadru decodat la poziția de start), o singură dată.
-   * Doar pentru clipurile care NU pot fi pre-rolate — altfel seek-ul ăsta ar
-   * intra în conflict cu redarea pornită în avans.
+   * Pre-încălzește un clip la poziția lui de pornire — DEVREME, cu o scenă
+   * înainte, și pentru TOATE clipurile.
+   *
+   * Cele două mecanisme sunt separate intenționat: pre-încălzirea (devreme)
+   * garantează că există un cadru decodat, deci niciodată negru; pre-roll-ul
+   * (târziu) pornește redarea, deci niciodată înghețat. Când erau legate,
+   * clipurile cu offset mic pierdeau garanția cadrului și primeau un pre-roll
+   * prea scurt ca seek-ul să apuce să termine — adică exact negru.
    */
   const primeAhead = (idx: number) => {
     if (idx < 0 || idx >= loadedClips.length || primed[idx]) return;
-    if (prerollLeadMs(idx) > 0) return;
     primed[idx] = true;
     // Fire-and-forget: are la dispoziție toată durata clipului curent.
-    void primeClip(loadedClips[idx].video, clipStartOffsetMs[idx] / 1000);
+    void primeClip(loadedClips[idx].video, startPosSec(idx));
   };
 
   /** Oprește clipurile care nu mai sunt pe ecran, ca să elibereze decodoare. */
@@ -515,15 +532,6 @@ export async function renderReelInBrowser(
     }
   };
 
-  // Prima scenă trebuie să aibă cadru ÎNAINTE de primul frame randat; restul
-  // se pregătesc din mers, cu un clip în avans.
-  onProgress?.({ phase: "loading", pct: 13, message: "Pregătesc prima scenă…" });
-  if (loadedClips.length > 0) {
-    primed[0] = true;
-    await primeClip(loadedClips[0].video, clipStartOffsetMs[0] / 1000);
-    primeAhead(1);
-  }
-
   const snap = document.createElement("canvas");
   snap.width = width; snap.height = height;
   const snapCtx = snap.getContext("2d")!;
@@ -536,7 +544,6 @@ export async function renderReelInBrowser(
   // lazily, only for clips where Studio enabled motion blur.
   const prevFrameByClip = new Map<number, HTMLCanvasElement>();
 
-  const { recorder, done } = createRecorder(canvas, fps);
   const variants = loadedClips.map((_, i) => (effects.kenBurns ? pickKenBurns(i) : "static" as KenBurnsVariant));
 
   const clipStarts: number[] = [];
@@ -548,17 +555,31 @@ export async function renderReelInBrowser(
   const outroStart = outroImg ? cursor - outroOverlap : Infinity;
   let outroSnapTaken = false;
 
+  // Pre-încălzirea trebuie să vină DUPĂ `clipStarts` — `startPosSec` depinde de
+  // el prin `prerollLeadMs`. Prima scenă are nevoie de cadru înainte de primul
+  // frame randat; restul se pregătesc din mers, cu o scenă în avans.
+  onProgress?.({ phase: "loading", pct: 13, message: "Pregătesc prima scenă…" });
+  if (loadedClips.length > 0) {
+    primed[0] = true;
+    await primeClip(loadedClips[0].video, startPosSec(0));
+    primeAhead(1);
+  }
+
   let frameIdx = 0;
 
   // Prima scenă nu are "scenă anterioară" în care să fie pre-rolată. Dacă nu
-  // există intro, o pornim exact înainte de buclă: play() apucă să demareze cât
-  // se inițializează recorderul, deci nici prima scenă nu începe înghețată.
+  // există intro, o pornim exact înainte de buclă, ca să nu înceapă înghețată.
   // (Cu intro, o prinde pre-roll-ul normal în timpul acestuia.)
   if (introMs === 0 && loadedClips.length > 0) {
     prerolled[0] = true;
     try { loadedClips[0].video.playbackRate = speedOf(0); } catch { /* ignore */ }
     loadedClips[0].video.play().catch(() => { /* ignore */ });
   }
+
+  // Recorderul se creează ULTIMUL: `createRecorder` cheamă `recorder.start()`
+  // pe loc, deci orice așteptare de dinainte (pre-încălzirea, care poate dura
+  // până la 2,5s) s-ar înregistra ca negru la începutul reel-ului.
+  const { recorder, done } = createRecorder(canvas, fps);
 
   try {
     const t0 = performance.now();
@@ -733,7 +754,7 @@ export async function renderReelInBrowser(
     // WebKit se epuizau => ultimele scene ieseau negre.
     const preIdx = prerollTarget(tMs);
     releaseInactive(active, nextActive, preIdx);
-    startPreroll(preIdx, tMs);
+    startPreroll(preIdx);
     primeAhead((nextActive !== -1 ? nextActive : active) + 1);
 
     if (active !== -1 && nextActive !== -1 && transMs > 0) {
