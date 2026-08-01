@@ -501,6 +501,13 @@ export async function renderReelInBrowser(
   try {
     const t0 = performance.now();
     let lastDrawn = -1;
+    // Raportarea progresului e THROTTLED. Inainte se chema la fiecare cadru
+    // desenat: in mobile asta inseamna setProgress() -> re-render React al
+    // intregului ecran de editare, de 30 de ori pe secunda, exact in timpul
+    // randarii in timp real. Concura cu bucla pentru main thread => cadre
+    // desenate tarziu => captureStream captura acelasi continut de doua ori
+    // => video sacadat. La 200ms UI-ul arata la fel de fluid, dar costa ~6x mai putin.
+    let lastProgressMs = -Infinity;
 
     await new Promise<void>((resolve, reject) => {
       const tick = () => {
@@ -515,12 +522,15 @@ export async function renderReelInBrowser(
             drawAt(tMs);
             lastDrawn = tMs;
             frameIdx++;
-            const pct = Math.min(98, 12 + (tMs / totalMs) * 86);
-            onProgress?.({
-              phase: "encoding",
-              pct,
-              message: `Randez · ${Math.round((tMs / totalMs) * 100)}%`,
-            });
+            if (tMs - lastProgressMs >= 200) {
+              lastProgressMs = tMs;
+              const pct = Math.min(98, 12 + (tMs / totalMs) * 86);
+              onProgress?.({
+                phase: "encoding",
+                pct,
+                message: `Randez · ${Math.round((tMs / totalMs) * 100)}%`,
+              });
+            }
           }
           setTimeout(tick, frameDur / 2);
         } catch (err) { reject(err); }
@@ -532,6 +542,16 @@ export async function renderReelInBrowser(
     await wait(150);
     recorder.stop();
     const blob = await done;
+    // Cadre efectiv desenate vs. tinta. Randarea e in TIMP REAL: daca bucla nu
+    // tine pasul, captureStream capteaza acelasi continut de doua ori si
+    // rezultatul e sacadat. Numarul asta spune daca sacadarea vine de aici
+    // (fps efectiv mult sub tinta) sau din altceva (encoder, bitrate, device).
+    const elapsedSec = Math.max(0.001, (performance.now() - t0) / 1000);
+    console.log(
+      `[render] ${frameIdx} cadre in ${elapsedSec.toFixed(1)}s = ` +
+      `${(frameIdx / elapsedSec).toFixed(1)} fps efectiv (tinta ${fps}) · ` +
+      `${width}x${height} · ${loadedClips.length} scene`,
+    );
     onProgress?.({ phase: "done", pct: 100, message: "Gata" });
     return blob;
   } finally {
