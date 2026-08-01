@@ -265,6 +265,43 @@ async function loadVideoClip(clip: RenderClipInput, index: number): Promise<Load
   };
 }
 
+/**
+ * Pre-încălzește un clip: caută poziția de start și așteaptă până când există
+ * un cadru DECODAT acolo.
+ *
+ * Fără asta, primele cadre ale fiecărei scene ieșeau NEGRE: `loadVideoClip`
+ * aștepta doar `loadedmetadata` (readyState 1 = fără cadru), iar `ensurePlaying`
+ * seta `currentTime` și chema `play()` — ambele asincrone — după care se desena
+ * imediat. `drawImage` pe un video fără cadru decodat pictează negru. Se vedea
+ * ca un flash negru înainte de fiecare scenă, la orice tranziție.
+ */
+function primeClip(video: HTMLVideoElement, seekSec: number): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      video.removeEventListener("seeked", finish);
+      video.removeEventListener("loadeddata", finish);
+      clearTimeout(timer);
+      resolve();
+    };
+    // Plasă de siguranță: dacă browserul nu emite niciun eveniment (fișier
+    // ciudat, codec lent), mergem mai departe în loc să blocăm exportul.
+    const timer = setTimeout(finish, 2500);
+    video.addEventListener("seeked", finish);
+    video.addEventListener("loadeddata", finish);
+    try {
+      video.currentTime = seekSec;
+    } catch {
+      finish();
+      return;
+    }
+    // Dacă era deja exact la poziția cerută ȘI are cadru, "seeked" nu mai vine.
+    if (video.readyState >= 2 && Math.abs(video.currentTime - seekSec) < 0.05) finish();
+  });
+}
+
 function createRenderCanvas(width: number, height: number) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -399,6 +436,15 @@ export async function renderReelInBrowser(
   const transitionsCount = Math.max(0, loadedClips.length - 1);
   const outroOverlap = outroImg && transMs ? transMs : 0;
   const totalMs = introMs + clipsTotal - transitionsCount * transMs + outroMs - outroOverlap;
+
+  // Pre-încălzire: fiecare clip trebuie să aibă un cadru DECODAT la poziția lui
+  // de start înainte să pornească randarea. Randarea merge în timp real — nu
+  // există a doua șansă pentru un cadru ratat, iar un video fără cadru decodat
+  // se desenează negru. Aici se plătea flash-ul negru dinaintea fiecărei scene.
+  onProgress?.({ phase: "loading", pct: 13, message: "Pregătesc scenele…" });
+  await Promise.all(
+    loadedClips.map((lc, i) => primeClip(lc.video, clipStartOffsetMs[i] / 1000)),
+  );
 
   const snap = document.createElement("canvas");
   snap.width = width; snap.height = height;
@@ -788,7 +834,13 @@ export async function renderReelInBrowser(
     // auto-trim window AND the slow/fast motion via the rate set below.
     const seekSec = Math.max(0, (clipStartOffsetMs[idx] + localMs * speed) / 1000);
     if (lc.video.paused) {
-      try { lc.video.currentTime = seekSec; } catch { /* ignore */ }
+      // NU re-căuta dacă suntem deja practic acolo. Pre-încălzirea a decodat
+      // un cadru fix la poziția de start; un seek nou (fie și de câțiva ms,
+      // fiindcă localMs nu e niciodată exact 0) l-ar arunca și primul cadru
+      // al scenei ar ieși negru — exact bug-ul pe care îl reparăm.
+      if (Math.abs(lc.video.currentTime - seekSec) > 0.15) {
+        try { lc.video.currentTime = seekSec; } catch { /* ignore */ }
+      }
       try { lc.video.playbackRate = speed; } catch { /* ignore */ }
       lc.video.play().catch(() => { /* ignore */ });
     }
