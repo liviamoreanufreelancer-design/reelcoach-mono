@@ -16,6 +16,9 @@ import type {
   HowShootItem,
   LightSource,
   CaptureKind,
+  OutputRow,
+  OutputKind,
+  OutputSlot,
 } from "./db-types";
 
 /**
@@ -480,6 +483,24 @@ export async function createDraftCopy(templateId: string) {
     if (shotsErr) throw new Error(shotsErr.message);
   }
 
+  // Copiaza si OUTPUTURILE (migratia 014). Fara asta, partenera ar deschide
+  // ciorna si ar gasi lista de postari goala, desi pe publicat exista.
+  const { data: outs } = await supabase
+    .from("outputs").select("*").eq("template_id", templateId).order("sort_order");
+
+  if (outs && outs.length > 0) {
+    const outCopies = outs.map((o) => ({
+      template_id: draftId,
+      name: o.name,
+      kind: o.kind,
+      slots: o.slots,
+      caption: o.caption,
+      sort_order: o.sort_order,
+    }));
+    const { error: outErr } = await supabase.from("outputs").insert(outCopies);
+    if (outErr) throw new Error(outErr.message);
+  }
+
   revalidatePath("/dashboard");
   return draftId;
 }
@@ -498,4 +519,56 @@ export async function discardDraftChanges(draftId: string) {
   const { error } = await supabase.from("templates").delete().eq("id", draftId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * OUTPUTURI (migratia 014) — ce POSTARI ies dintr-o sesiune.
+ *
+ * Un output cere un set ordonat de momente, prin `slot_key`. Regula de
+ * potrivire e o linie: outputul e disponibil daca TOATE slot-urile lui au
+ * captura. De aici rezulta automat "niciodata zero" — nu se programeaza
+ * separat: cine a filmat 5 din 8 momente primeste outputurile complete.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+export async function listOutputs(templateId: string): Promise<OutputRow[]> {
+  const supabase = await getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("outputs").select("*").eq("template_id", templateId).order("sort_order");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as OutputRow[];
+}
+
+export async function createOutput(templateId: string, name: string, kind: OutputKind = "reel") {
+  const supabase = await getSupabaseServerClient();
+  const { data: existing } = await supabase
+    .from("outputs").select("sort_order").eq("template_id", templateId)
+    .order("sort_order", { ascending: false }).limit(1);
+  const nextOrder = ((existing?.[0]?.sort_order as number | undefined) ?? -1) + 1;
+
+  const { error } = await supabase.from("outputs").insert({
+    template_id: templateId, name, kind, slots: [], sort_order: nextOrder,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/templates/${templateId}`);
+}
+
+export async function updateOutput(
+  outputId: string,
+  templateId: string,
+  patch: { name?: string; kind?: OutputKind; slots?: OutputSlot[]; caption?: string | null },
+) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("outputs").update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", outputId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/templates/${templateId}`);
+}
+
+export async function deleteOutput(outputId: string, templateId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.from("outputs").delete().eq("id", outputId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/templates/${templateId}`);
 }

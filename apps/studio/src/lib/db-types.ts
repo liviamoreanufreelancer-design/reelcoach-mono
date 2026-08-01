@@ -23,6 +23,39 @@ export type SlotRole = "hook" | "tip" | "step" | "reveal" | "cta" | "context";
  * Pozele NU intră în reeluri: produc postări foto cu caption propriu.
  */
 export type CaptureKind = "video" | "photo" | "both";
+
+/**
+ * Migrația 014 — ce POSTĂRI ies dintr-o sesiune.
+ *   reel     — montaj video din mai multe momente
+ *   carousel — set de imagini (before → detaliu → after)
+ *   stories  — clipurile brute, fiecare separat, fără montaj
+ */
+export type OutputKind = "reel" | "carousel" | "stories";
+
+/**
+ * Un moment consumat de un output, cu durata pe care o are AICI.
+ * Acelaşi moment are durate diferite în outputuri diferite — de asta durata
+ * stă pe legătură, nu pe scenă.
+ */
+export interface OutputSlot {
+  /** `shots.slot_key` — identitate stabilă, nu `shots.id`. */
+  slot: string;
+  /** Secunde în acest output. Absent = toată captura. */
+  sec?: number;
+}
+
+export interface OutputRow {
+  id: string;
+  template_id: string;
+  name: string;
+  kind: OutputKind;
+  /** ORDONAT: ordinea din array e ordinea din montaj. */
+  slots: OutputSlot[];
+  caption: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
 /**
  * Legacy enum of well-known patterns. Kept as a suggestion list only —
  * shots.pattern is now a free-form `string | null` and editors can type
