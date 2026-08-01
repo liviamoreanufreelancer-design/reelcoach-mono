@@ -578,9 +578,15 @@ export async function renderReelInBrowser(
     loadedClips[0].video.play().catch(() => { /* ignore */ });
   }
 
-  // Recorderul se creează ULTIMUL: `createRecorder` cheamă `recorder.start()`
-  // pe loc, deci orice așteptare de dinainte (pre-încălzirea, care poate dura
-  // până la 2,5s) s-ar înregistra ca negru la începutul reel-ului.
+  // Desenăm primul cadru ÎNAINTE de a porni recorderul.
+  //
+  // `createRecorder` cheamă `recorder.start()` pe loc, dar primul `drawAt` vine
+  // abia pe următorul macrotask — plus costul lui real, care pe surse 4K trece
+  // de 100ms. Până atunci canvasul nu a fost desenat NICIODATĂ, iar un canvas
+  // proaspăt cu `alpha:false` e NEGRU. Exact acele cadre ajungeau la începutul
+  // reel-ului. Desenând întâi, recorderul pornește peste o imagine validă.
+  drawAt(0);
+
   const { recorder, done } = createRecorder(canvas, fps);
 
   try {
@@ -600,6 +606,24 @@ export async function renderReelInBrowser(
           const tMs = performance.now() - t0;
           if (tMs >= totalMs) {
             drawAt(totalMs - 1);
+            // TEMPORAR: starea ULTIMEI scene la ultimul cadru. Dacă videoul ei
+            // s-a terminat (`ended`) înainte de finalul timeline-ului, sursa e
+            // mai scurtă decât fereastra de trim cerută — altă cauză decât
+            // decodarea, și singura care ar explica negru doar la final.
+            const lastIdx = loadedClips.length - 1;
+            if (lastIdx >= 0) {
+              const lv = loadedClips[lastIdx].video;
+              const lastStart = clipStarts[lastIdx];
+              console.log(
+                `[render:dbg] FINAL la ${Math.round(tMs)}ms (total ${Math.round(totalMs)}ms) · ` +
+                `ultima scena ${lastIdx}: t=${lv.currentTime.toFixed(2)}s ` +
+                `durataSursa=${(lv.duration || 0).toFixed(2)}s ended=${lv.ended} ` +
+                `paused=${lv.paused} readyState=${lv.readyState} · ` +
+                `start=${Math.round(lastStart)}ms durata=${Math.round(clipDursMs[lastIdx])}ms ` +
+                `trimStart=${(clipStartOffsetMs[lastIdx] / 1000).toFixed(2)}s ` +
+                `fereastra=${(sourceWindowMs[lastIdx] / 1000).toFixed(2)}s`,
+              );
+            }
             resolve();
             return;
           }
