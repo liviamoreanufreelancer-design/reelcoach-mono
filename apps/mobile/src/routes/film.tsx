@@ -275,16 +275,10 @@ function Film() {
   const handleFallbackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    await saveClip({
-      scenarioId,
-      sceneIdx: idx,
-      blob: file,
-      mimeType: file.type || "video/mp4",
-      duration: scene.duration,
-      finalUsageDuration: scene.finalUsageDuration,
-      createdAt: Date.now(),
-    });
-    setCaptured((s) => new Set(s).add(idx));
+    // Aceeasi garantie ca la filmarea normala: marcheaza doar la succes,
+    // si anunta vizibil esecul. Inainte, saveClip fara try insemna ca o
+    // eroare murea ca unhandled rejection, fara niciun semnal catre utilizatoare.
+    await persistClip(file, file.type || "video/mp4", scene.duration);
     e.target.value = "";
   };
 
