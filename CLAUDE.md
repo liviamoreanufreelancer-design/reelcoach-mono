@@ -171,7 +171,7 @@ Opțiune deschisă, nu bug: bitrate-ul din `useRecorder.ts` e nesetat (~9 Mbps,
 profil Baseline). Un plafon la 5–6 Mbps ar tăia ~40% din mărime la calitate
 practic identică pentru 1080p. Decizie de calitate, neluată.
 
-### 5. Restul listei de lansare — COD FĂCUT, rămâne testul pe device
+### 5. Restul listei de lansare — FĂCUT ȘI TESTAT PE DEVICE
 
 **Faza 5 text overlay — FĂCUT.** Lanțul complet, verificat verigă cu verigă:
 `supabase-client.ts:84` (`text_layers`) → `db-to-template.ts:143` →
@@ -191,9 +191,18 @@ ca `FALLBACK_COVER`. 404-ul devine imposibil, merge offline, zero dependență d
 Supabase. **Decizie confirmată: rămâne bundlat.** Dacă cineva urcă
 `covers/_fallback.jpg`, fișierul NU va fi folosit.
 
-**RĂMÂNE: test end-to-end pe device.** Studio text → publish → `cap sync` →
-reinstalare app → verifici pe ecranul de filmare și pe reelul exportat că
-textele partenerei apar.
+**Test end-to-end pe device — TRECUT (01.08.2026).** Studio (text multi-strat pe
+mai multe scene + dificultate) → publish → `cap sync` → ștergere și reinstalare
+app. Verificat pe device: dificultatea ajunge, reelul complet se vede, textele
+partenerei apar cu fontul și culoarea lor atât pe ecranul de filmare cât și pe
+reelul exportat.
+
+**Cu asta, SARCINI IMEDIATE 1-5 sunt închise.**
+
+Atenție dacă reiei testul: publicarea trebuie făcută DUPĂ randarea reelului
+(reelul se urcă pe ciornă, publicarea îl copiază pe versiunea live), iar appul
+trebuie șters și reinstalat — template-urile sunt cache-uite în IndexedDB
+stale-while-revalidate, altfel testezi date vechi.
 
 ---
 
