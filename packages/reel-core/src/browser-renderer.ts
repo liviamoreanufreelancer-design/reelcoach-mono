@@ -77,7 +77,24 @@ export interface BrowserRenderOptions {
 }
 
 type LoadedImage = { image: CanvasImageSource; cleanup: () => void };
-type LoadedVideo = { video: HTMLVideoElement; cleanup: () => void; duration: number };
+
+/**
+ * Un moment capturat, gata de desenat. Poate fi o FILMARE sau o POZĂ.
+ *
+ * Pozele sunt momente de sine stătătoare (before, after, detaliu de culoare) —
+ * un cadru extras dintr-un video iese neclar, de asta se capturează separat.
+ *
+ * `source` e ce se desenează (identic pentru ambele — `drawCover`/`getDims`
+ * tratează deja și video, și imagine). `video` e prezent DOAR la filmări:
+ * pozele n-au redare, seek, decodor sau pre-roll, deci tot codul care le
+ * atinge trebuie să verifice întâi.
+ */
+type LoadedClip = {
+  source: CanvasImageSource;
+  video: HTMLVideoElement | null;
+  duration: number;
+  cleanup: () => void;
+};
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -232,7 +249,25 @@ async function loadImage(blob?: Blob): Promise<LoadedImage | undefined> {
   return { image: img, cleanup: () => URL.revokeObjectURL(url) };
 }
 
-async function loadVideoClip(clip: RenderClipInput, index: number): Promise<LoadedVideo> {
+/**
+ * Încarcă un moment capturat, filmare sau poză, după tipul blob-ului.
+ * Necunoscut sau lipsă → tratat ca filmare (comportamentul de dinainte).
+ */
+async function loadClip(clip: RenderClipInput, index: number): Promise<LoadedClip> {
+  if (clip.blob?.type?.startsWith("image/")) return loadPhotoClip(clip, index);
+  return loadVideoClip(clip, index);
+}
+
+/** Poză: fără redare, fără decodor. Durata e cea cerută de montaj. */
+async function loadPhotoClip(clip: RenderClipInput, index: number): Promise<LoadedClip> {
+  const loaded = await loadImage(clip.blob);
+  if (!loaded) throw new Error(`Nu pot citi poza ${index + 1}.`);
+  // O poză n-are durată proprie: cât stă pe ecran e decizie de montaj.
+  const duration = Math.max(0.3, clip.finalUsageDuration || clip.duration || 2);
+  return { source: loaded.image, video: null, duration, cleanup: loaded.cleanup };
+}
+
+async function loadVideoClip(clip: RenderClipInput, index: number): Promise<LoadedClip> {
   const url = URL.createObjectURL(clip.blob);
   const video = document.createElement("video");
   video.src = url;
@@ -255,6 +290,7 @@ async function loadVideoClip(clip: RenderClipInput, index: number): Promise<Load
 
   const duration = Math.max(0.3, video.duration || clip.duration || 0.3);
   return {
+    source: video,
     video,
     duration,
     cleanup: () => {
@@ -395,14 +431,14 @@ export async function renderReelInBrowser(
   const introImg = await loadImage(opts.introPng);
   const outroImg = await loadImage(opts.outroPng);
 
-  const loadedClips: LoadedVideo[] = [];
+  const loadedClips: LoadedClip[] = [];
   for (let i = 0; i < clips.length; i++) {
     onProgress?.({
       phase: "loading",
       pct: Math.round((i / Math.max(1, clips.length)) * 12),
       message: `Pregătesc clipul ${i + 1}/${clips.length}…`,
     });
-    loadedClips.push(await loadVideoClip(clips[i], i));
+    loadedClips.push(await loadClip(clips[i], i));
   }
 
   // ── Auto-trim ─────────────────────────────────────────────────────
@@ -429,6 +465,9 @@ export async function renderReelInBrowser(
   // lingers twice as long (true slow-motion); at 2× it plays in half the time.
   const clipDursMs = loadedClips.map((_, i) => sourceWindowMs[i] / speedOf(i));
   const clipStartOffsetMs = loadedClips.map((c, i) => {
+    // Poză: nu există „mijloc" de decupat și nici unde să cauți. Mereu 0 —
+    // ceea ce face automat și pre-roll-ul zero (nu are ce porni în avans).
+    if (!c.video) return 0;
     const recordedMs = Math.max(0, c.duration * 1000);
     return Math.max(0, (recordedMs - sourceWindowMs[i]) / 2);
   });
@@ -500,6 +539,7 @@ export async function renderReelInBrowser(
     if (idx < 0 || prerolled[idx]) return;
     prerolled[idx] = true;
     const lc = loadedClips[idx];
+    if (!lc.video) return; // poză: nimic de pornit
     try { lc.video.playbackRate = speedOf(idx); } catch { /* ignore */ }
     lc.video.play().catch(() => { /* ignore */ });
   };
@@ -518,7 +558,9 @@ export async function renderReelInBrowser(
     if (idx < 0 || idx >= loadedClips.length || primed[idx]) return;
     primed[idx] = true;
     // Fire-and-forget: are la dispoziție toată durata clipului curent.
-    void primeClip(loadedClips[idx].video, startPosSec(idx));
+    const v = loadedClips[idx].video;
+    if (!v) return; // poză: deja decodată la încărcare
+    void primeClip(v, startPosSec(idx));
   };
 
   /** Oprește clipurile care nu mai sunt pe ecran, ca să elibereze decodoare. */
@@ -526,6 +568,7 @@ export async function renderReelInBrowser(
     for (let i = 0; i < loadedClips.length; i++) {
       if (i === keepA || i === keepB || i === keepC) continue;
       const v = loadedClips[i].video;
+      if (!v) continue; // poză: nu ocupă decodor
       if (!v.paused) {
         try { v.pause(); } catch { /* ignore */ }
       }
@@ -561,7 +604,8 @@ export async function renderReelInBrowser(
   onProgress?.({ phase: "loading", pct: 13, message: "Pregătesc prima scenă…" });
   if (loadedClips.length > 0) {
     primed[0] = true;
-    await primeClip(loadedClips[0].video, startPosSec(0));
+    const v0 = loadedClips[0].video;
+    if (v0) await primeClip(v0, startPosSec(0));
     primeAhead(1);
   }
 
@@ -572,8 +616,11 @@ export async function renderReelInBrowser(
   // (Cu intro, o prinde pre-roll-ul normal în timpul acestuia.)
   if (introMs === 0 && loadedClips.length > 0) {
     prerolled[0] = true;
-    try { loadedClips[0].video.playbackRate = speedOf(0); } catch { /* ignore */ }
-    loadedClips[0].video.play().catch(() => { /* ignore */ });
+    const first = loadedClips[0].video;
+    if (first) {
+      try { first.playbackRate = speedOf(0); } catch { /* ignore */ }
+      first.play().catch(() => { /* ignore */ });
+    }
   }
 
   // Desenăm primul cadru ÎNAINTE de a porni recorderul.
@@ -659,7 +706,7 @@ export async function renderReelInBrowser(
     // on scene 1, cinema on scene 2, warm on scene 3, etc.) as set in
     // Studio rather than one filter applied to the whole reel.
     const clipFilter = perClipFilters[idx] ?? filter;
-    drawClipFrame(target, lc.video, width, height, variants[idx], tNorm, effects.kenBurns, clipFilter);
+    drawClipFrame(target, lc.source, width, height, variants[idx], tNorm, effects.kenBurns, clipFilter);
     // Per-clip motion blur: a decaying feedback trail of the CLIP FRAME only,
     // captured before effects/overlay so text captions and sparkles never
     // ghost. Off unless Studio enabled it for this scene → zero regression.
@@ -978,6 +1025,7 @@ export async function renderReelInBrowser(
     // ms of wall-clock consumes `speed` ms of source — this realises both the
     // auto-trim window AND the slow/fast motion via the rate set below.
     const seekSec = Math.max(0, (clipStartOffsetMs[idx] + localMs * speed) / 1000);
+    if (!lc.video) return; // poză: statică, nimic de redat
     if (lc.video.paused) {
       // NU re-căuta dacă suntem deja practic acolo. Pre-încălzirea a decodat
       // un cadru fix la poziția de start; un seek nou (fie și de câțiva ms,
