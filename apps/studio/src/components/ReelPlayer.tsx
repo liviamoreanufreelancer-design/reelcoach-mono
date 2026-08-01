@@ -33,6 +33,8 @@ export default function ReelPlayer({
   const [pct, setPct] = useState(0);
   const [message, setMessage] = useState("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  /** Urcarea a esuat: reel-ul e vizibil aici, dar NU a ajuns in aplicatie. */
+  const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
   const startedRef = useRef(false);
   const uploadedRef = useRef(false);
@@ -121,6 +123,11 @@ export default function ReelPlayer({
         } catch (e) {
           uploadedRef.current = false;
           console.error("[reel-preview] urcare esuata:", e);
+          // Vizibil, nu doar in consola: altfel partenera crede ca reel-ul a
+          // ajuns in aplicatie, cand de fapt acolo ramane versiunea veche.
+          setUploadWarning(
+            "Reel-ul s-a randat, dar NU s-a salvat pentru aplicație. În app rămâne versiunea anterioară — apasă „Reîmprospătează”.",
+          );
         }
       }
     } catch (err) {
@@ -135,7 +142,16 @@ export default function ReelPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const rerender = () => { startedRef.current = false; setPhase("idle"); render(); };
+  const rerender = () => {
+    startedRef.current = false;
+    // CRITIC: fara resetarea asta, re-randarea NU se mai urca niciodata.
+    // Randai cu toate scenele, vedeai totul aici, dar in aplicatie ramanea
+    // reel-ul vechi (ex. cu o singura scena) — fara niciun semnal.
+    uploadedRef.current = false;
+    setUploadWarning(null);
+    setPhase("idle");
+    render();
+  };
 
   if (withFootage.length === 0) {
     return (
@@ -164,6 +180,11 @@ export default function ReelPlayer({
             className="rounded-2xl bg-black border border-[#5B34FF]/15" style={{ width: "240px", aspectRatio: "9 / 16" }} />
           {missingCount > 0 && (
             <p className="text-[11px] text-amber-700">{missingCount} {missingCount === 1 ? "scenă nu are" : "scene nu au"} clip — randate doar cele cu footage.</p>
+          )}
+          {uploadWarning && (
+            <p className="text-[12px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 max-w-[300px] text-center leading-snug">
+              {uploadWarning}
+            </p>
           )}
           <div className="flex gap-2">
             <a href={videoUrl} download="reel.mp4" className="btn-champagne text-[12px] px-5 py-2 inline-flex items-center gap-2">
