@@ -477,5 +477,23 @@ privire. Nu adăuga elemente vizuale care cer conținut recurent.
 - Refactorizări necerute
 - Dependințe noi
 - Modificări în `packages/reel-core` fără să verifici impactul pe ambele apps
-- Migrații Supabase fără discuție (ultima e 010)
+- Migrații Supabase fără discuție (ultima e 011)
 - Commit fără `npx tsc --noEmit` curat
+
+### CAPCANĂ: coloane noi în `shots` se pierd la publicare
+
+RPC-ul `publish_draft_changes` (sistemul de ciornă) **listează explicit fiecare
+coloană** din `shots` când copiază ciorna peste template-ul publicat.
+
+**Orice migrație care adaugă o coloană în `shots` trebuie să actualizeze și
+funcția asta.** Altfel coloana nouă se pierde tăcut la fiecare „Publică
+modificările" — fără eroare, fără semnal, doar date care dispar.
+
+S-a întâmplat deja: migrația 010 a adăugat `text_layers`, RPC-ul n-a fost
+actualizat, iar tot textul multi-strat al partenerei era șters la publicare.
+Codul era corect cap-coadă; publicarea distrugea datele înainte să ajungă pe
+telefon. Reparat de migrația 011.
+
+Simptomul e înșelător: pare că funcția din mobile „nu merge", când de fapt
+datele n-au ajuns niciodată acolo. Dacă ceva setat în Studio nu apare pe
+device, verifică întâi lista de coloane din `publish_draft_changes`.
