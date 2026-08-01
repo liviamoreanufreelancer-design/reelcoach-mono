@@ -444,18 +444,70 @@ export async function renderReelInBrowser(
   // intră în tranziție) și îl pregătim din timp doar pe următorul.
   const primed = loadedClips.map(() => false);
 
-  /** Pre-încălzește un clip (cadru decodat la poziția de start), o singură dată. */
+  // ── Pre-roll ──────────────────────────────────────────────────────────
+  // Pornirea unui <video> pus pe pauză NU e instantanee: decodorul are nevoie
+  // de zeci-sute de ms. Dacă chemăm play() exact când scena intră pe ecran,
+  // bucla desenează același cadru până pornește redarea — se vede ca un blocaj
+  // la începutul fiecărei scene (exact ce a rămas după ce am scăpat de negru).
+  //
+  // Soluție: pornim redarea cu PREROLL_MS înainte, căutând înapoi cu exact cât
+  // va avansa videoul în acest timp. Când scena intră, rulează deja ȘI e la
+  // poziția corectă. Posibil doar dacă există spațiu înaintea ferestrei de trim
+  // (offset > 0); altfel rămâne comportamentul de dinainte, fără regres.
+  const PREROLL_MS = 500;
+  const prerolled = loadedClips.map(() => false);
+
+  /** Cu cât timp real putem porni clipul mai devreme (0 = fără spațiu). */
+  const prerollLeadMs = (idx: number) =>
+    Math.min(PREROLL_MS, clipStartOffsetMs[idx] / speedOf(idx));
+
+  /**
+   * Clipul aflat ACUM în fereastra lui de pre-roll (-1 dacă niciunul).
+   *
+   * Întoarce clipul indiferent dacă a fost deja pornit — altfel, la cadrul
+   * următor după pornire, `releaseInactive` l-ar pune imediat pe pauză
+   * (nu e nici activ, nici următorul) și pre-roll-ul n-ar folosi la nimic.
+   * Pornirea efectivă e protejată separat, în `startPreroll`.
+   */
+  const prerollTarget = (tMs: number) => {
+    for (let i = 0; i < loadedClips.length; i++) {
+      const lead = prerollLeadMs(i);
+      if (lead <= 0) continue;
+      if (tMs >= clipStarts[i] - lead && tMs < clipStarts[i]) return i;
+    }
+    return -1;
+  };
+
+  const startPreroll = (idx: number, tMs: number) => {
+    if (idx < 0 || prerolled[idx]) return;
+    prerolled[idx] = true;
+    const lc = loadedClips[idx];
+    const speed = speedOf(idx);
+    const leadMs = Math.max(0, clipStarts[idx] - tMs);
+    // Pornim din urmă cu exact cât va consuma redarea până intră pe ecran.
+    const fromSec = Math.max(0, clipStartOffsetMs[idx] - leadMs * speed) / 1000;
+    try { lc.video.currentTime = fromSec; } catch { /* ignore */ }
+    try { lc.video.playbackRate = speed; } catch { /* ignore */ }
+    lc.video.play().catch(() => { /* ignore */ });
+  };
+
+  /**
+   * Pre-încălzește un clip (cadru decodat la poziția de start), o singură dată.
+   * Doar pentru clipurile care NU pot fi pre-rolate — altfel seek-ul ăsta ar
+   * intra în conflict cu redarea pornită în avans.
+   */
   const primeAhead = (idx: number) => {
     if (idx < 0 || idx >= loadedClips.length || primed[idx]) return;
+    if (prerollLeadMs(idx) > 0) return;
     primed[idx] = true;
     // Fire-and-forget: are la dispoziție toată durata clipului curent.
     void primeClip(loadedClips[idx].video, clipStartOffsetMs[idx] / 1000);
   };
 
   /** Oprește clipurile care nu mai sunt pe ecran, ca să elibereze decodoare. */
-  const releaseInactive = (keepA: number, keepB: number) => {
+  const releaseInactive = (keepA: number, keepB: number, keepC: number) => {
     for (let i = 0; i < loadedClips.length; i++) {
-      if (i === keepA || i === keepB) continue;
+      if (i === keepA || i === keepB || i === keepC) continue;
       const v = loadedClips[i].video;
       if (!v.paused) {
         try { v.pause(); } catch { /* ignore */ }
@@ -497,6 +549,16 @@ export async function renderReelInBrowser(
   let outroSnapTaken = false;
 
   let frameIdx = 0;
+
+  // Prima scenă nu are "scenă anterioară" în care să fie pre-rolată. Dacă nu
+  // există intro, o pornim exact înainte de buclă: play() apucă să demareze cât
+  // se inițializează recorderul, deci nici prima scenă nu începe înghețată.
+  // (Cu intro, o prinde pre-roll-ul normal în timpul acestuia.)
+  if (introMs === 0 && loadedClips.length > 0) {
+    prerolled[0] = true;
+    try { loadedClips[0].video.playbackRate = speedOf(0); } catch { /* ignore */ }
+    loadedClips[0].video.play().catch(() => { /* ignore */ });
+  }
 
   try {
     const t0 = performance.now();
@@ -669,7 +731,9 @@ export async function renderReelInBrowser(
     // exportului: la scena 8 rulau 8 videouri 1080p simultan, bucla de randare
     // (in timp real) nu mai tinea pasul => filmari sacadate, iar decodoarele
     // WebKit se epuizau => ultimele scene ieseau negre.
-    releaseInactive(active, nextActive);
+    const preIdx = prerollTarget(tMs);
+    releaseInactive(active, nextActive, preIdx);
+    startPreroll(preIdx, tMs);
     primeAhead((nextActive !== -1 ? nextActive : active) + 1);
 
     if (active !== -1 && nextActive !== -1 && transMs > 0) {
