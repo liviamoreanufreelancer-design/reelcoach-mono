@@ -77,6 +77,8 @@ export function templateToScenario(t: ReelTemplate): Scenario {
       // Straturi de text libere (Studio, multi-strat). Prioritate peste
       // overlayText in renderOverlay/renderPreviewFrame — vezi drawTextLayers.
       textLayers: shot.textLayers,
+      captureKind: shot.captureKind,
+      slotKey: shot.slotKey,
     };
   });
 

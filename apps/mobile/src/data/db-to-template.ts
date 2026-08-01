@@ -141,6 +141,8 @@ function dbShotToShot(row: DbShotRow): Shot {
     diagramUrl: row.diagram?.image_url ?? undefined,
     captionPreset: row.caption_preset ?? undefined,
     textLayers: row.text_layers ?? undefined,
+    captureKind: row.capture_kind ?? "video",
+    slotKey: row.slot_key ?? undefined,
   };
 }
 

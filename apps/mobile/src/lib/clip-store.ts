@@ -20,6 +20,14 @@ export type StoredClip = {
 const k = (scenarioId: string, sceneIdx: number) =>
   `clip:${scenarioId}:${sceneIdx}`;
 
+/**
+ * Cheia pozei unui moment. Separata de cea a filmarii pentru ca un moment
+ * poate cere AMANDOUA (before, after, detaliu culoare): filmarea intra in
+ * reel, poza devine postare separata. Doua fisiere, acelasi moment.
+ */
+const pk = (scenarioId: string, sceneIdx: number) =>
+  `photo:${scenarioId}:${sceneIdx}`;
+
 export async function saveClip(c: StoredClip): Promise<void> {
   await set(k(c.scenarioId, c.sceneIdx), c);
   // Best-effort persistence request (so the browser doesn't evict our data).
@@ -28,6 +36,45 @@ export async function saveClip(c: StoredClip): Promise<void> {
   } catch {
     // ignore
   }
+}
+
+/** O poza capturata la un moment. Mult mai simpla decat un clip: n-are durata. */
+export type StoredPhoto = {
+  scenarioId: string;
+  sceneIdx: number;
+  blob: Blob;
+  mimeType: string;
+  createdAt: number;
+};
+
+export async function savePhoto(p: StoredPhoto): Promise<void> {
+  await set(pk(p.scenarioId, p.sceneIdx), p);
+  try {
+    if (navigator.storage?.persist) await navigator.storage.persist();
+  } catch {
+    // ignore
+  }
+}
+
+export async function getPhoto(
+  scenarioId: string,
+  sceneIdx: number,
+): Promise<StoredPhoto | undefined> {
+  return (await get(pk(scenarioId, sceneIdx))) as StoredPhoto | undefined;
+}
+
+export async function listPhotos(scenarioId: string): Promise<StoredPhoto[]> {
+  const allKeys = await keys();
+  const prefix = `photo:${scenarioId}:`;
+  const matching = allKeys.filter(
+    (key) => typeof key === "string" && key.startsWith(prefix),
+  );
+  const photos = await Promise.all(
+    matching.map((key) => get(key) as Promise<StoredPhoto | undefined>),
+  );
+  return photos
+    .filter((p): p is StoredPhoto => !!p)
+    .sort((a, b) => a.sceneIdx - b.sceneIdx);
 }
 
 export async function getClip(
@@ -53,10 +100,12 @@ export async function listClips(scenarioId: string): Promise<StoredClip[]> {
 
 export async function clearScenario(scenarioId: string): Promise<void> {
   const allKeys = await keys();
-  const prefix = `clip:${scenarioId}:`;
+  // Sterge SI filmarile, SI pozele. Altfel pozele ar ramane orfane dupa
+  // "Reia filmarile" / "Sterge reel" si ar reaparea la o sesiune noua.
+  const prefixes = [`clip:${scenarioId}:`, `photo:${scenarioId}:`];
   await Promise.all(
     allKeys
-      .filter((key) => typeof key === "string" && key.startsWith(prefix))
+      .filter((key) => typeof key === "string" && prefixes.some((p) => key.startsWith(p)))
       .map((key) => del(key)),
   );
 }

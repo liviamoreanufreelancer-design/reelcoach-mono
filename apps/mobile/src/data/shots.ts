@@ -3,6 +3,7 @@ import type { FilterId } from "@reelcoach/core";
 import type { EffectId } from "@reelcoach/core";
 import type { TextLayer } from "@reelcoach/core";
 import type { Profession } from "./scenarios";
+import type { CaptureKind } from "./supabase-client";
 
 /**
  * Premium visual effects that overlay the video frame. The catalog now lives
@@ -153,12 +154,21 @@ export interface Shot {
   howShoot?: { icon: string; label: string; detail: string }[];
   /** Font/preset caption setat in Studio per scena (default reel-ului). */
   captionPreset?: string;
+  /**
+   * Migratiile 012+013: ce se captureaza la aceasta oprire.
+   *   video — doar filmare (intra in reel)
+   *   photo — doar poza (postare separata)
+   *   both  — si filmare, si poza, la aceeasi oprire
+   */
+  captureKind?: CaptureKind;
+  /** Migratia 012: identitatea stabila a momentului, pentru outputuri. */
+  slotKey?: string;
   /** Straturi de text libere multi-strat (Studio, migratia 010). Null/undefined = foloseste overlayText vechi. */
   textLayers?: TextLayer[];
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "hook" | "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl" | "textLayers">> {
+  extends Required<Omit<Shot, "hook" | "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl" | "textLayers" | "captureKind" | "slotKey">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -175,6 +185,10 @@ export interface ResolvedShot
   captionPreset?: string;
   /** Text mare pe ecranul de filmare (din Studio). */
   hook?: string;
+  /** Ce se captureaza aici (vezi Shot.captureKind). */
+  captureKind?: CaptureKind;
+  /** Identitatea stabila a momentului. */
+  slotKey?: string;
   /** Straturi de text libere multi-strat (din Studio). */
   textLayers?: TextLayer[];
 }
@@ -232,6 +246,8 @@ export function resolveShot(shot: Shot): ResolvedShot {
     exampleImageUrl: shot.exampleImageUrl,
     diagramUrl: shot.diagramUrl,
     textLayers: shot.textLayers,
+    captureKind: shot.captureKind,
+    slotKey: shot.slotKey,
   };
 }
 

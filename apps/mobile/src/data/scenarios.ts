@@ -179,6 +179,10 @@ export interface Scene {
   motionBlur?: boolean;
   /** Straturi de text libere multi-strat (din Studio). Mirrors Shot.textLayers. */
   textLayers?: TextLayer[];
+  /** Ce se captureaza aici: filmare, poza, sau amandoua. Mirrors Shot.captureKind. */
+  captureKind?: "video" | "photo" | "both";
+  /** Identitatea stabila a momentului in sesiune. Mirrors Shot.slotKey. */
+  slotKey?: string;
 }
 
 export type Difficulty = "easy" | "medium" | "hard";
