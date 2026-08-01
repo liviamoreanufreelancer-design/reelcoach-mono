@@ -444,6 +444,11 @@ Alte măsuri (fără cod):
   sloturile pline.
 - **Nu automatiza ce n-a fost făcut manual întâi.** Înainte de engine multi-output,
   partenera produce manual 4 outputuri distincte dintr-o sesiune reală.
+  **CONDIȚIE ÎNDEPLINITĂ (01.08.2026):** partenera a produs manual 4 outputuri
+  distincte dintr-o singură sesiune și funcționează — nu se simt repetitive.
+  Riscul principal al modelului de sesiune (4 postări cu aceeași clientă par
+  aceeași postare) e infirmat pe date reale, nu pe presupuneri.
+  Poarta e deschisă: VIZIUNEA poate fi construită.
 - **Uman la poarta finală de publicare**, cel puțin primul an.
 
 ---
