@@ -208,9 +208,6 @@ async function fetchPublishedTemplates(): Promise<ReelTemplate[]> {
 
   const templates = (templatesRes.data ?? []) as DbTemplateRow[];
   const allShots = (shotsRes.data ?? []) as DbShotRow[];
-  // TEMP DEBUG: cate shot-uri au diagrama din join?
-  const withDiag = allShots.filter((sh: any) => sh.diagram);
-  console.log("[DIAG DEBUG] total shots:", allShots.length, "| cu diagram:", withDiag.length, "| sample:", JSON.stringify(withDiag[0]?.diagram ?? allShots[0]?.diagram_id ?? "niciun diagram_id"));
 
   // Group shots by template_id.
   const shotsByTemplate = new Map<string, DbShotRow[]>();
