@@ -15,8 +15,14 @@ export type ConceptType =
   | "before_after" | "tutorial" | "other";
 export type ConceptStatus = "draft" | "in_review" | "published";
 export type SlotRole = "hook" | "tip" | "step" | "reveal" | "cta" | "context";
-/** Migrația 012. Cum se capturează un moment: filmat sau fotografiat. */
-export type CaptureKind = "video" | "photo";
+/**
+ * Cum se capturează un moment (migrațiile 012 + 013).
+ *   video — doar filmare; intră în reel
+ *   photo — doar poză; devine postare separată
+ *   both  — ambele, la aceeași oprire (before, after, detaliu culoare)
+ * Pozele NU intră în reeluri: produc postări foto cu caption propriu.
+ */
+export type CaptureKind = "video" | "photo" | "both";
 /**
  * Legacy enum of well-known patterns. Kept as a suggestion list only —
  * shots.pattern is now a free-form `string | null` and editors can type
@@ -140,9 +146,9 @@ export interface ShotRow {
   /** Migrația 010: straturi de text overlay (multi-text). null = folosește overlay_text vechi. */
   text_layers: unknown[] | null;
   /**
-   * Migrația 012. Cum se capturează momentul: filmat sau fotografiat.
-   * Pozele sunt momente de sine stătătoare (before, after, detaliu) — un cadru
-   * extras dintr-un video iese neclar.
+   * Migrațiile 012 + 013. `both` = și filmare, și poză la aceeași oprire
+   * (before, after, detaliu culoare): filmarea intră în reel, poza devine
+   * postare separată cu caption propriu.
    */
   capture_kind: CaptureKind;
   /**
