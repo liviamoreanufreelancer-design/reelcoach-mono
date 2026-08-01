@@ -437,14 +437,40 @@ export async function renderReelInBrowser(
   const outroOverlap = outroImg && transMs ? transMs : 0;
   const totalMs = introMs + clipsTotal - transitionsCount * transMs + outroMs - outroOverlap;
 
-  // Pre-încălzire: fiecare clip trebuie să aibă un cadru DECODAT la poziția lui
-  // de start înainte să pornească randarea. Randarea merge în timp real — nu
-  // există a doua șansă pentru un cadru ratat, iar un video fără cadru decodat
-  // se desenează negru. Aici se plătea flash-ul negru dinaintea fiecărei scene.
-  onProgress?.({ phase: "loading", pct: 13, message: "Pregătesc scenele…" });
-  await Promise.all(
-    loadedClips.map((lc, i) => primeClip(lc.video, clipStartOffsetMs[i] / 1000)),
-  );
+  // ── Bugetul de decodoare video ────────────────────────────────────────
+  // WebKit poate decoda doar câteva videouri simultan, iar randarea merge în
+  // TIMP REAL: dacă bucla nu ține pasul, cadrele se pierd definitiv.
+  // De aceea ținem în viață doar clipurile de pe ecran (cel activ + cel care
+  // intră în tranziție) și îl pregătim din timp doar pe următorul.
+  const primed = loadedClips.map(() => false);
+
+  /** Pre-încălzește un clip (cadru decodat la poziția de start), o singură dată. */
+  const primeAhead = (idx: number) => {
+    if (idx < 0 || idx >= loadedClips.length || primed[idx]) return;
+    primed[idx] = true;
+    // Fire-and-forget: are la dispoziție toată durata clipului curent.
+    void primeClip(loadedClips[idx].video, clipStartOffsetMs[idx] / 1000);
+  };
+
+  /** Oprește clipurile care nu mai sunt pe ecran, ca să elibereze decodoare. */
+  const releaseInactive = (keepA: number, keepB: number) => {
+    for (let i = 0; i < loadedClips.length; i++) {
+      if (i === keepA || i === keepB) continue;
+      const v = loadedClips[i].video;
+      if (!v.paused) {
+        try { v.pause(); } catch { /* ignore */ }
+      }
+    }
+  };
+
+  // Prima scenă trebuie să aibă cadru ÎNAINTE de primul frame randat; restul
+  // se pregătesc din mers, cu un clip în avans.
+  onProgress?.({ phase: "loading", pct: 13, message: "Pregătesc prima scenă…" });
+  if (loadedClips.length > 0) {
+    primed[0] = true;
+    await primeClip(loadedClips[0].video, clipStartOffsetMs[0] / 1000);
+    primeAhead(1);
+  }
 
   const snap = document.createElement("canvas");
   snap.width = width; snap.height = height;
@@ -617,6 +643,14 @@ export async function renderReelInBrowser(
         else nextActive = i;
       }
     }
+
+    // Tine in redare DOAR clipurile de pe ecran, si pregateste-l pe urmatorul.
+    // Fara asta, fiecare clip pornit ramanea in redare pana la finalul
+    // exportului: la scena 8 rulau 8 videouri 1080p simultan, bucla de randare
+    // (in timp real) nu mai tinea pasul => filmari sacadate, iar decodoarele
+    // WebKit se epuizau => ultimele scene ieseau negre.
+    releaseInactive(active, nextActive);
+    primeAhead((nextActive !== -1 ? nextActive : active) + 1);
 
     if (active !== -1 && nextActive !== -1 && transMs > 0) {
       const start = clipStarts[nextActive];
