@@ -126,20 +126,50 @@ lângă un reel terminat. "Șterge reel" are deja `window.confirm` — aliniază
 
 Commit separat.
 
-### 4. Măsurători pe device (nu din cod)
+### 4. Măsurători pe device — FĂCUT (01.08.2026, iPhone real)
 
-- Mărimea reală a unui clip (bitrate MediaRecorder e implicit, nesetat)
-- Total per sesiune la 8-10 clipuri
-- Dacă `navigator.storage.persist()` întoarce `true` în Capacitor
-- **Dacă datele supraviețuiesc peste noapte cu appul închis** — cel mai important
-- Dacă `video/mp4;codecs=avc1,mp4a` e suportat în WKWebView sau se cade pe webm
-- Timpul de randare per output
+Instrument: `lib/diag.ts`, `__diag()` din Safari Web Inspector. TEMPORAR —
+se șterge cu fișierul + linia `import "@/lib/diag";` din `__root.tsx`.
 
-`getStorageEstimate()` există în `clip-store.ts` ~108, nu e apelat nicăieri.
+**Codec: MP4/H.264 nativ. ✅**
+`video/mp4; codecs=avc1.42000a,mp4a.40.2`. NU cade pe webm. Exportul nu are
+nevoie de transcodare. Profil Baseline (`42`) — cel mai compatibil, cel mai
+puțin eficient; de aici bitrate-ul mare.
 
-**Contingență dacă iOS evacuează IndexedDB:** mută clipurile pe Capacitor
-Filesystem `Directory.Data`. Nu e subiect al evacuării WebKit. Exportul
-folosește `Directory.Cache` — OK pentru tranzitoriu, nu pentru surse.
+**Supraviețuire: DA, 19,8 zile. ✅ (era "cel mai important")**
+Clipuri filmate 12.07, încă intacte la 01.08, peste zeci de reporniri —
+**și cu `persistenta: false`**. WebKit nu le-a evacuat nici neprotejate.
+
+**`navigator.storage.persist()` întoarce `false`** în Capacitor. Confirmă
+riscul teoretic, dar datele reale îl infirmă în practică (vezi mai sus).
+
+**`estimate()` MINTE pe iOS. 🔴 Descoperire nouă.**
+Raportează `0.2 MB` folosiți când în IndexedDB sunt real `35.87 MB` — de ~180×
+sub realitate. **`getStorageEstimate()` e inutilizabil ca indicator de cotă pe
+iOS.** Orice avertisment "memoria se umple" construit pe el ar tăcea exact când
+e nevoie de el. Dacă vrem vreodată un asemenea avertisment, se calculează prin
+însumarea `blob.size`, cum face `__diag`.
+
+**Dimensiuni reale:**
+- **1,12 MB/s** (~9 Mbps, cu audio). Clip 4s ≈ 4,4 MB, 5s ≈ 5,6 MB, 6s ≈ 7,2 MB
+- Medie 5,12 MB/clip; **sesiune de 8 momente × ~4,5s ≈ 40 MB**
+- Cotă raportată 9830 MB → ~240 de sesiuni (indicativ, vezi minciuna de mai sus)
+- Un singur MP4 exportat de 30s la 12–30 Mbps ≈ 45–110 MB — **mai mult decât
+  toată sesiunea brută.** Confirmă "nu randa eager, nu persista 4 MP4-uri".
+
+**Timpul de randare** nu e în `__diag` — se citește din UI-ul de export
+(secundele de sub bara de progres).
+
+**VERDICT: contingența `Directory.Data` NU e necesară.** Dovada empirică bate
+valoarea de retur a API-ului. Nu mutăm stratul de stocare.
+
+Singura necunoscută rămasă: evacuarea iOS se declanșează la *presiune de
+stocare*, iar testul s-a făcut pe un telefon cu 9,6 GB liberi. **De retestat pe
+un telefon aproape plin** — poate aștepta primele stiliste reale.
+
+Opțiune deschisă, nu bug: bitrate-ul din `useRecorder.ts` e nesetat (~9 Mbps,
+profil Baseline). Un plafon la 5–6 Mbps ar tăia ~40% din mărime la calitate
+practic identică pentru 1080p. Decizie de calitate, neluată.
 
 ### 5. Restul listei de lansare
 
