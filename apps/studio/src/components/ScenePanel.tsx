@@ -27,9 +27,32 @@ import { useRouter } from "next/navigation";
 import { Check, Plus, X } from "lucide-react";
 import { updateShot } from "@/lib/template-actions";
 import { PATTERNS, HOW_SHOOT_ICONS } from "@/lib/options";
-import type { ShotRow, HowShootItem } from "@/lib/db-types";
+import type { ShotRow, HowShootItem, CaptureKind } from "@/lib/db-types";
 import Combobox from "./Combobox";
 import DiagramPicker from "./DiagramPicker";
+
+/**
+ * Ce se capturează la această oprire. Textele sunt scrise pentru parteneră,
+ * nu pentru dezvoltator: ea alege ce face stilista, nu un enum.
+ */
+const CAPTURE_KINDS: { id: CaptureKind; label: string; hint: string }[] = [
+  { id: "video", label: "🎥 Filmare", hint: "Intră în reel" },
+  { id: "photo", label: "📷 Poză", hint: "Devine postare separată" },
+  { id: "both", label: "🎥 + 📷 Amândouă", hint: "Filmare în reel, poză separat" },
+];
+
+/** Etichetă stabilă din text: fără diacritice, litere mici, cratime. */
+function slugify(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[șş]/gi, "s")
+    .replace(/[țţ]/gi, "t")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
 
 export default function ScenePanel({
   shot,
@@ -50,6 +73,11 @@ export default function ScenePanel({
   const [mustShow, setMustShow] = useState<string[]>(shot.must_show ?? []);
   const [instructions, setInstructions] = useState<string[]>(shot.instructions ?? []);
   const [howShoot, setHowShoot] = useState<HowShootItem[]>(shot.how_shoot ?? []);
+  const [captureKind, setCaptureKind] = useState<CaptureKind>(shot.capture_kind ?? "video");
+
+  // Eticheta se propune automat din pattern/titlu; partenera o poate schimba.
+  const autoSlotKey =
+    slugify(shot.pattern || shot.title || "") || `moment-${shot.sort_order}`;
 
   const saveField = (patch: Parameters<typeof updateShot>[2]) => {
     setError(null);
@@ -97,6 +125,60 @@ export default function ScenePanel({
             type="text"
             defaultValue={shot.title}
             onBlur={(e) => saveField({ title: e.target.value })}
+            className="input"
+          />
+        </div>
+      </div>
+
+      {/* Ce se capturează + eticheta momentului (migrațiile 012/013) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="label">
+            Ce capturează stilista?
+          </label>
+          <div className="flex gap-2">
+            {CAPTURE_KINDS.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                title={o.hint}
+                onClick={() => {
+                  setCaptureKind(o.id);
+                  saveField({ capture_kind: o.id });
+                }}
+                className={`flex-1 py-2 rounded-lg text-[12px] transition ${
+                  captureKind === o.id
+                    ? "bg-[#5B34FF] text-white font-medium"
+                    : "bg-white border border-[#E7E3F5] text-[#6B6B6B] hover:text-[#1F1F1F]"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-[#9A9A9A] mt-1.5 leading-snug">
+            {CAPTURE_KINDS.find((o) => o.id === captureKind)?.hint}
+          </p>
+        </div>
+
+        <div>
+          <label className="label">
+            Eticheta momentului{" "}
+            <span className="text-[#9A9A9A] normal-case tracking-normal">
+              (cu ea se construiesc postările)
+            </span>
+          </label>
+          <input
+            type="text"
+            defaultValue={shot.slot_key ?? ""}
+            placeholder={autoSlotKey}
+            onBlur={(e) => {
+              // Gol → folosim propunerea automată, ca partenera să nu fie
+              // obligată să completeze încă un câmp la fiecare scenă.
+              const next = slugify(e.target.value) || autoSlotKey;
+              e.target.value = next;
+              if (next !== shot.slot_key) saveField({ slot_key: next });
+            }}
             className="input"
           />
         </div>

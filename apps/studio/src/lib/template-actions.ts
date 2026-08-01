@@ -15,6 +15,7 @@ import type {
   Difficulty,
   HowShootItem,
   LightSource,
+  CaptureKind,
 } from "./db-types";
 
 /**
@@ -207,6 +208,10 @@ export async function updateShot(
     caption_preset?: string;
     text_layers?: unknown[] | null;
     diagram_id?: string | null;
+    /** Migrațiile 012+013: cum se capturează momentul. */
+    capture_kind?: CaptureKind;
+    /** Migrația 012: identitatea stabilă a momentului (pentru outputuri). */
+    slot_key?: string | null;
   },
 ) {
   const supabase = await getSupabaseServerClient();
