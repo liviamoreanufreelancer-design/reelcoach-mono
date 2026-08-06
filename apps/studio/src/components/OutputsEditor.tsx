@@ -52,11 +52,12 @@ export default function OutputsEditor({
 
   const options = slotOptions(shots);
 
-  const run = (fn: () => Promise<void>) => {
+  const run = (fn: () => Promise<unknown>) => {
     setError(null);
     startTransition(async () => {
       try {
-        await fn();
+        const res = (await fn()) as { ok: boolean; error?: string } | void;
+        if (res && res.ok === false) { setError(res.error ?? "Salvarea a eșuat."); return; }
         router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));

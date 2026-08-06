@@ -570,8 +570,12 @@ export async function updateOutput(
   const { error } = await supabase
     .from("outputs").update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", outputId);
-  if (error) throw new Error(error.message);
+  // Intoarcem eroarea in loc s-o aruncam: o exceptie dintr-o server action
+  // ajunge in UI ca "An error occurred in the Server Components render", cu
+  // mesajul ascuns in productie. Asa vede partenera ce s-a intamplat.
+  if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/templates/${templateId}`);
+  return { ok: true as const };
 }
 
 export async function deleteOutput(outputId: string, templateId: string) {

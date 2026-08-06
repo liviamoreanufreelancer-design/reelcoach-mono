@@ -12,7 +12,6 @@
  * decizii de stil (vezi CLAUDE.md, economia muncii partenerei).
  */
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Film, Images, Layers } from "lucide-react";
 import { updateOutput } from "@/lib/template-actions";
 import { FILTERS, TRANSITIONS } from "@/lib/options";
@@ -90,7 +89,6 @@ function OutputCard({
   open: boolean;
   onToggle: () => void;
 }) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -111,8 +109,10 @@ function OutputCard({
     setError(null);
     startTransition(async () => {
       try {
-        await updateOutput(output.id, templateId, patch);
-        router.refresh();
+        const res = await updateOutput(output.id, templateId, patch);
+        if (res && !res.ok) { setError(res.error); return; }
+        // revalidatePath din actiune reimprospateaza deja; router.refresh() ar
+        // fi o a doua rundă inutilă peste bucla de previzualizare.
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
