@@ -42,6 +42,19 @@ export interface OutputSlot {
   slot: string;
   /** Secunde în acest output. Absent = toată captura. */
   sec?: number;
+
+  // ── Excepții peste implicitul postării (migrația 015) ──────────────
+  // Toate opționale: absente = se folosește implicitul postării. Stau în
+  // jsonb tocmai ca adăugarea altora să nu mai ceară migrație.
+  /** Filtru doar pentru acest moment, în această postare. */
+  filter?: string;
+  /** Tranziția DIN acest moment spre următorul, în această postare. */
+  transition?: TransitionId;
+  /** Viteză de redare (0,5 = slow-mo). */
+  speed?: number;
+  motionBlur?: boolean;
+  /** Text peste acest moment. Diferă aproape mereu de la o postare la alta. */
+  textLayers?: unknown[];
 }
 
 export interface OutputRow {
@@ -52,6 +65,10 @@ export interface OutputRow {
   /** ORDONAT: ordinea din array e ordinea din montaj. */
   slots: OutputSlot[];
   caption: string | null;
+  /** Migrația 015: filtrul implicit al postării. Slot-urile îl pot suprascrie. */
+  filter: string | null;
+  /** Migrația 015: tranziția implicită între momente. */
+  transition: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;

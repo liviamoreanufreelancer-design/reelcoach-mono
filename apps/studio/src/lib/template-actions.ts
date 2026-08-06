@@ -556,7 +556,15 @@ export async function createOutput(templateId: string, name: string, kind: Outpu
 export async function updateOutput(
   outputId: string,
   templateId: string,
-  patch: { name?: string; kind?: OutputKind; slots?: OutputSlot[]; caption?: string | null },
+  patch: {
+    name?: string;
+    kind?: OutputKind;
+    slots?: OutputSlot[];
+    caption?: string | null;
+    /** Migrația 015: implicitele de stil ale postării. */
+    filter?: string | null;
+    transition?: string | null;
+  },
 ) {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase
