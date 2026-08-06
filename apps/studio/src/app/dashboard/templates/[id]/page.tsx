@@ -21,6 +21,8 @@ import ScenesEditor from "@/components/ScenesEditor";
 import LiveScenePreview from "@/components/LiveScenePreview";
 import TemplateSidebar from "@/components/TemplateSidebar";
 import OutputsEditor from "@/components/OutputsEditor";
+import OutputStyleEditor from "@/components/OutputStyleEditor";
+import EditorSteps from "@/components/EditorSteps";
 import { getDraftFor } from "@/lib/template-actions";
 
 export default async function TemplateDetailPage({
@@ -112,25 +114,42 @@ export default async function TemplateDetailPage({
           stacks below. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-6 items-start">
 
-        {/* ── MAIN: scene editor + form ── */}
-        <div className="flex flex-col gap-6 min-w-0">
-          <LiveScenePreview templateId={template.id} shots={shots} globalFilter={template.global_filter} disabled={!canEdit} />
-          <TemplateFormCard
-            template={template}
-            categories={categories}
-            disabled={!canEdit}
-          />
-          <ScenesEditor
-            templateId={template.id}
-            shots={shots}
-            disabled={!canEdit}
-          />
-          {/* Jumatatea "ce iese": postarile care se construiesc din momente. */}
-          <OutputsEditor
-            templateId={template.id}
-            shots={shots}
-            outputs={outputs}
-            disabled={!canEdit}
+        {/* ── MAIN: cei trei pasi ai sesiunii ── */}
+        <div className="min-w-0">
+          <EditorSteps
+            momenteCount={shots.length}
+            outputsCount={outputs.length}
+            momente={
+              <div className="flex flex-col gap-6">
+                <LiveScenePreview templateId={template.id} shots={shots} globalFilter={template.global_filter} disabled={!canEdit} />
+                <TemplateFormCard
+                  template={template}
+                  categories={categories}
+                  disabled={!canEdit}
+                />
+                <ScenesEditor
+                  templateId={template.id}
+                  shots={shots}
+                  disabled={!canEdit}
+                />
+              </div>
+            }
+            ceIese={
+              <OutputsEditor
+                templateId={template.id}
+                shots={shots}
+                outputs={outputs}
+                disabled={!canEdit}
+              />
+            }
+            editare={
+              <OutputStyleEditor
+                templateId={template.id}
+                outputs={outputs}
+                shots={shots}
+                disabled={!canEdit}
+              />
+            }
           />
         </div>
 
