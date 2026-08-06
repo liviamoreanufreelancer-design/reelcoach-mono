@@ -14,12 +14,13 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-import type { TemplateRow, ShotRow, Category } from "@/lib/db-types";
+import type { TemplateRow, ShotRow, Category, OutputRow } from "@/lib/db-types";
 import TemplateFormCard from "@/components/TemplateFormCard";
 import CoverUploadCard from "@/components/CoverUploadCard";
 import ScenesEditor from "@/components/ScenesEditor";
 import LiveScenePreview from "@/components/LiveScenePreview";
 import TemplateSidebar from "@/components/TemplateSidebar";
+import OutputsEditor from "@/components/OutputsEditor";
 import { getDraftFor } from "@/lib/template-actions";
 
 export default async function TemplateDetailPage({
@@ -42,10 +43,11 @@ export default async function TemplateDetailPage({
   const isAdmin = profile?.role === "admin";
 
   // Fetch template + shots + categories in parallel.
-  const [templateRes, shotsRes, categoriesRes] = await Promise.all([
+  const [templateRes, shotsRes, categoriesRes, outputsRes] = await Promise.all([
     supabase.from("templates").select("*").eq("id", id).maybeSingle(),
     supabase.from("shots").select("*").eq("template_id", id).order("sort_order"),
     supabase.from("categories").select("id, label").order("sort_order"),
+    supabase.from("outputs").select("*").eq("template_id", id).order("sort_order"),
   ]);
 
   const template = templateRes.data as TemplateRow | null;
@@ -53,6 +55,7 @@ export default async function TemplateDetailPage({
 
   const shots = (shotsRes.data ?? []) as ShotRow[];
   const categories = (categoriesRes.data ?? []) as Pick<Category, "id" | "label">[];
+  const outputs = (outputsRes.data ?? []) as OutputRow[];
 
   const isPublished = template.status === "published";
   const isDraftCopy = Boolean(template.parent_id);
@@ -120,6 +123,13 @@ export default async function TemplateDetailPage({
           <ScenesEditor
             templateId={template.id}
             shots={shots}
+            disabled={!canEdit}
+          />
+          {/* Jumatatea "ce iese": postarile care se construiesc din momente. */}
+          <OutputsEditor
+            templateId={template.id}
+            shots={shots}
+            outputs={outputs}
             disabled={!canEdit}
           />
         </div>
