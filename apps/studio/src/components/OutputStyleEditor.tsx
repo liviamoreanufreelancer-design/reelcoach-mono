@@ -17,6 +17,7 @@ import { Film, Images, Layers } from "lucide-react";
 import { updateOutput } from "@/lib/template-actions";
 import { FILTERS, TRANSITIONS } from "@/lib/options";
 import type { OutputRow, ShotRow } from "@/lib/db-types";
+import OutputReelPreview from "./OutputReelPreview";
 
 const KIND_META = {
   reel: { label: "Reel", Icon: Film },
@@ -107,6 +108,11 @@ export default function OutputStyleEditor({
                   <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug">
                     Postarea n-are momente. Adaugă-i câteva la pasul „Ce iese".
                   </p>
+                )}
+
+                {/* Previzualizarea acestei postari — vezi, nu doar seteaza. */}
+                {isVideo && o.slots.length > 0 && (
+                  <OutputReelPreview output={o} shots={shots} />
                 )}
 
                 {/* Look-ul postării: o singură decizie, nu una per moment */}
