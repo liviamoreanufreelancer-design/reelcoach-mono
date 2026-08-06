@@ -2,10 +2,10 @@
 /**
  * OutputStyleEditor — pasul 3: cum arată fiecare postare.
  *
- * Stilul stă pe POSTARE, nu pe moment (migrația 015). Motivul e că același
- * moment are roluri diferite în postări diferite: „mișcarea părului" e urmată
- * de after în „Transformarea", e ultima în „Procesul" și prima în „Rezultatul".
- * O tranziție setată pe moment n-ar putea fi corectă în toate trei.
+ * Stilul stă pe POSTARE, nu pe moment (migrația 015). Același moment are
+ * roluri diferite în postări diferite: „mișcarea părului" e urmată de after în
+ * „Transformarea", e ultima în „Procesul" și prima în „Rezultatul". O tranziție
+ * setată pe moment n-ar putea fi corectă în toate trei.
  *
  * Aici se setează IMPLICITELE postării — o singură decizie de fiecare.
  * Excepțiile per moment vin separat, ca să nu transformăm 9 momente în ~24 de
@@ -17,6 +17,7 @@ import { Film, Images, Layers } from "lucide-react";
 import { updateOutput } from "@/lib/template-actions";
 import { FILTERS, TRANSITIONS } from "@/lib/options";
 import type { OutputRow, ShotRow } from "@/lib/db-types";
+import OutputLivePreview from "./OutputLivePreview";
 import OutputReelPreview from "./OutputReelPreview";
 
 const KIND_META = {
@@ -36,25 +37,7 @@ export default function OutputStyleEditor({
   shots: ShotRow[];
   disabled: boolean;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(outputs[0]?.id ?? null);
-
-  const titleOf = (slotKey: string) =>
-    shots.find((s) => s.slot_key === slotKey)?.title || slotKey;
-
-  const patch = (o: OutputRow, p: Parameters<typeof updateOutput>[2]) => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await updateOutput(o.id, templateId, p);
-        router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-    });
-  };
 
   if (outputs.length === 0) {
     return (
@@ -69,59 +52,131 @@ export default function OutputStyleEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      {error && (
-        <p className="text-[12px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
+      {outputs.map((o) => (
+        <OutputCard
+          key={o.id}
+          output={o}
+          shots={shots}
+          templateId={templateId}
+          disabled={disabled}
+          open={openId === o.id}
+          onToggle={() => setOpenId(openId === o.id ? null : o.id)}
+        />
+      ))}
+    </div>
+  );
+}
 
-      {outputs.map((o) => {
-        const meta = KIND_META[o.kind] ?? KIND_META.reel;
-        const isOpen = openId === o.id;
-        const isVideo = o.kind === "reel";
+/**
+ * O postare. Ține stare LOCALĂ pentru stil.
+ *
+ * Fără ea, selectul ar fi controlat direct de datele de pe server: alegi un
+ * filtru, componenta se redesenează cu valoarea veche până răspunde salvarea,
+ * iar selectul sare înapoi — pare că nu se poate modifica. Local state =
+ * feedback instant, iar previzualizarea de deasupra reacționează imediat.
+ */
+function OutputCard({
+  output,
+  shots,
+  templateId,
+  disabled,
+  open,
+  onToggle,
+}: {
+  output: OutputRow;
+  shots: ShotRow[];
+  templateId: string;
+  disabled: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
-        return (
-          <div key={o.id} className="card overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setOpenId(isOpen ? null : o.id)}
-              className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-[#F8F8FA] transition"
-            >
-              <span className="w-9 h-9 shrink-0 grid place-items-center rounded-[11px] bg-[#EDE8FF] text-[#5B34FF]">
-                <meta.Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
-              </span>
-              <span className="flex-1 min-w-0">
-                <span className="block text-[14.5px] font-semibold text-[#1F1F1F] truncate">
-                  {o.name}
-                </span>
-                <span className="block text-[11.5px] text-[#9A9A9A]">
-                  {meta.label} · {o.slots.length}{" "}
-                  {o.slots.length === 1 ? "moment" : "momente"}
-                </span>
-              </span>
-              <span className="text-[#9A9A9A] text-[13px]">{isOpen ? "▲" : "▼"}</span>
-            </button>
+  const [filter, setFilter] = useState<string>(output.filter ?? "");
+  const [transition, setTransition] = useState<string>(output.transition ?? "");
+  const [showRender, setShowRender] = useState(false);
 
-            {isOpen && (
-              <div className="px-5 pb-5 pt-1 border-t border-[#E7E3F5] flex flex-col gap-4">
-                {o.slots.length === 0 && (
-                  <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug">
-                    Postarea n-are momente. Adaugă-i câteva la pasul „Ce iese".
+  const meta = KIND_META[output.kind] ?? KIND_META.reel;
+  const isVideo = output.kind === "reel";
+  const titleOf = (slotKey: string) =>
+    shots.find((s) => s.slot_key === slotKey)?.title || slotKey;
+
+  // Copie locală cu stilul curent — previzualizarea o folosește, deci reflectă
+  // alegerea din secundă, nu ce e salvat pe server.
+  const live: OutputRow = { ...output, filter: filter || null, transition: transition || null };
+
+  const save = (patch: Parameters<typeof updateOutput>[2]) => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await updateOutput(output.id, templateId, patch);
+        router.refresh();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    });
+  };
+
+  return (
+    <div className="card overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-[#F8F8FA] transition"
+      >
+        <span className="w-9 h-9 shrink-0 grid place-items-center rounded-[11px] bg-[#EDE8FF] text-[#5B34FF]">
+          <meta.Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-[14.5px] font-semibold text-[#1F1F1F] truncate">
+            {output.name}
+          </span>
+          <span className="block text-[11.5px] text-[#9A9A9A]">
+            {meta.label} · {output.slots.length}{" "}
+            {output.slots.length === 1 ? "moment" : "momente"}
+          </span>
+        </span>
+        <span className="text-[#9A9A9A] text-[13px]">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="px-5 pb-5 pt-4 border-t border-[#E7E3F5]">
+          {error && (
+            <p className="text-[12px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 mb-3">
+              {error}
+            </p>
+          )}
+
+          {output.slots.length === 0 ? (
+            <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug">
+              Postarea n-are momente. Adaugă-i câteva la pasul „Ce iese".
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 items-start">
+              {/* Previzualizare LIVE — filtrul se vede pe loc, fara randare */}
+              <div>
+                {isVideo ? (
+                  <OutputLivePreview output={live} shots={shots} />
+                ) : (
+                  <p className="text-[11.5px] text-[#9A9A9A] text-center py-8 leading-snug">
+                    Previzualizarea pentru {meta.label.toLowerCase()} vine separat.
                   </p>
                 )}
+              </div>
 
-                {/* Previzualizarea acestei postari — vezi, nu doar seteaza. */}
-                {isVideo && o.slots.length > 0 && (
-                  <OutputReelPreview output={o} shots={shots} />
-                )}
-
-                {/* Look-ul postării: o singură decizie, nu una per moment */}
+              {/* Setarile — schimbarea se vede imediat in stanga */}
+              <div className="flex flex-col gap-4 min-w-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="label">Filtru</label>
                     <select
-                      value={o.filter ?? ""}
-                      onChange={(e) => patch(o, { filter: e.target.value || null })}
+                      value={filter}
+                      onChange={(e) => {
+                        setFilter(e.target.value);
+                        save({ filter: e.target.value || null });
+                      }}
                       disabled={disabled}
                       className="input"
                     >
@@ -138,8 +193,11 @@ export default function OutputStyleEditor({
                     <div>
                       <label className="label">Tranziție între momente</label>
                       <select
-                        value={o.transition ?? ""}
-                        onChange={(e) => patch(o, { transition: e.target.value || null })}
+                        value={transition}
+                        onChange={(e) => {
+                          setTransition(e.target.value);
+                          save({ transition: e.target.value || null });
+                        }}
                         disabled={disabled}
                         className="input"
                       >
@@ -154,7 +212,6 @@ export default function OutputStyleEditor({
                   )}
                 </div>
 
-                {/* Caption — pentru poze e chiar conținutul postării */}
                 <div>
                   <label className="label">
                     Caption{" "}
@@ -163,14 +220,14 @@ export default function OutputStyleEditor({
                     </span>
                   </label>
                   <textarea
-                    defaultValue={o.caption ?? ""}
+                    defaultValue={output.caption ?? ""}
                     onBlur={(e) => {
                       const v = e.target.value.trim();
-                      if (v !== (o.caption ?? "")) patch(o, { caption: v || null });
+                      if (v !== (output.caption ?? "")) save({ caption: v || null });
                     }}
                     rows={3}
                     placeholder={
-                      o.kind === "stories"
+                      output.kind === "stories"
                         ? "Text scurt pentru story…"
                         : "Textul care însoțește postarea…"
                     }
@@ -179,23 +236,38 @@ export default function OutputStyleEditor({
                   />
                 </div>
 
-                {/* Momentele, doar ca reper — se editeaza la pasul 2 */}
-                {o.slots.length > 0 && (
-                  <div>
-                    <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-1.5">
-                      Momentele acestei postări
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {o.slots.map((s, i) => (
-                        <span
-                          key={`${s.slot}-${i}`}
-                          className="text-[11.5px] px-2.5 py-1 rounded-full bg-[#F6F4FE] border border-[#EDE8FF] text-[#6B6B6B]"
-                        >
-                          {i + 1}. {titleOf(s.slot)}
-                          {s.sec ? ` · ${s.sec}s` : ""}
-                        </span>
-                      ))}
-                    </div>
+                <div>
+                  <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-1.5">
+                    Momentele acestei postări
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {output.slots.map((s, i) => (
+                      <span
+                        key={`${s.slot}-${i}`}
+                        className="text-[11.5px] px-2.5 py-1 rounded-full bg-[#F6F4FE] border border-[#EDE8FF] text-[#6B6B6B]"
+                      >
+                        {i + 1}. {titleOf(s.slot)}
+                        {s.sec ? ` · ${s.sec}s` : ""}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Verificarea finala: randarea adevarata, cu tranzitii.
+                    Optionala, fiindca merge in timp real. */}
+                {isVideo && (
+                  <div className="pt-1">
+                    {showRender ? (
+                      <OutputReelPreview output={live} shots={shots} />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowRender(true)}
+                        className="text-[12px] text-[#5B34FF] hover:text-[#4826CC] underline underline-offset-2"
+                      >
+                        Verifică rezultatul final (cu tranziții)
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -205,10 +277,10 @@ export default function OutputStyleEditor({
                   </span>
                 )}
               </div>
-            )}
-          </div>
-        );
-      })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
