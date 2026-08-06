@@ -11,13 +11,14 @@
  * Excepțiile per moment vin separat, ca să nu transformăm 9 momente în ~24 de
  * decizii de stil (vezi CLAUDE.md, economia muncii partenerei).
  */
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Film, Images, Layers } from "lucide-react";
 import { updateOutput } from "@/lib/template-actions";
 import { FILTERS, TRANSITIONS } from "@/lib/options";
-import type { OutputRow, ShotRow } from "@/lib/db-types";
+import type { OutputRow, OutputSlot, ShotRow } from "@/lib/db-types";
 import OutputLivePreview from "./OutputLivePreview";
 import OutputReelPreview from "./OutputReelPreview";
+import OutputTextEditor from "./OutputTextEditor";
 
 const KIND_META = {
   reel: { label: "Reel", Icon: Film },
@@ -95,6 +96,11 @@ function OutputCard({
   const [filter, setFilter] = useState<string>(output.filter ?? "");
   const [transition, setTransition] = useState<string>(output.transition ?? "");
   const [showRender, setShowRender] = useState(false);
+  // Slot-urile local: textul se vede in previzualizare pe masura ce scrii,
+  // iar salvarea pleaca debounced ca sa nu lovim serverul la fiecare tasta.
+  const [slots, setSlots] = useState<OutputSlot[]>(output.slots);
+  const [textSlotIdx, setTextSlotIdx] = useState<number | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const meta = KIND_META[output.kind] ?? KIND_META.reel;
   const isVideo = output.kind === "reel";
@@ -103,7 +109,21 @@ function OutputCard({
 
   // Copie locală cu stilul curent — previzualizarea o folosește, deci reflectă
   // alegerea din secundă, nu ce e salvat pe server.
-  const live: OutputRow = { ...output, filter: filter || null, transition: transition || null };
+  const live: OutputRow = {
+    ...output,
+    filter: filter || null,
+    transition: transition || null,
+    slots,
+  };
+
+  // Cand se schimba postarea de pe server (ex. dupa pasul 2), resincronizam.
+  useEffect(() => { setSlots(output.slots); }, [output.slots]);
+
+  const writeSlots = (next: OutputSlot[]) => {
+    setSlots(next);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => save({ slots: next }), 600);
+  };
 
   const save = (patch: Parameters<typeof updateOutput>[2]) => {
     setError(null);
@@ -158,7 +178,25 @@ function OutputCard({
               {/* Previzualizare LIVE — filtrul se vede pe loc, fara randare */}
               <div>
                 {isVideo ? (
-                  <OutputLivePreview output={live} shots={shots} />
+                  <OutputLivePreview
+                    output={live}
+                    shots={shots}
+                    pinnedIdx={textSlotIdx}
+                    onMoveLayer={(slotIdx, layerId, x, y) => {
+                      writeSlots(
+                        slots.map((s, i) =>
+                          i !== slotIdx
+                            ? s
+                            : {
+                                ...s,
+                                textLayers: ((s.textLayers ?? []) as { id: string }[]).map((l) =>
+                                  l.id === layerId ? { ...l, x, y } : l,
+                                ),
+                              },
+                        ),
+                      );
+                    }}
+                  />
                 ) : (
                   <p className="text-[11.5px] text-[#9A9A9A] text-center py-8 leading-snug">
                     Previzualizarea pentru {meta.label.toLowerCase()} vine separat.
@@ -235,6 +273,17 @@ function OutputCard({
                     className="input resize-none leading-relaxed"
                   />
                 </div>
+
+                {isVideo && (
+                  <OutputTextEditor
+                    output={live}
+                    shots={shots}
+                    activeSlotIdx={textSlotIdx ?? 0}
+                    onPickSlot={(i) => setTextSlotIdx(textSlotIdx === i ? null : i)}
+                    onChangeSlots={writeSlots}
+                    disabled={disabled}
+                  />
+                )}
 
                 <div>
                   <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-1.5">

@@ -18,7 +18,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Pause } from "lucide-react";
 import { renderPreviewFrame, FILTERS } from "@reelcoach/core";
-import type { FilterPreset } from "@reelcoach/core";
+import type { FilterPreset, TextLayer } from "@reelcoach/core";
 import type { OutputRow, ShotRow } from "@/lib/db-types";
 
 const W = 405;
@@ -32,14 +32,20 @@ type Piece = {
   effectId?: string;
   speed: number;
   title: string;
+  textLayers?: TextLayer[];
 };
 
 export default function OutputLivePreview({
   output,
   shots,
+  pinnedIdx = null,
+  onMoveLayer,
 }: {
   output: OutputRow;
   shots: ShotRow[];
+  /** Când e setat, previzualizarea îngheață pe acest moment (editare text). */
+  pinnedIdx?: number | null;
+  onMoveLayer?: (slotIdx: number, layerId: string, x: number, y: number) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -62,6 +68,7 @@ export default function OutputLivePreview({
           effectId: shot.effect && shot.effect !== "none" ? shot.effect : undefined,
           speed: slot.speed ?? shot.playback_speed ?? 1,
           title: shot.title || slot.slot,
+          textLayers: slot.textLayers as TextLayer[] | undefined,
         };
       })
       .filter((p): p is Piece => p !== null);
@@ -74,8 +81,13 @@ export default function OutputLivePreview({
   // schimbarea filtrului sa se vada la urmatorul cadru, fara reprornire.
   const piecesRef = useRef(pieces);
   useEffect(() => { piecesRef.current = pieces; }, [pieces]);
-  const playingRef = useRef(playing);
-  useEffect(() => { playingRef.current = playing; }, [playing]);
+  const pinnedRef = useRef(pinnedIdx);
+  useEffect(() => { pinnedRef.current = pinnedIdx; }, [pinnedIdx]);
+  // Cand se editeaza textul, previzualizarea sta pe loc: nu poti pozitiona un
+  // text pe o imagine care se misca.
+  const isPinned = pinnedIdx !== null && pinnedIdx !== undefined;
+  const playingRef = useRef(playing && !isPinned);
+  useEffect(() => { playingRef.current = playing && !isPinned; }, [playing, isPinned]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -91,6 +103,8 @@ export default function OutputLivePreview({
         rafRef.current = requestAnimationFrame(loop);
         return;
       }
+      const pin = pinnedRef.current;
+      if (pin !== null && pin !== undefined && pin >= 0 && pin < list.length) idx = pin;
       if (idx >= list.length) idx = 0;
 
       const piece = list[idx];
@@ -111,6 +125,8 @@ export default function OutputLivePreview({
           tNorm: Math.min(1, elapsed / Math.max(0.1, piece.sec)),
           localMs: elapsed * 1000,
           clipMs: piece.sec * 1000,
+          // Aceeasi functie deseneaza textul la export — preview = export.
+          textLayers: piece.textLayers?.length ? piece.textLayers : undefined,
         });
       }
 
@@ -132,6 +148,48 @@ export default function OutputLivePreview({
     };
   }, []);
 
+  // Tragerea textului — activa doar cand previzualizarea e inghetata pe un
+  // moment. Fara hit-test vizibil: apuci textul cel mai apropiat de deget.
+  const dragRef = useRef<string | null>(null);
+  const activePiece = pieces[isPinned ? (pinnedIdx as number) : activeIdx];
+
+  const pointToFraction = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
+      y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
+    };
+  };
+
+  const onDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isPinned || !onMoveLayer) return;
+    const list = activePiece?.textLayers ?? [];
+    if (list.length === 0) return;
+    const { x, y } = pointToFraction(e);
+    let best: TextLayer | null = null;
+    let bestD = Infinity;
+    for (const l of list) {
+      const d = (l.x - x) ** 2 + (l.y - y) ** 2;
+      if (d < bestD) { bestD = d; best = l; }
+    }
+    if (best && bestD < 0.2 * 0.2) {
+      dragRef.current = best.id;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+  };
+
+  const onMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!dragRef.current || !onMoveLayer || pinnedIdx == null) return;
+    const { x, y } = pointToFraction(e);
+    onMoveLayer(pinnedIdx, dragRef.current, x, y);
+  };
+
+  const onUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!dragRef.current) return;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    dragRef.current = null;
+  };
+
   if (output.slots.length === 0) return null;
 
   return (
@@ -142,7 +200,16 @@ export default function OutputLivePreview({
           width={W}
           height={H}
           className="block"
-          style={{ width: "220px", aspectRatio: "9 / 16" }}
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerLeave={onUp}
+          style={{
+            width: "220px",
+            aspectRatio: "9 / 16",
+            touchAction: "none",
+            cursor: isPinned && (activePiece?.textLayers?.length ?? 0) > 0 ? "move" : "default",
+          }}
         />
         {pieces.length === 0 && (
           <div className="absolute inset-0 grid place-items-center text-white/50 text-[11px] px-4 text-center">
@@ -170,7 +237,13 @@ export default function OutputLivePreview({
         />
       ))}
 
-      <div className="flex items-center gap-2.5">
+      {isPinned ? (
+        <p className="text-[11px] text-[#5B34FF] text-center leading-snug max-w-[220px]">
+          Oprit pe momentul editat — trage textul ca să-l poziționezi
+        </p>
+      ) : null}
+
+      <div className={`flex items-center gap-2.5 ${isPinned ? "opacity-40 pointer-events-none" : ""}`}>
         <button
           type="button"
           onClick={() => setPlaying((p) => !p)}
