@@ -16,9 +16,8 @@ import { Film, Images, Layers } from "lucide-react";
 import { updateOutput } from "@/lib/template-actions";
 import { FILTERS, TRANSITIONS } from "@/lib/options";
 import type { OutputRow, OutputSlot, ShotRow } from "@/lib/db-types";
-import OutputLivePreview from "./OutputLivePreview";
 import OutputReelPreview from "./OutputReelPreview";
-import OutputTextEditor from "./OutputTextEditor";
+import OutputSceneEditor from "./OutputSceneEditor";
 
 const KIND_META = {
   reel: { label: "Reel", Icon: Film },
@@ -99,7 +98,6 @@ function OutputCard({
   // Slot-urile local: textul se vede in previzualizare pe masura ce scrii,
   // iar salvarea pleaca debounced ca sa nu lovim serverul la fiecare tasta.
   const [slots, setSlots] = useState<OutputSlot[]>(output.slots);
-  const [textSlotIdx, setTextSlotIdx] = useState<number | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const meta = KIND_META[output.kind] ?? KIND_META.reel;
@@ -174,69 +172,55 @@ function OutputCard({
               Postarea n-are momente. Adaugă-i câteva la pasul „Ce iese".
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 items-start">
-              {/* Previzualizarea — LIVE sau randata, in ACELASI loc.
-                  Inainte, rezultatul randat aparea jos printre setari; acum
-                  apare unde te uiti oricum, fara sa sara pagina. */}
-              <div>
-                {isVideo && (
-                  <div className="flex gap-1 mb-2 p-0.5 bg-[#F6F4FE] rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => setShowRender(false)}
-                      className={`flex-1 py-1 rounded-md text-[11.5px] transition ${
-                        !showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
-                      }`}
-                    >
-                      Live
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowRender(true)}
-                      title="Randare reala, cu tranzitii"
-                      className={`flex-1 py-1 rounded-md text-[11.5px] transition ${
-                        showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
-                      }`}
-                    >
-                      Rezultat final
-                    </button>
-                  </div>
-                )}
-                {isVideo && showRender ? (
-                  <OutputReelPreview output={live} shots={shots} />
-                ) : isVideo ? (
-                  <OutputLivePreview
-                    output={live}
-                    shots={shots}
-                    pinnedIdx={textSlotIdx}
-                    onUnpin={() => setTextSlotIdx(null)}
-                    onMoveLayer={(slotIdx, layerId, x, y) => {
-                      writeSlots(
-                        slots.map((s, i) =>
-                          i !== slotIdx
-                            ? s
-                            : {
-                                ...s,
-                                textLayers: ((s.textLayers ?? []) as { id: string }[]).map((l) =>
-                                  l.id === layerId ? { ...l, x, y } : l,
-                                ),
-                              },
-                        ),
-                      );
-                    }}
-                  />
-                ) : (
-                  <p className="text-[11.5px] text-[#9A9A9A] text-center py-8 leading-snug">
-                    Previzualizarea pentru {meta.label.toLowerCase()} vine separat.
-                  </p>
-                )}
-              </div>
+            <div className="flex flex-col gap-5">
+              {/* Comutator: editare moment cu moment, sau rezultatul randat.
+                  Amandoua in acelasi loc, ca sa nu sara pagina. */}
+              {isVideo && (
+                <div className="flex gap-1 p-0.5 bg-[#F6F4FE] rounded-lg self-start">
+                  <button
+                    type="button"
+                    onClick={() => setShowRender(false)}
+                    className={`px-4 py-1.5 rounded-md text-[12px] transition ${
+                      !showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
+                    }`}
+                  >
+                    Editare
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRender(true)}
+                    title="Randare reala, cu tranzitii"
+                    className={`px-4 py-1.5 rounded-md text-[12px] transition ${
+                      showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
+                    }`}
+                  >
+                    Rezultat final
+                  </button>
+                </div>
+              )}
 
-              {/* Setarile — schimbarea se vede imediat in stanga */}
-              <div className="flex flex-col gap-4 min-w-0">
+              {isVideo && showRender ? (
+                <div className="flex justify-center">
+                  <OutputReelPreview output={live} shots={shots} />
+                </div>
+              ) : isVideo ? (
+                <OutputSceneEditor
+                  output={live}
+                  shots={shots}
+                  onChangeSlots={writeSlots}
+                  disabled={disabled}
+                />
+              ) : (
+                <p className="text-[12px] text-[#9A9A9A] py-6 text-center leading-snug">
+                  Editorul pentru {meta.label.toLowerCase()} vine separat.
+                </p>
+              )}
+
+              {/* Implicitele postarii — se aplica momentelor care n-au exceptie */}
+              <div className="flex flex-col gap-4 pt-1 border-t border-[#E7E3F5]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="label">Filtru</label>
+                    <label className="label">Filtru implicit</label>
                     <select
                       value={filter}
                       onChange={(e) => {
@@ -248,16 +232,14 @@ function OutputCard({
                     >
                       <option value="">Fără filtru</option>
                       {FILTERS.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.label}
-                        </option>
+                        <option key={f.id} value={f.id}>{f.label}</option>
                       ))}
                     </select>
                   </div>
 
                   {isVideo && (
                     <div>
-                      <label className="label">Tranziție între momente</label>
+                      <label className="label">Tranziție implicită</label>
                       <select
                         value={transition}
                         onChange={(e) => {
@@ -269,9 +251,7 @@ function OutputCard({
                       >
                         <option value="">Implicit (fade)</option>
                         {TRANSITIONS.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.label}
-                          </option>
+                          <option key={t.id} value={t.id}>{t.label}</option>
                         ))}
                       </select>
                     </div>
@@ -301,17 +281,6 @@ function OutputCard({
                     className="input resize-none leading-relaxed"
                   />
                 </div>
-
-                {isVideo && (
-                  <OutputTextEditor
-                    output={live}
-                    shots={shots}
-                    activeSlotIdx={textSlotIdx ?? 0}
-                    onPickSlot={(i) => setTextSlotIdx(i)}
-                    onChangeSlots={writeSlots}
-                    disabled={disabled}
-                  />
-                )}
 
                 <div>
                   <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-1.5">
