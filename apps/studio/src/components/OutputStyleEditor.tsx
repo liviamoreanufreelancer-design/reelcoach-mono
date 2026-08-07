@@ -175,13 +175,41 @@ function OutputCard({
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 items-start">
-              {/* Previzualizare LIVE — filtrul se vede pe loc, fara randare */}
+              {/* Previzualizarea — LIVE sau randata, in ACELASI loc.
+                  Inainte, rezultatul randat aparea jos printre setari; acum
+                  apare unde te uiti oricum, fara sa sara pagina. */}
               <div>
-                {isVideo ? (
+                {isVideo && (
+                  <div className="flex gap-1 mb-2 p-0.5 bg-[#F6F4FE] rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setShowRender(false)}
+                      className={`flex-1 py-1 rounded-md text-[11.5px] transition ${
+                        !showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
+                      }`}
+                    >
+                      Live
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowRender(true)}
+                      title="Randare reala, cu tranzitii"
+                      className={`flex-1 py-1 rounded-md text-[11.5px] transition ${
+                        showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
+                      }`}
+                    >
+                      Rezultat final
+                    </button>
+                  </div>
+                )}
+                {isVideo && showRender ? (
+                  <OutputReelPreview output={live} shots={shots} />
+                ) : isVideo ? (
                   <OutputLivePreview
                     output={live}
                     shots={shots}
                     pinnedIdx={textSlotIdx}
+                    onUnpin={() => setTextSlotIdx(null)}
                     onMoveLayer={(slotIdx, layerId, x, y) => {
                       writeSlots(
                         slots.map((s, i) =>
@@ -279,7 +307,7 @@ function OutputCard({
                     output={live}
                     shots={shots}
                     activeSlotIdx={textSlotIdx ?? 0}
-                    onPickSlot={(i) => setTextSlotIdx(textSlotIdx === i ? null : i)}
+                    onPickSlot={(i) => setTextSlotIdx(i)}
                     onChangeSlots={writeSlots}
                     disabled={disabled}
                   />
@@ -301,24 +329,6 @@ function OutputCard({
                     ))}
                   </div>
                 </div>
-
-                {/* Verificarea finala: randarea adevarata, cu tranzitii.
-                    Optionala, fiindca merge in timp real. */}
-                {isVideo && (
-                  <div className="pt-1">
-                    {showRender ? (
-                      <OutputReelPreview output={live} shots={shots} />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowRender(true)}
-                        className="text-[12px] text-[#5B34FF] hover:text-[#4826CC] underline underline-offset-2"
-                      >
-                        Verifică rezultatul final (cu tranziții)
-                      </button>
-                    )}
-                  </div>
-                )}
 
                 {pending && (
                   <span className="text-[9px] tracking-[0.2em] uppercase text-[#9A9A9A]">

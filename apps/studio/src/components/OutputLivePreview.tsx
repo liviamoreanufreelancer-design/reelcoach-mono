@@ -39,12 +39,14 @@ export default function OutputLivePreview({
   output,
   shots,
   pinnedIdx = null,
+  onUnpin,
   onMoveLayer,
 }: {
   output: OutputRow;
   shots: ShotRow[];
   /** Când e setat, previzualizarea îngheață pe acest moment (editare text). */
   pinnedIdx?: number | null;
+  onUnpin?: () => void;
   onMoveLayer?: (slotIdx: number, layerId: string, x: number, y: number) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -238,9 +240,20 @@ export default function OutputLivePreview({
       ))}
 
       {isPinned ? (
-        <p className="text-[11px] text-[#5B34FF] text-center leading-snug max-w-[220px]">
-          Oprit pe momentul editat — trage textul ca să-l poziționezi
-        </p>
+        <div className="flex flex-col items-center gap-1.5">
+          <p className="text-[11px] text-[#5B34FF] text-center leading-snug max-w-[220px]">
+            Oprit pe momentul editat — trage textul ca să-l poziționezi
+          </p>
+          {onUnpin && (
+            <button
+              type="button"
+              onClick={onUnpin}
+              className="text-[11.5px] text-[#5B34FF] hover:text-[#4826CC] inline-flex items-center gap-1"
+            >
+              <Play className="w-3 h-3" /> Redă toată postarea
+            </button>
+          )}
+        </div>
       ) : null}
 
       <div className={`flex items-center gap-2.5 ${isPinned ? "opacity-40 pointer-events-none" : ""}`}>

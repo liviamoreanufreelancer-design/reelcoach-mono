@@ -57,6 +57,9 @@ export default function OutputTextEditor({
   };
 
   const addLayer = () => {
+    // Ancoram previzualizarea pe momentul asta: altfel textul nou apare abia
+    // cand redarea ajunge la el si pare ca nu s-a intamplat nimic.
+    onPickSlot(activeSlotIdx);
     const n: TextLayer = {
       id: globalThis.crypto?.randomUUID?.() ?? String(Date.now()),
       text: "Text nou",
@@ -80,7 +83,11 @@ export default function OutputTextEditor({
         ✦ Text pe video
       </div>
 
-      {/* Pe care moment scriem. Selectia conduce si previzualizarea. */}
+      {/* Pe care moment scriem. Selectia OPRESTE previzualizarea pe el, ca sa
+          poti scrie si pozitiona pe o imagine care sta pe loc. */}
+      <p className="text-[11px] text-[#6B6B6B] mb-2 leading-snug">
+        Alege momentul pe care scrii — previzualizarea se oprește pe el.
+      </p>
       <div className="flex flex-wrap gap-1.5 mb-3">
         {output.slots.map((s, i) => {
           const count = ((s.textLayers as TextLayer[] | undefined) ?? []).length;
