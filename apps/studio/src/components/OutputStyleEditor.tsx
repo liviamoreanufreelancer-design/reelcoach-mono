@@ -241,11 +241,15 @@ function OutputCard({
                   </select>
                 </div>
 
+                {/* NU e acelasi lucru cu "Text pe video": ala arde in imagine,
+                    asta se lipeste in campul de descriere din Instagram/TikTok
+                    cand stilista distribuie. Eticheta o spune explicit —
+                    inainte scria doar "Caption" si se confundau. */}
                 <div>
                   <label className="label">
-                    Caption{" "}
+                    Descriere pentru Instagram / TikTok{" "}
                     <span className="text-[#9A9A9A] normal-case tracking-normal">
-                      (stilista îl poate schimba)
+                      (textul de sub postare — NU apare pe video)
                     </span>
                   </label>
                   <textarea
@@ -255,14 +259,14 @@ function OutputCard({
                       if (v !== (output.caption ?? "")) save({ caption: v || null });
                     }}
                     rows={3}
-                    placeholder={
-                      output.kind === "stories"
-                        ? "Text scurt pentru story…"
-                        : "Textul care însoțește postarea…"
-                    }
+                    placeholder="Balayage cald pe bază naturală… #balayage #parfrumos"
                     disabled={disabled}
                     className="input resize-none leading-relaxed"
                   />
+                  <p className="text-[11px] text-[#9A9A9A] mt-1 leading-snug">
+                    Stilista o poate schimba înainte să posteze. Textul care apare
+                    PESTE imagine se pune mai sus, la fiecare moment.
+                  </p>
                 </div>
 
                 <div>
