@@ -1,10 +1,9 @@
 "use client";
 /**
- * EditorSteps — cei trei pași ai editorului de sesiune.
+ * EditorSteps — cei doi pași ai editorului de sesiune.
  *
- *   1. Momentele    ce se filmează, cum se filmează
- *   2. Ce iese      ce postări se construiesc din momente
- *   3. Editare      cum arată fiecare postare
+ *   1. Momente     ce se filmează, cum se filmează
+ *   2. Rezultate   ce iese din ele — și se compune pe loc, nu în alt pas
  *
  * Ordinea sugerează fluxul real (întâi ce capturezi, apoi ce faci din el),
  * dar NU blochează: orice pas e accesibil oricând. Partenera se întoarce des
@@ -25,14 +24,12 @@ type Step = {
 
 export default function EditorSteps({
   momente,
-  ceIese,
-  editare,
+  rezultate,
   momenteCount,
   outputsCount,
 }: {
   momente: ReactNode;
-  ceIese: ReactNode;
-  editare: ReactNode;
+  rezultate: ReactNode;
   momenteCount: number;
   outputsCount: number;
 }) {
@@ -41,24 +38,17 @@ export default function EditorSteps({
   const steps: Step[] = [
     {
       id: 1,
-      label: "Momentele",
+      label: "Momente",
       hint: "Ce se filmează și cum",
       count: momenteCount,
       content: momente,
     },
     {
       id: 2,
-      label: "Ce iese",
-      hint: "Postările din aceste momente",
+      label: "Rezultate",
+      hint: "Ce iese din momente",
       count: outputsCount,
-      content: ceIese,
-    },
-    {
-      id: 3,
-      label: "Editare",
-      hint: "Cum arată fiecare postare",
-      count: outputsCount,
-      content: editare,
+      content: rezultate,
     },
   ];
 
@@ -132,8 +122,8 @@ export default function EditorSteps({
         </button>
         <button
           type="button"
-          onClick={() => setActive((s) => Math.min(3, s + 1))}
-          disabled={active === 3}
+          onClick={() => setActive((s) => Math.min(2, s + 1))}
+          disabled={active === 2}
           className="btn-glass text-[12.5px] px-4 py-2 disabled:opacity-0"
         >
           {steps[active]?.label ?? ""} →

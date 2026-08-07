@@ -1,7 +1,7 @@
 "use client";
 /**
  * ReelPlayer — renders the FULL reel via the engine (renderReelInBrowser):
- * per-scene footage + global filter + per-scene effect/transition/speed/blur
+ * per-momente footage + global filter + per-momente effect/transition/speed/blur
  * + caption overlays. Shows progress, then loops the MP4. Used by the "Reel"
  * tab in the editor. "Preview = export" — this IS the export.
  */
@@ -62,7 +62,7 @@ export default function ReelPlayer({
 
       for (let i = 0; i < withFootage.length; i += 1) {
         const shot = withFootage[i];
-        setMessage(`Descarc scena ${i + 1}…`);
+        setMessage(`Descarc momentul ${i + 1}…`);
         const res = await fetch(shot.sample_video_url as string);
         const blob = await res.blob();
         clips.push({
@@ -77,7 +77,7 @@ export default function ReelPlayer({
         motionBlurs.push(shot.motion_blur || false);
 
         if (shot.overlay_text && shot.overlay_text.trim()) {
-          setMessage(`Generez textul scenei ${i + 1}…`);
+          setMessage(`Generez textul momentului ${i + 1}…`);
           const presetId = shot.caption_preset || "hookBold";
           const ov = await renderOverlay({
             caption: {
@@ -157,7 +157,7 @@ export default function ReelPlayer({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <p className="text-[13px] text-[#6B6B6B] leading-relaxed max-w-[300px]">
-          Adaugă cel puțin un clip pe o scenă ca să vezi reel-ul.
+          Adaugă cel puțin un clip pe un moment ca să vezi reel-ul.
         </p>
       </div>
     );
@@ -179,7 +179,7 @@ export default function ReelPlayer({
           <video src={videoUrl} controls autoPlay loop muted playsInline
             className="rounded-2xl bg-black border border-[#5B34FF]/15" style={{ width: "240px", aspectRatio: "9 / 16" }} />
           {missingCount > 0 && (
-            <p className="text-[11px] text-amber-700">{missingCount} {missingCount === 1 ? "scenă nu are" : "scene nu au"} clip — randate doar cele cu footage.</p>
+            <p className="text-[11px] text-amber-700">{missingCount} {missingCount === 1 ? "moment nu are" : "momente nu au"} clip — randate doar cele cu footage.</p>
           )}
           {uploadWarning && (
             <p className="text-[12px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 max-w-[300px] text-center leading-snug">

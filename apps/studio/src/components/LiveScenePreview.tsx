@@ -57,7 +57,7 @@ export default function LiveScenePreview({
   const [reelMode, setReelMode] = useState(false);
   const [reelMounted, setReelMounted] = useState(false);
   const [uploading, setUploading] = useState(false);
-  /** Eroare la urcarea clipului scenei — vizibila, nu doar in consola. */
+  /** Eroare la urcarea clipului momentului — vizibila, nu doar in consola. */
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [clipDuration, setClipDuration] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -233,15 +233,15 @@ export default function LiveScenePreview({
         await setShotSampleUrl(shot.id, templateId, pub.publicUrl);
         // NU revocam blob-ul local aici: pana cand router.refresh() propaga
         // URL-ul salvat, video.src ar ramane un blob mort => preview negru.
-        // Revocarea se face la schimbarea scenei / unmount, unde oricum era.
+        // Revocarea se face la schimbarea momentului / unmount, unde oricum era.
         router.refresh();
       } catch (err) {
         // Fara asta, esecul murea ca unhandled rejection: spinnerul disparea
-        // si atat. Scena parea incarcata, dar sample_video_url nu se salva
+        // si atat. Momentul parea incarcat, dar sample_video_url nu se salva
         // niciodata — iar reel-ul o sarea in tacere.
         console.error("[scene-upload] urcare esuata:", err);
         setUploadError(
-          "Clipul NU s-a salvat. Scena rămâne fără footage și nu va intra în reel. Încearcă din nou.",
+          "Clipul NU s-a salvat. Momentul rămâne fără footage și nu va intra în reel. Încearcă din nou.",
         );
       } finally {
         setUploading(false);
@@ -415,7 +415,7 @@ export default function LiveScenePreview({
       ? lights.map((l) => `${LIGHTS.find((o) => o.id === l.type)?.label ?? l.type} (${posLabel(l.position)})`).join(", ")
       : "—";
     const lines = [
-      "═══ CUM FILMEZI — Scena " + (selectedIdx + 1) + " ═══",
+      "═══ CUM FILMEZI — Momentul " + (selectedIdx + 1) + " ═══",
       "",
       `Cum ții telefonul: ${phoneHold ? L(phoneHold, PHONE_HOLDS) : "—"}`,
       `Distanța: ${shotDist ? L(shotDist, DISTANCES) : "—"}`,
@@ -523,8 +523,8 @@ export default function LiveScenePreview({
   if (shots.length === 0) {
     return (
       <div className="card p-6 text-center">
-        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold mb-2">Editor scenă</h2>
-        <p className="text-[12px] text-[#6B6B6B] leading-relaxed">Adaugă o scenă mai jos pentru a începe.</p>
+        <h2 className="text-[10px] tracking-[0.32em] uppercase text-[#5B34FF]/85 font-bold mb-2">Editor moment</h2>
+        <p className="text-[12px] text-[#6B6B6B] leading-relaxed">Adaugă un moment mai jos pentru a începe.</p>
       </div>
     );
   }
@@ -533,14 +533,14 @@ export default function LiveScenePreview({
 
   return (
     <div className="card p-6 sm:p-7">
-      {/* Scene tabs */}
+      {/* Momente tabs */}
       <div className="flex items-center justify-center gap-1.5 flex-wrap mb-6">
         {shots.map((s, i) => {
           const active = i === selectedIdx && !reelMode;
           return (
             <button key={s.id} type="button" onClick={() => selectScene(i)}
               className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition tabular-nums ${active ? "bg-[#5B34FF] text-white" : "text-[#6B6B6B] hover:text-[#1F1F1F]"}`}>
-              Scena {i + 1}{s.sample_video_url ? " ✓" : ""}
+              Momentul {i + 1}{s.sample_video_url ? " ✓" : ""}
             </button>
           );
         })}
@@ -677,7 +677,7 @@ export default function LiveScenePreview({
             <div className="flex flex-col gap-5">
           {/* Durată */}
           <div>
-            <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Durată scenă</div>
+            <div className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">Durată moment</div>
             <div className="flex items-center gap-3">
               <input type="range" min={1} max={trimMax} step={0.1} value={Math.min(trimSec, trimMax)} onChange={(e) => onTrimChange(Number(e.target.value))} disabled={!hasVideo} className="flex-1 accent-[#5B34FF] disabled:opacity-40" />
               <span className="text-[14px] text-[#5B34FF] font-medium tabular-nums min-w-[80px] text-right">{trimSec.toFixed(1)}s{clipDuration > 0 && <span className="text-[#B8B8B8] font-normal"> / {clipDuration.toFixed(1)}s</span>}</span>

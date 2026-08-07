@@ -74,7 +74,7 @@ export default function OutputReelPreview({
         clips.push({
           blob,
           duration: shot.recording_duration || 4,
-          // Durata din ACEASTĂ postare are prioritate peste cea a scenei.
+          // Durata din ACEASTĂ postare are prioritate peste cea a momentului.
           finalUsageDuration: slot.sec ?? shot.final_usage_duration ?? undefined,
         });
 
@@ -88,7 +88,7 @@ export default function OutputReelPreview({
         motionBlurs.push(slot.motionBlur ?? shot.motion_blur ?? false);
         effectIds.push(shot.effect && shot.effect !== "none" ? shot.effect : undefined);
 
-        // Textul: încă de pe scenă. Trece pe slot când construim editorul de text
+        // Textul: încă de pe moment. Trece pe slot când construim editorul de text
         // per postare — atunci „ZIUA 1" și „Pasul 2" pot sta peste același cadru.
         if (shot.overlay_text && shot.overlay_text.trim()) {
           const presetId = shot.caption_preset || "hookBold";
@@ -148,7 +148,7 @@ export default function OutputReelPreview({
       {missing > 0 && (
         <p className="text-[11.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug w-full">
           {missing} {missing === 1 ? "moment n-are" : "momente n-au"} clip exemplu — nu
-          intră în previzualizare. Încarcă-le la pasul „Momentele".
+          intră în previzualizare. Încarcă-le la pasul „Momente".
         </p>
       )}
 

@@ -3,14 +3,14 @@
  * OutputSceneEditor — editorul unei postări, moment cu moment.
  *
  * Copiat după `LiveScenePreview`, care e mecanismul dovedit (canvas + tragere
- * + ghidaje). Diferența e UNDE se scrie: acolo pe scenă (`shots`), aici pe
+ * + ghidaje). Diferența e UNDE se scrie: acolo pe moment (`shots`), aici pe
  * momentul din ACEASTĂ postare (`output.slots[i]`).
  *
  * De ce contează: același moment are alt rol în fiecare postare. Peste exact
  * același cadru, „Transformarea" scrie ZIUA 1 și „Procesul" scrie Pasul 2; iar
  * „prima trăsătură" ține 2s într-una și 3s în cealaltă.
  *
- * Un moment o dată, ca la scene — editarea cere o imagine care stă pe loc.
+ * Un moment o dată, ca în editorul de momente — editarea cere o imagine care stă pe loc.
  * Pentru vizionarea postării întregi există comutatorul „Rezultat final".
  */
 import { useEffect, useRef, useState } from "react";
@@ -35,11 +35,14 @@ const SWATCHES = ["#FFFFFF", "#000000", "#5B34FF", "#F5B228", "#FF3D9A"];
 export default function OutputSceneEditor({
   output,
   shots,
+  idx,
   onChangeSlots,
   disabled,
 }: {
   output: OutputRow;
   shots: ShotRow[];
+  /** Momentul editat — ales din lista de deasupra, ca sa nu fie doua selectoare. */
+  idx: number;
   onChangeSlots: (slots: OutputSlot[]) => void;
   disabled: boolean;
 }) {
@@ -48,7 +51,6 @@ export default function OutputSceneEditor({
   const stageRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
-  const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [guides, setGuides] = useState<{ v: boolean; h: boolean; vs: number[]; hs: number[] }>(
@@ -156,7 +158,7 @@ export default function OutputSceneEditor({
 
   const removeLayer = (id: string) => writeLayers(layers.filter((l) => l.id !== id));
 
-  // ── Tragere + ghidaje, identic cu editorul de scene ──────────────────
+  // ── Tragere + ghidaje, identic cu editorul de momente ──────────────────
   const SNAP = 0.02;
 
   const onDown = (e: React.PointerEvent) => {
@@ -276,27 +278,6 @@ export default function OutputSceneEditor({
 
       {/* DREAPTA: momentele + setările momentului selectat */}
       <div className="flex flex-col gap-4 min-w-0">
-        {/* Momentele postării, ca tab-uri */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {output.slots.map((s, i) => {
-            const t = shots.find((x) => x.slot_key === s.slot)?.title || s.slot;
-            const n = ((s.textLayers as TextLayer[] | undefined) ?? []).length;
-            return (
-              <button
-                key={`${s.slot}-${i}`}
-                type="button"
-                onClick={() => setIdx(i)}
-                className={`px-3 py-1.5 rounded-full text-[12px] transition ${
-                  i === idx ? "bg-[#5B34FF] text-white font-medium" : "text-[#6B6B6B] hover:text-[#1F1F1F] bg-white border border-[#E7E3F5]"
-                }`}
-              >
-                {i + 1}. {t}
-                {n > 0 && <span className={i === idx ? " text-white/75" : " text-[#5B34FF]"}> · {n}</span>}
-              </button>
-            );
-          })}
-        </div>
-
         <fieldset disabled={disabled} className="flex flex-col gap-4 disabled:opacity-60">
           {/* Durata în ACEASTĂ postare + viteză */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

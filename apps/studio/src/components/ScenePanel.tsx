@@ -105,7 +105,7 @@ export default function ScenePanel({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label">
-            Pattern <span className="text-[#9A9A9A] normal-case tracking-normal">(opțional, eticheta scenei)</span>
+            Pattern <span className="text-[#9A9A9A] normal-case tracking-normal">(opțional, eticheta momentului)</span>
           </label>
           <Combobox
             value={shot.pattern}
@@ -174,7 +174,7 @@ export default function ScenePanel({
             placeholder={autoSlotKey}
             onBlur={(e) => {
               // Gol → folosim propunerea automată, ca partenera să nu fie
-              // obligată să completeze încă un câmp la fiecare scenă.
+              // obligată să completeze încă un câmp la fiecare moment.
               const next = slugify(e.target.value) || autoSlotKey;
               e.target.value = next;
               if (next !== shot.slot_key) saveField({ slot_key: next });

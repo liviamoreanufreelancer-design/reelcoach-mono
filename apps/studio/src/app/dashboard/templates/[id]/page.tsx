@@ -20,8 +20,7 @@ import CoverUploadCard from "@/components/CoverUploadCard";
 import ScenesEditor from "@/components/ScenesEditor";
 import LiveScenePreview from "@/components/LiveScenePreview";
 import TemplateSidebar from "@/components/TemplateSidebar";
-import OutputsEditor from "@/components/OutputsEditor";
-import OutputStyleEditor from "@/components/OutputStyleEditor";
+import ResultsEditor from "@/components/ResultsEditor";
 import EditorSteps from "@/components/EditorSteps";
 import { getDraftFor } from "@/lib/template-actions";
 
@@ -134,19 +133,11 @@ export default async function TemplateDetailPage({
                 />
               </div>
             }
-            ceIese={
-              <OutputsEditor
+            rezultate={
+              <ResultsEditor
                 templateId={template.id}
                 shots={shots}
                 outputs={outputs}
-                disabled={!canEdit}
-              />
-            }
-            editare={
-              <OutputStyleEditor
-                templateId={template.id}
-                outputs={outputs}
-                shots={shots}
                 disabled={!canEdit}
               />
             }

@@ -4,7 +4,7 @@
  * PreviewPanel — interactive visual preview with inline editing.
  *
  * Editors:
- *   1. Pick a scene (dropdown) — defaults to first scene
+ *   1. Pick a momente (dropdown) — defaults to first scene
  *   2. Watch the preview video for the current dimension (filter/effect/transition/speed)
  *   3. Change filter/effect/transition/speed inline via dropdowns under the video
  *   4. Toggle motion blur
@@ -54,7 +54,7 @@ export default function PreviewPanel({
 
   const shot = shots[selectedShotIdx];
 
-  // Pick the preview video URL based on current dimension + scene value.
+  // Pick the preview video URL based on current dimension + momente value.
   const videoUrl = useMemo(() => {
     if (!shot) return null;
     switch (dimension) {
@@ -85,7 +85,7 @@ export default function PreviewPanel({
           Preview vizual
         </h2>
         <p className="text-[12px] text-[#9A9A9A] leading-relaxed">
-          Adaugă o scenă pentru a vedea preview-urile și a edita efectele.
+          Adaugă un moment pentru a vedea preview-urile și a edita efectele.
         </p>
       </div>
     );
@@ -102,7 +102,7 @@ export default function PreviewPanel({
         )}
       </div>
 
-      {/* Scene selector — only if there are multiple scenes */}
+      {/* Momente selector — only if there are multiple scenes */}
       {shots.length > 1 && (
         <div className="mb-3">
           <label className="label">Scena</label>

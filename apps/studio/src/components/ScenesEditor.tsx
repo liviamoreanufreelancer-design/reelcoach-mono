@@ -3,10 +3,10 @@
 /**
  * ScenesEditor — manages the list of shots (scenes) for a template.
  *
- * Each scene is rendered as an expandable card with all its fields.
+ * Each momente is rendered as an expandable card with all its fields.
  * Provides:
- *   - Add scene (appends at the end)
- *   - Delete scene (with confirmation, re-numbers the rest)
+ *   - Add momente (appends at the end)
+ *   - Delete momente (with confirmation, re-numbers the rest)
  *   - Move up / Move down buttons for reordering
  *   - Inline edit with auto-save on blur for every field
  *
@@ -77,14 +77,14 @@ export default function ScenesEditor({
           className="btn-glass inline-flex items-center gap-1.5 disabled:opacity-30"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Adaugă scenă</span>
+          <span>Adaugă moment</span>
         </button>
       </div>
 
       {shots.length === 0 ? (
         <div className="border border-dashed border-[#5B34FF]/20 rounded-xl p-8 text-center">
           <p className="text-[13px] text-[#6B6B6B]">
-            Nicio scenă încă. Adaugă prima scenă pentru a construi șablonul.
+            Niciun moment încă. Adaugă prima moment pentru a construi șablonul.
           </p>
         </div>
       ) : (
@@ -149,7 +149,7 @@ export default function ScenesEditor({
                       type="button"
                       onClick={() => onDelete(shot.id)}
                       disabled={disabled || pending}
-                      aria-label="Șterge scena"
+                      aria-label="Șterge momentul"
                       className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 disabled:opacity-25 active:scale-95"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
