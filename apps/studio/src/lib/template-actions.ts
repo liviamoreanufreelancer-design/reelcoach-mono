@@ -564,6 +564,8 @@ export async function updateOutput(
     /** Migrația 015: implicitele de stil ale postării. */
     filter?: string | null;
     transition?: string | null;
+    /** Migrația 016: care moment dă cadrul de copertă. */
+    cover_slot?: string | null;
   },
 ) {
   const supabase = await getSupabaseServerClient();

@@ -69,6 +69,8 @@ export interface OutputRow {
   filter: string | null;
   /** Migrația 015: tranziția implicită între momente. */
   transition: string | null;
+  /** Migrația 016: slot_key-ul momentului din care se desenează coperta. NULL = primul. */
+  cover_slot: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
