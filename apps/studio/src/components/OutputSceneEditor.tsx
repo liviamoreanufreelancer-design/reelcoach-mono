@@ -15,7 +15,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
-import { FILTERS as FILTER_OPTS, TRANSITIONS, EFFECTS } from "@/lib/options";
+import { TRANSITIONS } from "@/lib/options";
 import type { OutputRow, OutputSlot, ShotRow, TransitionId } from "@/lib/db-types";
 
 const W = 540;
@@ -331,36 +331,23 @@ export default function OutputSceneEditor({
             </div>
           </div>
 
-          {/* Filtru + tranziție, ca excepții peste implicitul postării */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="label">Filtru</label>
-              <select
-                value={slot?.filter ?? ""}
-                onChange={(e) => patchSlot({ filter: e.target.value || undefined })}
-                className="input"
-              >
-                <option value="">Ca postarea{output.filter ? ` (${output.filter})` : ""}</option>
-                {FILTER_OPTS.map((f) => (
-                  <option key={f.id} value={f.id}>{f.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Tranziție după</label>
-              <select
-                value={slot?.transition ?? ""}
-                onChange={(e) =>
-                  patchSlot({ transition: (e.target.value || undefined) as TransitionId | undefined })
-                }
-                className="input"
-              >
-                <option value="">Ca postarea{output.transition ? ` (${output.transition})` : ""}</option>
-                {TRANSITIONS.map((t) => (
-                  <option key={t.id} value={t.id}>{t.label}</option>
-                ))}
-              </select>
-            </div>
+          {/* Tranzitia sta pe MOMENT: partenera o variaza intentionat de la un
+              moment la altul (fade, slide, zoom, whipPan in acelasi reel).
+              Filtrul sta pe postare — un reel are o singura nota de culoare. */}
+          <div>
+            <label className="label">Tranziție după acest moment</label>
+            <select
+              value={slot?.transition ?? ""}
+              onChange={(e) =>
+                patchSlot({ transition: (e.target.value || undefined) as TransitionId | undefined })
+              }
+              className="input"
+            >
+              <option value="">Implicit (fade)</option>
+              {TRANSITIONS.map((t) => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </select>
           </div>
 
           <label className="flex items-center gap-2.5 cursor-pointer">

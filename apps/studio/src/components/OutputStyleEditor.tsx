@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Film, Images, Layers } from "lucide-react";
 import { updateOutput } from "@/lib/template-actions";
-import { FILTERS, TRANSITIONS } from "@/lib/options";
+import { FILTERS } from "@/lib/options";
 import type { OutputRow, OutputSlot, ShotRow } from "@/lib/db-types";
 import OutputReelPreview from "./OutputReelPreview";
 import OutputSceneEditor from "./OutputSceneEditor";
@@ -93,7 +93,7 @@ function OutputCard({
   const [error, setError] = useState<string | null>(null);
 
   const [filter, setFilter] = useState<string>(output.filter ?? "");
-  const [transition, setTransition] = useState<string>(output.transition ?? "");
+  const transition = output.transition ?? "";
   const [showRender, setShowRender] = useState(false);
   // Slot-urile local: textul se vede in previzualizare pe masura ce scrii,
   // iar salvarea pleaca debounced ca sa nu lovim serverul la fiecare tasta.
@@ -218,44 +218,27 @@ function OutputCard({
 
               {/* Implicitele postarii — se aplica momentelor care n-au exceptie */}
               <div className="flex flex-col gap-4 pt-1 border-t border-[#E7E3F5]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">Filtru implicit</label>
-                    <select
-                      value={filter}
-                      onChange={(e) => {
-                        setFilter(e.target.value);
-                        save({ filter: e.target.value || null });
-                      }}
-                      disabled={disabled}
-                      className="input"
-                    >
-                      <option value="">Fără filtru</option>
-                      {FILTERS.map((f) => (
-                        <option key={f.id} value={f.id}>{f.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {isVideo && (
-                    <div>
-                      <label className="label">Tranziție implicită</label>
-                      <select
-                        value={transition}
-                        onChange={(e) => {
-                          setTransition(e.target.value);
-                          save({ transition: e.target.value || null });
-                        }}
-                        disabled={disabled}
-                        className="input"
-                      >
-                        <option value="">Implicit (fade)</option>
-                        {TRANSITIONS.map((t) => (
-                          <option key={t.id} value={t.id}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                <div>
+                  <label className="label">
+                    Filtru{" "}
+                    <span className="text-[#9A9A9A] normal-case tracking-normal">
+                      (pentru toată postarea)
+                    </span>
+                  </label>
+                  <select
+                    value={filter}
+                    onChange={(e) => {
+                      setFilter(e.target.value);
+                      save({ filter: e.target.value || null });
+                    }}
+                    disabled={disabled}
+                    className="input sm:max-w-[280px]"
+                  >
+                    <option value="">Fără filtru</option>
+                    {FILTERS.map((f) => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
