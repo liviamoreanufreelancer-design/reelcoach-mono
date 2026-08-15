@@ -16,7 +16,7 @@
 import { useEffect, useRef, useState } from "react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
 import { TRANSITIONS } from "@/lib/options";
-import type { Composition, OutputSlot, ShotRow, TransitionId } from "@/lib/db-types";
+import type { Composition, OutputSlot, ShotLike, TransitionId } from "@/lib/db-types";
 
 const W = 540;
 const H = 960;
@@ -40,7 +40,7 @@ export default function OutputSceneEditor({
   disabled,
 }: {
   output: Composition;
-  shots: ShotRow[];
+  shots: ShotLike[];
   /** Momentul editat — ales din lista de deasupra, ca sa nu fie doua selectoare. */
   idx: number;
   onChangeSlots: (slots: OutputSlot[]) => void;

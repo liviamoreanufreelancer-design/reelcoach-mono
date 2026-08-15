@@ -13,8 +13,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-import type { ReelDesignRow, ShotRow } from "@/lib/db-types";
-import { oneShotPerSlot } from "@/lib/slot-catalog";
+import type { ReelDesignRow } from "@/lib/db-types";
 import NewReelDesignButton from "@/components/NewReelDesignButton";
 import ReelDesignGrid from "@/components/ReelDesignGrid";
 
@@ -25,13 +24,9 @@ export default async function BibliotecaPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [designsRes, shotsRes] = await Promise.all([
-    supabase.from("reel_designs").select("*").order("reel_type").order("sort_order"),
-    supabase.from("shots").select("*").order("sort_order"),
-  ]);
-
-  const designs = (designsRes.data ?? []) as ReelDesignRow[];
-  const shots = oneShotPerSlot((shotsRes.data ?? []) as ShotRow[]);
+  const { data: designsData } = await supabase
+    .from("reel_designs").select("*").order("reel_type").order("sort_order");
+  const designs = (designsData ?? []) as ReelDesignRow[];
 
   // Tipurile deja folosite — sugestii în dialogul de creare, ca partenera să
   // nu scrie „glow up" o dată și „glowup" a doua oară.
@@ -57,10 +52,11 @@ export default async function BibliotecaPage() {
       </div>
 
       <p className="text-[13px] text-[#6B6B6B] leading-relaxed max-w-[620px] mb-7">
-        Mai multe abordări ale aceluiași tip de reel, construite peste aceleași
-        momente. Testul care contează: pune trei una lângă alta — dacă cineva din
-        afară nu poate spune imediat că sunt diferite, schimbă abordarea în loc
-        s-o adaugi pe a patra.
+        Mai multe abordări ale aceluiași tip de reel, construite pe filmări de
+        probă urcate de voi. Se fac întâi, se aplică apoi pe ce filmează
+        stilista. Testul care contează: pune trei una lângă alta — dacă cineva
+        din afară nu poate spune imediat că sunt diferite, schimbă abordarea în
+        loc s-o adaugi pe a patra.
       </p>
 
       {designs.length === 0 ? (
@@ -69,8 +65,9 @@ export default async function BibliotecaPage() {
             Biblioteca e goală.
           </p>
           <p className="text-[13px] text-[#6B6B6B] mt-1.5 leading-relaxed max-w-[420px] mx-auto">
-            Prima variantă se construiește de la zero. Următoarele se duplică
-            din ea și se schimbă doar ce diferă.
+            Prima variantă se construiește de la zero: adaugi cadre, le dai
+            nume și urci câte o filmare de probă. Următoarele se duplică din ea
+            și se schimbă doar ce diferă.
           </p>
         </div>
       ) : (
@@ -83,7 +80,7 @@ export default async function BibliotecaPage() {
                   {list.length} {list.length === 1 ? "variantă" : "variante"}
                 </span>
               </div>
-              <ReelDesignGrid designs={list} shots={shots} />
+              <ReelDesignGrid designs={list} />
             </section>
           ))}
         </div>

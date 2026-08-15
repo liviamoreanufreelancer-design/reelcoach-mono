@@ -1,15 +1,14 @@
 /**
  * /dashboard/biblioteca/[id] — editarea unei variante de reel.
  *
- * Momentele nu vin dintr-un șablon anume: varianta e o compoziție peste NUME
- * de momente, iar filmarea de probă vine de la exemplarul cel mai util al
- * fiecărei etichete, din tot catalogul (vezi lib/slot-catalog.ts).
+ * Varianta e de sine stătătoare: cadrele ei și filmările lor de probă sunt
+ * urcate aici, nu împrumutate dintr-un șablon. Se construiește întâi, se
+ * aplică apoi pe ce filmează stilista.
  */
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-import type { ReelDesignRow, ShotRow } from "@/lib/db-types";
-import { oneShotPerSlot } from "@/lib/slot-catalog";
+import type { ReelDesignRow } from "@/lib/db-types";
 import ReelDesignEditor from "@/components/ReelDesignEditor";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +23,10 @@ export default async function ReelDesignPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [designRes, shotsRes] = await Promise.all([
-    supabase.from("reel_designs").select("*").eq("id", id).maybeSingle(),
-    supabase.from("shots").select("*").order("sort_order"),
-  ]);
-
-  if (!designRes.data) notFound();
-  const design = designRes.data as ReelDesignRow;
-  const shots = oneShotPerSlot((shotsRes.data ?? []) as ShotRow[]);
+  const { data } = await supabase
+    .from("reel_designs").select("*").eq("id", id).maybeSingle();
+  if (!data) notFound();
+  const design = data as ReelDesignRow;
 
   return (
     <main className="mx-auto max-w-[860px] px-5 py-8">
@@ -49,7 +44,7 @@ export default async function ReelDesignPage({
         </h1>
       </div>
 
-      <ReelDesignEditor design={design} shots={shots} />
+      <ReelDesignEditor design={design} />
     </main>
   );
 }

@@ -55,7 +55,33 @@ export interface OutputSlot {
   motionBlur?: boolean;
   /** Text peste acest moment. Diferă aproape mereu de la o postare la alta. */
   textLayers?: unknown[];
+  /**
+   * Numele cadrului, în variantele din bibliotecă ("before", "aplicare").
+   * Acolo slotul nu trimite la un moment existent — ÎL DEFINEȘTE. Devine
+   * cerința pe care o umple mai târziu filmarea stilistei.
+   */
+  label?: string;
+  /**
+   * Filmarea de probă a cadrului, urcată de parteneră (bucket `samples`).
+   * Există doar în bibliotecă: la postări, filmarea vine de pe moment.
+   */
+  demoUrl?: string;
 }
+
+/**
+ * Ce citesc editorul și preview-ul dintr-un moment.
+ *
+ * Îngust dinadins: aceleași componente lucrează și pe momente reale (`shots`),
+ * și pe cadrele unei variante din bibliotecă, care n-au rând în `shots` — sunt
+ * doar sloturi cu o filmare de probă. Fără tipul ăsta ar fi trebuit copiat
+ * editorul, iar două copii încep să dea drift din prima săptămână.
+ */
+export type ShotLike = Pick<
+  ShotRow,
+  | "slot_key" | "title" | "sample_video_url" | "example_image_url" | "effect"
+  | "recording_duration" | "final_usage_duration" | "playback_speed"
+  | "motion_blur" | "overlay_text" | "caption_preset" | "caption_position"
+>;
 
 /**
  * Ce citesc editorul si preview-ul: compozitia + stilul, atat.

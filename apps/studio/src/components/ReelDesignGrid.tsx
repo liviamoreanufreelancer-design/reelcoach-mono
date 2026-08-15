@@ -6,28 +6,23 @@
  * motiv: forma și cadrul spun mai mult decât un nume. Aici e chiar scopul —
  * variantele se compară vizual, nu se citesc.
  *
- * Coperta se desenează din filmarea momentului, cu filtrul variantei. Deci
- * diferența dintre două variante se vede din grilă, fără să intri în ele.
+ * Coperta se desenează din filmarea de probă a cadrului, cu filtrul variantei.
+ * Deci diferența dintre două variante se vede din grilă, fără să intri în ele.
  */
 import Link from "next/link";
 import { Film } from "lucide-react";
-import type { ReelDesignRow, ShotRow } from "@/lib/db-types";
+import type { ReelDesignRow } from "@/lib/db-types";
+import { framesAsShots } from "@/lib/design-frames";
 import OutputCover from "./OutputCover";
 
 const TILE = 132;
 
-export default function ReelDesignGrid({
-  designs,
-  shots,
-}: {
-  designs: ReelDesignRow[];
-  /** Câte un moment per etichetă, din tot catalogul. */
-  shots: ShotRow[];
-}) {
+export default function ReelDesignGrid({ designs }: { designs: ReelDesignRow[] }) {
   return (
     <div className="flex flex-wrap items-start gap-x-4 gap-y-5">
       {designs.map((d) => {
         const n = d.slots.length;
+        const shots = framesAsShots(d.slots);
         return (
           <Link
             key={d.id}
@@ -44,7 +39,7 @@ export default function ReelDesignGrid({
               </div>
               <div className="text-[10.5px] text-[#9A9A9A] mt-0.5 inline-flex items-center gap-1">
                 <Film className="w-3 h-3" strokeWidth={1.8} />
-                {n} {n === 1 ? "moment" : "momente"}
+                {n} {n === 1 ? "cadru" : "cadre"}
               </div>
             </div>
           </Link>
