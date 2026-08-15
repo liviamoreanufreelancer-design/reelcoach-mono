@@ -32,10 +32,18 @@ export async function createTemplate(formData: FormData) {
   if (!user) throw new Error("Not authenticated");
 
   const title = String(formData.get("title") ?? "").trim();
-  const categoryId = String(formData.get("category_id") ?? "").trim();
-
   if (!title) throw new Error("Titlul e obligatoriu");
-  if (!categoryId) throw new Error("Categoria e obligatorie");
+
+  // Categoria nu se mai cere la creare — vezi NewTemplateButton. Punem prima
+  // din catalog ca sa nu lasam coloana goala; se schimba din editor. Sablonul
+  // e ciorna, deci categoria gresita nu se vede nicaieri pe telefon.
+  let categoryId = String(formData.get("category_id") ?? "").trim();
+  if (!categoryId) {
+    const { data: firstCategory } = await supabase
+      .from("categories").select("id").order("sort_order").limit(1).maybeSingle();
+    categoryId = (firstCategory?.id as string | undefined) ?? "";
+    if (!categoryId) throw new Error("Nu există nicio categorie în catalog");
+  }
 
   // Generate id from title slug.
   const base = slugify(title);

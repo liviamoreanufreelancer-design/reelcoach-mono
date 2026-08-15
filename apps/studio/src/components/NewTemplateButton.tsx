@@ -1,9 +1,16 @@
 "use client";
 
 /**
- * "Șablon nou" button — opens an inline dialog to pick a title + category,
- * then calls the createTemplate server action which redirects to the new
- * template's edit page.
+ * "Șablon nou" — un dialog cu UN câmp: titlul.
+ *
+ * Categoria a fost scoasă de aici. La momentul creării, partenera știe ce
+ * vrea să facă, nu neapărat unde se așază în catalog — iar o alegere cerută
+ * înainte să existe conținutul e o alegere ghicită. Șablonul se creează ca
+ * ciornă, deci nu apare nicăieri pe telefon până nu e publicat: până atunci
+ * are tot timpul să pună categoria din editor, unde selectorul a rămas.
+ *
+ * `createTemplate` pune categoria implicită (prima din listă) ca să nu lase
+ * coloana goală.
  *
  * Uses native <dialog> element for accessibility (no modal lib required).
  */
@@ -11,13 +18,8 @@
 import { useRef, useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { createTemplate } from "@/lib/template-actions";
-import type { Category } from "@/lib/db-types";
 
-export default function NewTemplateButton({
-  categories,
-}: {
-  categories: Pick<Category, "id" | "label">[];
-}) {
+export default function NewTemplateButton() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -85,16 +87,6 @@ export default function NewTemplateButton({
                 placeholder="ex. Nu o să crezi transformarea asta"
                 className="input"
               />
-            </div>
-
-            <div>
-              <label htmlFor="category_id" className="label">Categorie</label>
-              <select id="category_id" name="category_id" required className="input">
-                <option value="">— Alege categoria —</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
             </div>
 
             {error && (

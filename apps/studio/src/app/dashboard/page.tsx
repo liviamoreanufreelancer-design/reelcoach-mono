@@ -55,7 +55,7 @@ export default async function DashboardPage() {
               : `${templates.length} șabloane în total · ${drafts.length} drafts · ${published.length} publicate`}
           </p>
         </div>
-        <NewTemplateButton categories={categories} />
+        <NewTemplateButton />
       </div>
 
       <TemplateList templates={templates} categoryLabels={categoryLabels} parentsWithDraft={Array.from(parentsWithDraft)} />
