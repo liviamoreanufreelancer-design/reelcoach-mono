@@ -1,24 +1,22 @@
 "use client";
 /**
- * „Variantă nouă" — nume, tip, șablon de referință.
+ * „Variantă nouă" — nume și tip. Atât.
  *
  * Tipul e text liber cu sugestii din ce există deja (`datalist`). Un select
  * fix ar îngheța acum o taxonomie pe care partenera încă o descoperă; sugestiile
  * previn doar varianta ieftină a problemei — „glow up" o dată, „glowup" a doua.
  *
- * Șablonul de referință e obligatoriu fiindcă fără filmări n-ai ce edita: e
- * materialul de probă peste care se construiesc toate variantele tipului.
+ * Nu se alege niciun șablon (migrația 018): varianta e o compoziție peste nume
+ * de momente, iar filmările de probă vin de la momentul cu eticheta cerută,
+ * din orice serviciu.
  */
 import { useRef, useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { createReelDesign } from "@/lib/template-actions";
-import type { TemplateRow } from "@/lib/db-types";
 
 export default function NewReelDesignButton({
-  templates,
   knownTypes,
 }: {
-  templates: Pick<TemplateRow, "id" | "title">[];
   knownTypes: string[];
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -108,26 +106,6 @@ export default function NewReelDesignButton({
                   <option key={t} value={t} />
                 ))}
               </datalist>
-            </div>
-
-            <div>
-              <label htmlFor="reference_template_id" className="label">
-                Filmări de probă din{" "}
-                <span className="text-[#9A9A9A] normal-case tracking-normal">
-                  (materialul peste care proiectezi)
-                </span>
-              </label>
-              <select
-                id="reference_template_id"
-                name="reference_template_id"
-                required
-                className="input"
-              >
-                <option value="">— Alege șablonul —</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>{t.title}</option>
-                ))}
-              </select>
             </div>
 
             {error && (

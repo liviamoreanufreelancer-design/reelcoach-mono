@@ -6,9 +6,8 @@
  * motiv: forma și cadrul spun mai mult decât un nume. Aici e chiar scopul —
  * variantele se compară vizual, nu se citesc.
  *
- * Coperta se desenează din filmările șablonului de referință, cu filtrul
- * variantei. Deci diferența dintre două variante se vede din grilă, fără să
- * intri în ele.
+ * Coperta se desenează din filmarea momentului, cu filtrul variantei. Deci
+ * diferența dintre două variante se vede din grilă, fără să intri în ele.
  */
 import Link from "next/link";
 import { Film } from "lucide-react";
@@ -19,16 +18,15 @@ const TILE = 132;
 
 export default function ReelDesignGrid({
   designs,
-  allShots,
+  shots,
 }: {
   designs: ReelDesignRow[];
-  /** Momentele TUTUROR șabloanelor — fiecare variantă le filtrează pe ale ei. */
-  allShots: ShotRow[];
+  /** Câte un moment per etichetă, din tot catalogul. */
+  shots: ShotRow[];
 }) {
   return (
     <div className="flex flex-wrap items-start gap-x-4 gap-y-5">
       {designs.map((d) => {
-        const shots = allShots.filter((s) => s.template_id === d.reference_template_id);
         const n = d.slots.length;
         return (
           <Link

@@ -71,7 +71,12 @@ export type Composition = Pick<
 
 /**
  * O varianta de reel din biblioteca (migratia 017). Aceeasi forma ca OutputRow
- * pe partea de compozitie, plus de ce tip e si de unde isi ia filmarile.
+ * pe partea de compozitie, plus de ce tip e.
+ *
+ * Nu apartine niciunui sablon (migratia 018): e o compozitie peste NUME de
+ * momente. Filmarile de proba vin de la orice moment cu eticheta ceruta,
+ * indiferent din ce serviciu — exact forma de care e nevoie ca o varianta
+ * construita peste balayage sa se aplice si la tuns.
  *
  * NU e o postare: appul nu o citeste. E unealta de lucru a partenerei.
  */
@@ -81,8 +86,6 @@ export interface ReelDesignRow {
   /** Tipul al carui varianta este. Text liber — taxonomia inca se descopera. */
   reel_type: string;
   category_id: string | null;
-  /** Sablonul din care se iau filmarile de proba. */
-  reference_template_id: string | null;
   slots: OutputSlot[];
   caption: string | null;
   filter: string | null;

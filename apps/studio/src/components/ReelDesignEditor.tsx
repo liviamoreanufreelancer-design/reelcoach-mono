@@ -30,6 +30,7 @@ export default function ReelDesignEditor({
   shots,
 }: {
   design: ReelDesignRow;
+  /** Câte un moment per etichetă, din tot catalogul. */
   shots: ShotRow[];
 }) {
   const [pending, startTransition] = useTransition();
@@ -91,11 +92,12 @@ export default function ReelDesignEditor({
     return (
       <div className="card px-6 py-8 text-center">
         <p className="text-[14px] text-[#1F1F1F] font-medium">
-          Șablonul de referință n-are momente cu etichetă.
+          Niciun moment n-are etichetă.
         </p>
         <p className="text-[13px] text-[#6B6B6B] mt-1.5 leading-relaxed max-w-[440px] mx-auto">
-          Variantele se leagă de momente prin etichetă. Completează „Eticheta
-          momentului" în șablonul de referință și revino.
+          Variantele se compun din momente identificate prin etichetă, nu prin
+          șablon. Completează „Eticheta momentului" în cel puțin un șablon și
+          revino.
         </p>
       </div>
     );

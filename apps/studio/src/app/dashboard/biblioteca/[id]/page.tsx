@@ -1,13 +1,15 @@
 /**
  * /dashboard/biblioteca/[id] — editarea unei variante de reel.
  *
- * Momentele vin din șablonul de referință: materialul de probă peste care
- * partenera proiectează toate variantele acelui tip.
+ * Momentele nu vin dintr-un șablon anume: varianta e o compoziție peste NUME
+ * de momente, iar filmarea de probă vine de la exemplarul cel mai util al
+ * fiecărei etichete, din tot catalogul (vezi lib/slot-catalog.ts).
  */
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-import type { ReelDesignRow, ShotRow, TemplateRow } from "@/lib/db-types";
+import type { ReelDesignRow, ShotRow } from "@/lib/db-types";
+import { oneShotPerSlot } from "@/lib/slot-catalog";
 import ReelDesignEditor from "@/components/ReelDesignEditor";
 
 export const dynamic = "force-dynamic";
@@ -22,24 +24,14 @@ export default async function ReelDesignPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: designData } = await supabase
-    .from("reel_designs").select("*").eq("id", id).maybeSingle();
-  if (!designData) notFound();
-  const design = designData as ReelDesignRow;
-
-  const [shotsRes, templateRes] = await Promise.all([
-    supabase
-      .from("shots").select("*")
-      .eq("template_id", design.reference_template_id ?? "")
-      .order("sort_order"),
-    supabase
-      .from("templates").select("id, title")
-      .eq("id", design.reference_template_id ?? "")
-      .maybeSingle(),
+  const [designRes, shotsRes] = await Promise.all([
+    supabase.from("reel_designs").select("*").eq("id", id).maybeSingle(),
+    supabase.from("shots").select("*").order("sort_order"),
   ]);
 
-  const shots = (shotsRes.data ?? []) as ShotRow[];
-  const reference = templateRes.data as Pick<TemplateRow, "id" | "title"> | null;
+  if (!designRes.data) notFound();
+  const design = designRes.data as ReelDesignRow;
+  const shots = oneShotPerSlot((shotsRes.data ?? []) as ShotRow[]);
 
   return (
     <main className="mx-auto max-w-[860px] px-5 py-8">
@@ -55,19 +47,6 @@ export default async function ReelDesignPage({
         <h1 className="text-[24px] font-semibold text-[#1F1F1F] leading-tight mt-1">
           {design.name}
         </h1>
-        <p className="text-[12.5px] text-[#9A9A9A] mt-1.5">
-          Filmări de probă din{" "}
-          {reference ? (
-            <Link
-              href={`/dashboard/templates/${reference.id}`}
-              className="text-[#5B34FF] hover:underline"
-            >
-              {reference.title}
-            </Link>
-          ) : (
-            <span className="text-rose-600">șablon șters</span>
-          )}
-        </p>
       </div>
 
       <ReelDesignEditor design={design} shots={shots} />

@@ -13,7 +13,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-import type { ReelDesignRow, ShotRow, TemplateRow } from "@/lib/db-types";
+import type { ReelDesignRow, ShotRow } from "@/lib/db-types";
+import { oneShotPerSlot } from "@/lib/slot-catalog";
 import NewReelDesignButton from "@/components/NewReelDesignButton";
 import ReelDesignGrid from "@/components/ReelDesignGrid";
 
@@ -24,16 +25,13 @@ export default async function BibliotecaPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [designsRes, templatesRes, shotsRes] = await Promise.all([
+  const [designsRes, shotsRes] = await Promise.all([
     supabase.from("reel_designs").select("*").order("reel_type").order("sort_order"),
-    // Doar șabloanele publicate/ciornă cu momente — de acolo vin filmările.
-    supabase.from("templates").select("id, title").order("title"),
     supabase.from("shots").select("*").order("sort_order"),
   ]);
 
   const designs = (designsRes.data ?? []) as ReelDesignRow[];
-  const templates = (templatesRes.data ?? []) as Pick<TemplateRow, "id" | "title">[];
-  const allShots = (shotsRes.data ?? []) as ShotRow[];
+  const shots = oneShotPerSlot((shotsRes.data ?? []) as ShotRow[]);
 
   // Tipurile deja folosite — sugestii în dialogul de creare, ca partenera să
   // nu scrie „glow up" o dată și „glowup" a doua oară.
@@ -55,12 +53,12 @@ export default async function BibliotecaPage() {
             Variante de reel
           </h1>
         </div>
-        <NewReelDesignButton templates={templates} knownTypes={knownTypes} />
+        <NewReelDesignButton knownTypes={knownTypes} />
       </div>
 
       <p className="text-[13px] text-[#6B6B6B] leading-relaxed max-w-[620px] mb-7">
         Mai multe abordări ale aceluiași tip de reel, construite peste aceleași
-        filmări. Testul care contează: pune trei una lângă alta — dacă cineva din
+        momente. Testul care contează: pune trei una lângă alta — dacă cineva din
         afară nu poate spune imediat că sunt diferite, schimbă abordarea în loc
         s-o adaugi pe a patra.
       </p>
@@ -85,7 +83,7 @@ export default async function BibliotecaPage() {
                   {list.length} {list.length === 1 ? "variantă" : "variante"}
                 </span>
               </div>
-              <ReelDesignGrid designs={list} allShots={allShots} />
+              <ReelDesignGrid designs={list} shots={shots} />
             </section>
           ))}
         </div>

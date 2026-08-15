@@ -610,11 +610,9 @@ export async function createReelDesign(formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   const reelType = String(formData.get("reel_type") ?? "").trim();
-  const referenceTemplateId = String(formData.get("reference_template_id") ?? "").trim();
 
   if (!name) throw new Error("Numele e obligatoriu");
   if (!reelType) throw new Error("Tipul e obligatoriu");
-  if (!referenceTemplateId) throw new Error("Alege un șablon de referință — de acolo vin filmările");
 
   const { data: last } = await supabase
     .from("reel_designs").select("sort_order").eq("reel_type", reelType)
@@ -623,7 +621,6 @@ export async function createReelDesign(formData: FormData) {
   const { data, error } = await supabase.from("reel_designs").insert({
     name,
     reel_type: reelType,
-    reference_template_id: referenceTemplateId,
     slots: [],
     sort_order: ((last?.sort_order as number | undefined) ?? -1) + 1,
     created_by: user.id,
@@ -676,7 +673,6 @@ export async function duplicateReelDesign(designId: string) {
     name: `${src.name} (copie)`,
     reel_type: src.reel_type,
     category_id: src.category_id,
-    reference_template_id: src.reference_template_id,
     slots: src.slots,
     caption: src.caption,
     filter: src.filter,
