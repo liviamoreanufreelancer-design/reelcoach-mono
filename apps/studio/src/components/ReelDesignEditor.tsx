@@ -226,7 +226,8 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
           {slots.length === 0 ? (
             <p className="text-[12px] text-[#6B6B6B] py-2 leading-relaxed">
               Niciun cadru încă. Adaugă primul, dă-i un nume („before") și urcă
-              o filmare de probă.
+              filmarea de probă — butonul apare pe rândul lui și peste
+              previzualizare.
             </p>
           ) : (
             <div className="flex flex-col gap-1.5">
@@ -285,10 +286,10 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                       onClick={(e) => { e.stopPropagation(); pickVideo(i); }}
                       disabled={busy}
                       title={s.demoUrl ? "Înlocuiește filmarea de probă" : "Urcă o filmare de probă"}
-                      className={`shrink-0 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded transition ${
+                      className={`shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition ${
                         s.demoUrl
-                          ? "text-emerald-700 hover:bg-emerald-50"
-                          : "text-[#5B34FF] hover:bg-[#EDE8FF]"
+                          ? "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+                          : "text-[#5B34FF] border-[#D8D0F5] bg-white hover:bg-[#EDE8FF]"
                       }`}
                     >
                       {busy ? (
@@ -298,7 +299,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                       ) : (
                         <Upload className="w-3.5 h-3.5" />
                       )}
-                      {busy ? "urc…" : s.demoUrl ? "" : "filmare"}
+                      {busy ? "urc…" : s.demoUrl ? "filmare" : "urcă filmare"}
                     </button>
 
                     <button
@@ -376,6 +377,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                 idx={Math.min(activeIdx, slots.length - 1)}
                 onChangeSlots={writeSlots}
                 disabled={false}
+                onRequestVideo={() => pickVideo(Math.min(activeIdx, slots.length - 1))}
               />
             )}
           </>

@@ -14,6 +14,7 @@
  * Pentru vizionarea postării întregi există comutatorul „Rezultat final".
  */
 import { useEffect, useRef, useState } from "react";
+import { Upload } from "lucide-react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
 import { TRANSITIONS } from "@/lib/options";
 import type { Composition, OutputSlot, ShotLike, TransitionId } from "@/lib/db-types";
@@ -38,6 +39,7 @@ export default function OutputSceneEditor({
   idx,
   onChangeSlots,
   disabled,
+  onRequestVideo,
 }: {
   output: Composition;
   shots: ShotLike[];
@@ -45,6 +47,11 @@ export default function OutputSceneEditor({
   idx: number;
   onChangeSlots: (slots: OutputSlot[]) => void;
   disabled: boolean;
+  /**
+   * Doar in biblioteca: cadrul isi are propria filmare de proba, urcata de
+   * parteneri. Absent la postari, unde filmarea vine de pe moment.
+   */
+  onRequestVideo?: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -253,8 +260,26 @@ export default function OutputSceneEditor({
           )}
 
           {!shot?.sample_video_url && (
-            <div className="absolute inset-0 grid place-items-center text-[#9A9A9A] text-[11px] px-3 text-center">
-              Momentul n-are clip exemplu
+            // In biblioteca, cadrul gol E locul unde urci filmarea — acolo se
+            // uita omul, nu in lista de deasupra. La postari nu exista buton:
+            // filmarea vine de pe moment, se urca in editorul de sablon.
+            <div className="absolute inset-0 grid place-items-center px-3 text-center">
+              {onRequestVideo ? (
+                <button
+                  type="button"
+                  onClick={onRequestVideo}
+                  className="inline-flex flex-col items-center gap-2 text-[#5B34FF] group"
+                >
+                  <span className="w-11 h-11 rounded-full bg-[#EDE8FF] grid place-items-center group-hover:bg-[#DFD6FF] transition">
+                    <Upload className="w-5 h-5" strokeWidth={1.8} />
+                  </span>
+                  <span className="text-[12px] font-medium">Urcă filmarea</span>
+                </button>
+              ) : (
+                <span className="text-[#9A9A9A] text-[11px]">
+                  Momentul n-are clip exemplu
+                </span>
+              )}
             </div>
           )}
 
