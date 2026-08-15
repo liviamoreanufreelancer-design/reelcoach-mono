@@ -2,6 +2,10 @@ import type { ConcatProgress } from "./render-progress";
 import type { FilterPreset } from "./filters";
 import { FILTERS } from "./filters";
 import type { TransitionId } from "./transitions";
+import type { FxParams } from "./fx/types";
+import { findTransition, findClipEffect } from "./fx/registry";
+import { drawPremiumEffect } from "./fx/effects/legacy";
+import { fadeTransition } from "./fx/transitions/legacy";
 import { drawCaption, drawTextLayers, makeSurface, type Caption, type TextLayer } from "./overlay-renderer";
 import { TEXT_PRESETS } from "./text-presets";
 
@@ -44,6 +48,14 @@ export interface BrowserRenderOptions {
    * the per-clip value is undefined.
    */
   transitionTypes?: (TransitionId | undefined)[];
+  /**
+   * Parametrii tranziției care IESE din clipul i (punct de zoom, direcție,
+   * intensitate). Stau în `slots` ca jsonb, deci un efect nou nu cere
+   * migrație. Absenți = implicitele efectului.
+   */
+  transitionParams?: (FxParams | undefined)[];
+  /** Parametrii efectului de clip, la fel. */
+  effectParams?: (FxParams | undefined)[];
   width?: number;
   height?: number;
   fps?: number;
@@ -407,6 +419,8 @@ export async function renderReelInBrowser(
   const perClipFilters: (FilterPreset | undefined)[] = opts.filters ?? [];
   // Per-clip transitions and other dimensions — wired up similarly.
   const perClipTransitions: (TransitionId | undefined)[] = opts.transitionTypes ?? [];
+  const transitionParams: (FxParams | undefined)[] = opts.transitionParams ?? [];
+  const effectParams: (FxParams | undefined)[] = opts.effectParams ?? [];
   const perClipPlaybackSpeeds: (number | undefined)[] = opts.playbackSpeeds ?? [];
   const perClipMotionBlurs: (boolean | undefined)[] = opts.motionBlurs ?? [];
 
@@ -736,7 +750,21 @@ export async function renderReelInBrowser(
     if (effectsEnabled) {
       const effectId = effectIds[idx];
       if (effectId && effectId !== "none") {
-        drawPremiumEffect(target, effectId, localMs, clipDursMs[idx], width, height);
+        // Întâi registry-ul (efectele noi, parametrizate); dacă id-ul nu e
+        // acolo, cade pe catalogul istoric din drawPremiumEffect.
+        const fx = findClipEffect(effectId);
+        if (fx) {
+          fx.draw({
+            ctx: target,
+            localMs,
+            clipMs: clipDursMs[idx],
+            width,
+            height,
+            params: effectParams[idx] ?? {},
+          });
+        } else {
+          drawPremiumEffect(target, effectId, localMs, clipDursMs[idx], width, height);
+        }
       }
     }
     const ov = overlayImgs[idx];
@@ -823,192 +851,20 @@ export async function renderReelInBrowser(
       // Falls back to the global transitionType if not specified per-clip.
       const currentTransition = perClipTransitions[active] ?? transitionType;
 
-      if (currentTransition === "flash") {
-        // White-flash transition. First half: outgoing clip blown out to
-        // white. Second half: incoming clip emerging from white. The eye
-        // reads it as a snap, not a fade.
-        const halfway = t < 0.5;
-        ctx.drawImage(halfway ? snap : incoming, 0, 0);
-        const flashAlpha = halfway ? t * 2 : (1 - t) * 2; // 0→1→0
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, flashAlpha);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.restore();
-      } else if (currentTransition === "zoom") {
-        // Zoom-punch: outgoing clip scales up while fading; incoming clip
-        // scales DOWN from oversize into place. Gives a snappy, punchy feel.
-        const eT = easeInOut(t);
-        // Outgoing — scale up + fade out
-        ctx.save();
-        ctx.globalAlpha = 1 - eT;
-        const outScale = 1 + eT * 0.18;
-        ctx.translate(width / 2, height / 2);
-        ctx.scale(outScale, outScale);
-        ctx.drawImage(snap, -width / 2, -height / 2);
-        ctx.restore();
-        // Incoming — scale from oversize down to natural, fade in
-        ctx.save();
-        ctx.globalAlpha = eT;
-        const inScale = 1.18 - eT * 0.18;
-        ctx.translate(width / 2, height / 2);
-        ctx.scale(inScale, inScale);
-        ctx.drawImage(incoming, -width / 2, -height / 2);
-        ctx.restore();
-      } else if (currentTransition === "glitch") {
-        // RGB-split + scanline glitch. The eye reads chaos, then resolves.
-        const eT = t;
-        ctx.drawImage(eT < 0.5 ? snap : incoming, 0, 0);
-        // RGB channel splits at peak in the middle, ease out toward ends
-        const peak = Math.sin(eT * Math.PI); // 0 → 1 → 0
-        const offset = Math.round(peak * 22);
-        if (offset > 0) {
-          ctx.save();
-          ctx.globalCompositeOperation = "screen";
-          ctx.globalAlpha = 0.55;
-          ctx.fillStyle = "rgba(255,0,80,1)";
-          ctx.fillRect(offset, 0, width - offset, height);
-          ctx.fillStyle = "rgba(0,200,255,1)";
-          ctx.fillRect(0, 0, width - offset, height);
-          ctx.restore();
-          // Scanline jitter — 4-6 horizontal slices shifted
-          ctx.save();
-          const slices = 5;
-          const sliceH = height / slices;
-          for (let i = 0; i < slices; i++) {
-            const sx = (Math.sin((eT * 12) + i * 1.7) * peak * 18) | 0;
-            ctx.drawImage(eT < 0.5 ? snap : incoming,
-              0, i * sliceH, width, sliceH,
-              sx, i * sliceH, width, sliceH);
-          }
-          ctx.restore();
-        }
-      } else if (currentTransition === "blur") {
-        // Defocus the outgoing, focus the incoming. Dreamy & soft.
-        const eT = easeInOut(t);
-        // Outgoing: increasing blur, fading out
-        ctx.save();
-        ctx.filter = `blur(${eT * 20}px)`;
-        ctx.globalAlpha = 1 - eT;
-        ctx.drawImage(snap, 0, 0);
-        ctx.restore();
-        // Incoming: decreasing blur, fading in
-        ctx.save();
-        ctx.filter = `blur(${(1 - eT) * 20}px)`;
-        ctx.globalAlpha = eT;
-        ctx.drawImage(incoming, 0, 0);
-        ctx.restore();
-      } else if (currentTransition === "slide") {
-        // Incoming slides in from the right; outgoing pushes off to left.
-        const eT = easeInOut(t);
-        const shift = eT * width;
-        ctx.drawImage(snap, -shift, 0);
-        ctx.drawImage(incoming, width - shift, 0);
-      } else if (currentTransition === "spin") {
-        // Both clips rotate around the centre; outgoing zooms out while
-        // incoming zooms in. A 180° swap reads as a fast spin transition.
-        const eT = easeInOut(t);
-        const angle = eT * Math.PI; // 0 → π (180°)
-        // Outgoing — rotate + scale down + fade
-        ctx.save();
-        ctx.translate(width / 2, height / 2);
-        ctx.rotate(angle);
-        const outScale = 1 - eT * 0.6;
-        ctx.scale(outScale, outScale);
-        ctx.globalAlpha = 1 - eT;
-        ctx.drawImage(snap, -width / 2, -height / 2);
-        ctx.restore();
-        // Incoming — rotate from -π → 0, scale up + fade in
-        ctx.save();
-        ctx.translate(width / 2, height / 2);
-        ctx.rotate(angle - Math.PI);
-        const inScale = 0.4 + eT * 0.6;
-        ctx.scale(inScale, inScale);
-        ctx.globalAlpha = eT;
-        ctx.drawImage(incoming, -width / 2, -height / 2);
-        ctx.restore();
-      } else if (currentTransition === "cut") {
-        // Hard cut — no blend. The timeline still overlaps the two clips by
-        // transMs, so we snap from outgoing to incoming at the midpoint of
-        // that window. Reads as an instant cut, not a fade.
-        ctx.drawImage(t < 0.5 ? snap : incoming, 0, 0);
-      } else if (currentTransition === "whipPan") {
-        // Whip-pan: fast horizontal swipe with directional motion smear.
-        // Outgoing flies off to the left while incoming rushes in from the
-        // right, both streaked. Canvas blur() is isotropic, so the smear is
-        // built by stacking horizontally-offset copies with falloff alpha.
-        const eT = easeInOut(t);
-        const smear = Math.sin(t * Math.PI); // 0 → 1 → 0 motion intensity
-        const trail = Math.round(width * 0.18 * smear);
-        const steps = 5;
-        // Outgoing — slides left, faint trailing ghosts behind it.
-        for (let k = steps - 1; k >= 0; k--) {
-          const f = k / steps;
-          ctx.save();
-          ctx.globalAlpha = (1 - eT) * (1 - f * 0.7);
-          ctx.drawImage(snap, -eT * width - f * trail, 0);
-          ctx.restore();
-        }
-        // Incoming — slides in from the right, trailing ghosts behind it.
-        for (let k = steps - 1; k >= 0; k--) {
-          const f = k / steps;
-          ctx.save();
-          ctx.globalAlpha = eT * (1 - f * 0.7);
-          ctx.drawImage(incoming, (1 - eT) * width + f * trail, 0);
-          ctx.restore();
-        }
-      } else if (currentTransition === "smoothZoom") {
-        // Smooth zoom-through: a gentle, continuous push (unlike the snappy
-        // "zoom" punch). Outgoing keeps zooming in and softly defocuses as it
-        // fades; incoming settles from a slight over-zoom into place. Dreamy
-        // and seamless rather than abrupt.
-        const eT = easeInOut(t);
-        ctx.save();
-        ctx.globalAlpha = 1 - eT;
-        ctx.filter = `blur(${eT * 6}px)`;
-        const outS = 1 + eT * 0.35;
-        ctx.translate(width / 2, height / 2);
-        ctx.scale(outS, outS);
-        ctx.drawImage(snap, -width / 2, -height / 2);
-        ctx.restore();
-        ctx.save();
-        ctx.globalAlpha = eT;
-        const inS = 1.15 - eT * 0.15;
-        ctx.translate(width / 2, height / 2);
-        ctx.scale(inS, inS);
-        ctx.drawImage(incoming, -width / 2, -height / 2);
-        ctx.restore();
-      } else if (currentTransition === "motionBlur") {
-        // Motion-blurred dissolve: a cross-fade where both frames carry a
-        // small opposing horizontal smear that peaks mid-transition. Distinct
-        // from "blur" (defocus) and "whipPan" (full swipe) — this is a soft
-        // moving blend, the two clips brushing past each other.
-        const eT = easeInOut(t);
-        const smear = Math.sin(t * Math.PI);
-        const trail = Math.round(width * 0.05 * smear);
-        const steps = 4;
-        for (let k = steps - 1; k >= 0; k--) {
-          const f = k / steps;
-          ctx.save();
-          ctx.globalAlpha = (1 - eT) * (1 - f * 0.6);
-          ctx.drawImage(snap, f * trail, 0);
-          ctx.restore();
-        }
-        for (let k = steps - 1; k >= 0; k--) {
-          const f = k / steps;
-          ctx.save();
-          ctx.globalAlpha = eT * (1 - f * 0.6);
-          ctx.drawImage(incoming, -f * trail, 0);
-          ctx.restore();
-        }
-      } else {
-        // Default: classic cross-fade.
-        ctx.drawImage(snap, 0, 0);
-        ctx.save();
-        ctx.globalAlpha = easeInOut(t);
-        ctx.drawImage(incoming, 0, 0);
-        ctx.restore();
-      }
+      // Registry: efectul se caută, nu se ramifică. Definițiile stau în
+      // fx/transitions/*, iar `fade` e plasa de siguranță — un id necunoscut
+      // (efect șters, date mai vechi) trebuie să dea o tranziție corectă, nu
+      // un cadru negru.
+      const def = findTransition(currentTransition) ?? fadeTransition;
+      def.draw({
+        ctx,
+        from: snap,
+        to: incoming,
+        t,
+        width,
+        height,
+        params: transitionParams[active] ?? {},
+      });
       return;
     }
 
@@ -1040,340 +896,6 @@ export async function renderReelInBrowser(
   }
 }
 
-/* ════════════════════════════════════════════════════════════════════
- * PREMIUM EFFECTS
- * Pure-canvas effect layer drawn between clip frame and text overlay.
- * Same effects render in the live preview (see LivePreview.tsx) with
- * matching colors / timing for visual consistency.
- * ════════════════════════════════════════════════════════════════════ */
-
-/** Deterministic pseudo-random in [0,1) from integer seed. */
-function rand(seed: number): number {
-  // simple LCG — stable across frames so element positions don't jitter
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
-}
-
-/**
- * Draw the chosen premium effect on top of the current clip frame.
- * `localMs` is the time INTO the played window of this clip,
- * `clipMs` is its total played length.
- */
-function drawPremiumEffect(
-  ctx: CanvasRenderingContext2D,
-  effectId: string,
-  localMs: number,
-  clipMs: number,
-  width: number,
-  height: number,
-): void {
-  switch (effectId) {
-    case "sparkle":   return drawSparkles(ctx, localMs, clipMs, width, height);
-    case "leak":      return drawLightLeaks(ctx, localMs, clipMs, width, height);
-    case "bokeh":     return drawBokeh(ctx, localMs, clipMs, width, height);
-    case "dust":      return drawGoldDust(ctx, localMs, clipMs, width, height);
-    // Dedicated frame-derived renderers (no longer aliased):
-    //   glow      → real bloom: highlights bloom out of the frame itself
-    //   softLight → Orton-style diffusion: dreamy, soft, luminous skin
-    //   lensFlare → anamorphic flare: hot core + horizontal streak + ghosts
-    case "glow":      return drawGlow(ctx, localMs, clipMs, width, height);
-    case "softLight": return drawSoftLight(ctx, localMs, clipMs, width, height);
-    case "lensFlare": return drawLensFlare(ctx, localMs, clipMs, width, height);
-  }
-}
-
-/** Champagne gold for all effect highlights. Match Figma palette. */
-const GOLD_LIGHT = "rgba(244, 228, 193, 1)";
-const GOLD_WARM  = "rgba(232, 180, 120, 1)";
-
-function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, alpha: number) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.globalCompositeOperation = "screen";
-  ctx.fillStyle = GOLD_LIGHT;
-  ctx.beginPath();
-  // 4-point star: long axes + short axes, diamond pattern
-  ctx.moveTo(cx, cy - size);
-  ctx.lineTo(cx + size * 0.18, cy - size * 0.18);
-  ctx.lineTo(cx + size, cy);
-  ctx.lineTo(cx + size * 0.18, cy + size * 0.18);
-  ctx.lineTo(cx, cy + size);
-  ctx.lineTo(cx - size * 0.18, cy + size * 0.18);
-  ctx.lineTo(cx - size, cy);
-  ctx.lineTo(cx - size * 0.18, cy - size * 0.18);
-  ctx.closePath();
-  ctx.fill();
-  // soft glow
-  ctx.globalAlpha = alpha * 0.35;
-  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 1.4);
-  grad.addColorStop(0, "rgba(244,228,193,0.35)");
-  grad.addColorStop(0.5, "rgba(244,228,193,0.1)");
-  grad.addColorStop(1, "rgba(244,228,193,0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.arc(cx, cy, size * 1.4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-/**
- * Sparkle highlights — 3 very subtle stars. The intent is "noticed on
- * second look", not "look at me". Small, slow cycle, low peak alpha.
- */
-function drawSparkles(ctx: CanvasRenderingContext2D, localMs: number, clipMs: number, w: number, h: number) {
-  const count = 3;
-  for (let i = 0; i < count; i++) {
-    // 2-second cycle, well staggered so only one is near-peak at a time.
-    const cycleMs = 2000;
-    const phase = ((localMs + i * 700) % cycleMs) / cycleMs;
-    let alpha: number;
-    if (phase < 0.4) alpha = phase / 0.4;
-    else if (phase < 0.6) alpha = 1;
-    else alpha = 1 - (phase - 0.6) / 0.4;
-    if (alpha <= 0) continue;
-    const x = (0.2 + rand(i * 7.3) * 0.6) * w;
-    const y = (0.2 + rand(i * 11.1) * 0.55) * h;
-    // Small stars — 14-22px @ 1080px reference. Half the previous size.
-    const size = (14 + rand(i * 3.7) * 8) * (w / 1080);
-    drawStar(ctx, x, y, size, alpha * 0.55);
-  }
-}
-
-/** Light leaks — 1-2 soft warm patches that drift across the frame. */
-function drawLightLeaks(ctx: CanvasRenderingContext2D, localMs: number, clipMs: number, w: number, h: number) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  const leaks = 2;
-  for (let i = 0; i < leaks; i++) {
-    // 4-second drift cycle, leaks staggered.
-    const cycleMs = 4000;
-    const phase = ((localMs + i * 2000) % cycleMs) / cycleMs;
-    // Fade in/out at edges.
-    let alpha: number;
-    if (phase < 0.2) alpha = phase / 0.2;
-    else if (phase < 0.8) alpha = 1;
-    else alpha = 1 - (phase - 0.8) / 0.2;
-    if (alpha <= 0) continue;
-    const startX = i === 0 ? -0.15 * w : 0.6 * w;
-    const endX = i === 0 ? 0.3 * w : 1.1 * w;
-    const cx = startX + (endX - startX) * phase;
-    const cy = (i === 0 ? 0.25 : 0.65) * h;
-    const radius = 0.35 * w;
-    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    grad.addColorStop(0, `rgba(244, 220, 170, ${0.55 * alpha})`);
-    grad.addColorStop(0.4, `rgba(232, 180, 110, ${0.25 * alpha})`);
-    grad.addColorStop(1, "rgba(232, 180, 110, 0)");
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-/** Bokeh — 4 soft circles of light pulsing in the background. */
-function drawBokeh(ctx: CanvasRenderingContext2D, localMs: number, clipMs: number, w: number, h: number) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  const circles = 4;
-  // Fixed positions, deterministic per circle.
-  const positions = [
-    { x: 0.08, y: 0.15, r: 0.13 },
-    { x: 0.78, y: 0.62, r: 0.16 },
-    { x: 0.85, y: 0.20, r: 0.09 },
-    { x: 0.20, y: 0.80, r: 0.11 },
-  ];
-  for (let i = 0; i < circles; i++) {
-    const p = positions[i];
-    // 3s pulse cycle, staggered.
-    const cycleMs = 3000;
-    const phase = ((localMs + i * 800) % cycleMs) / cycleMs;
-    // Sine wave from 0.35 to 0.6 alpha, with scale 1.0 to 1.08
-    const sineT = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2);
-    const alpha = 0.4 + sineT * 0.22;
-    const scale = 1 + sineT * 0.08;
-    const cx = p.x * w;
-    const cy = p.y * h;
-    const radius = p.r * w * scale;
-    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    grad.addColorStop(0, `rgba(244, 228, 193, ${0.55 * alpha})`);
-    grad.addColorStop(0.55, `rgba(232, 180, 120, ${0.2 * alpha})`);
-    grad.addColorStop(1, "rgba(232, 180, 120, 0)");
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-/** Gold dust — tiny particles falling slowly across the frame. */
-function drawGoldDust(ctx: CanvasRenderingContext2D, localMs: number, clipMs: number, w: number, h: number) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  const particles = 9;
-  const fallMs = 3500;
-  for (let i = 0; i < particles; i++) {
-    const phase = ((localMs + rand(i * 13.7) * fallMs) % fallMs) / fallMs;
-    // Fade in/out
-    let alpha: number;
-    if (phase < 0.15) alpha = phase / 0.15;
-    else if (phase < 0.85) alpha = 0.7;
-    else alpha = 0.7 * (1 - (phase - 0.85) / 0.15);
-    if (alpha <= 0) continue;
-    const x = (0.05 + rand(i * 19.1) * 0.9) * w;
-    const y = phase * h * 1.1 - 0.05 * h;
-    const size = (2 + rand(i * 5.3) * 1.5) * (w / 1080);
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = i % 2 === 0 ? GOLD_LIGHT : GOLD_WARM;
-    ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-/* ════════════════════════════════════════════════════════════════════
- * DEDICATED FRAME-DERIVED EFFECTS  (glow / softLight / lensFlare)
- * These sample the already-drawn clip frame from `ctx.canvas`, so they
- * react to the actual footage (hair shine, skin highlights) instead of
- * floating decorative gradients. Works in all paths — during transitions
- * the renderer draws onto offscreen canvases and `ctx.canvas` resolves to
- * the correct surface automatically.
- * ════════════════════════════════════════════════════════════════════ */
-
-/**
- * Half-resolution scratch canvas, reused across frames. Frame-derived
- * effects blur a downscaled copy (cheaper + softer) then composite it back
- * upscaled. Recreated only when the output dimensions change.
- */
-let _fxScratch: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; w: number; h: number } | null = null;
-function getFxScratch(w: number, h: number) {
-  const sw = Math.max(2, Math.round(w * 0.5));
-  const sh = Math.max(2, Math.round(h * 0.5));
-  if (!_fxScratch || _fxScratch.w !== sw || _fxScratch.h !== sh) {
-    const c = document.createElement("canvas");
-    c.width = sw;
-    c.height = sh;
-    const cx = c.getContext("2d");
-    if (!cx) return null;
-    _fxScratch = { canvas: c, ctx: cx, w: sw, h: sh };
-  }
-  return _fxScratch;
-}
-
-/**
- * GLOW — real bloom. Crush the darks and lift the brights in a blurred
- * half-res copy, then `screen`-composite it back so only luminous areas
- * (hair gloss, skin highlights, jewellery) bleed light. Distinct from
- * light-leaks: it comes FROM the subject, not over it.
- */
-function drawGlow(ctx: CanvasRenderingContext2D, localMs: number, clipMs: number, w: number, h: number) {
-  const s = getFxScratch(w, h);
-  if (!s) return;
-  s.ctx.clearRect(0, 0, s.w, s.h);
-  // contrast() crushes midtones/shadows so the bloom is highlight-only;
-  // brightness() pushes the surviving brights; blur() spreads them.
-  s.ctx.filter = `contrast(1.7) brightness(1.12) blur(${Math.max(2, Math.round(s.w * 0.018))}px)`;
-  s.ctx.drawImage(ctx.canvas, 0, 0, s.w, s.h);
-  s.ctx.filter = "none";
-  // Subtle breathing across the clip so it feels alive, never static.
-  const t = clamp01(localMs / Math.max(1, clipMs));
-  const breathe = 0.5 + 0.5 * Math.sin(t * Math.PI); // 0 → 1 → 0
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  ctx.globalAlpha = 0.20 + 0.10 * breathe;
-  ctx.drawImage(s.canvas, 0, 0, s.w, s.h, 0, 0, w, h);
-  ctx.restore();
-}
-
-/**
- * SOFT LIGHT — Orton-style diffusion. A heavily-blurred copy composited
- * with `soft-light` gives that dreamy editorial haze where skin smooths
- * and highlights bloom gently without blowing out. A faint `screen` pass
- * adds the luminous lift. The luxury "expensive skin" look.
- */
-function drawSoftLight(ctx: CanvasRenderingContext2D, localMs: number, clipMs: number, w: number, h: number) {
-  const s = getFxScratch(w, h);
-  if (!s) return;
-  s.ctx.clearRect(0, 0, s.w, s.h);
-  s.ctx.filter = `blur(${Math.max(3, Math.round(s.w * 0.03))}px) saturate(1.05)`;
-  s.ctx.drawImage(ctx.canvas, 0, 0, s.w, s.h);
-  s.ctx.filter = "none";
-  ctx.save();
-  ctx.globalCompositeOperation = "soft-light";
-  ctx.globalAlpha = 0.55;
-  ctx.drawImage(s.canvas, 0, 0, s.w, s.h, 0, 0, w, h);
-  ctx.restore();
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  ctx.globalAlpha = 0.10;
-  ctx.drawImage(s.canvas, 0, 0, s.w, s.h, 0, 0, w, h);
-  ctx.restore();
-}
-
-/**
- * LENS FLARE — anamorphic. A hot core drifts slowly across the upper
- * third, throwing a horizontal blue-ish streak (the anamorphic signature)
- * and a few coloured ghosts projected through frame-centre. All on
- * `screen` so it reads as light, not paint.
- */
-function drawLensFlare(ctx: CanvasRenderingContext2D, localMs: number, clipMs: number, w: number, h: number) {
-  const phase = (localMs % 6000) / 6000;        // slow 6s drift
-  const cx = (0.18 + 0.64 * phase) * w;
-  const cy = 0.28 * h;
-  const pulse = 0.75 + 0.25 * Math.sin(localMs / 550);
-
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-
-  // Hot core
-  const coreR = w * 0.16;
-  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-  core.addColorStop(0, `rgba(255, 250, 235, ${0.9 * pulse})`);
-  core.addColorStop(0.3, `rgba(255, 225, 180, ${0.4 * pulse})`);
-  core.addColorStop(1, "rgba(255, 225, 180, 0)");
-  ctx.fillStyle = core;
-  ctx.beginPath();
-  ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Anamorphic horizontal streak
-  const streakLen = w * 0.95;
-  const streakH = Math.max(2, h * 0.01);
-  const streak = ctx.createLinearGradient(cx - streakLen / 2, cy, cx + streakLen / 2, cy);
-  streak.addColorStop(0, "rgba(120, 170, 255, 0)");
-  streak.addColorStop(0.5, `rgba(150, 195, 255, ${0.38 * pulse})`);
-  streak.addColorStop(1, "rgba(120, 170, 255, 0)");
-  ctx.fillStyle = streak;
-  ctx.fillRect(cx - streakLen / 2, cy - streakH / 2, streakLen, streakH);
-
-  // Coloured ghosts projected through the centre
-  const ccx = w / 2, ccy = h / 2;
-  const ghosts: { t: number; r: number; rgb: string }[] = [
-    { t: 0.35, r: 0.045, rgb: "255, 210, 150" },
-    { t: 0.7, r: 0.06, rgb: "170, 255, 200" },
-    { t: 1.05, r: 0.035, rgb: "200, 180, 255" },
-  ];
-  for (const g of ghosts) {
-    const gx = cx + (ccx - cx) * g.t;
-    const gy = cy + (ccy - cy) * g.t;
-    const r = w * g.r;
-    const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, r);
-    grad.addColorStop(0, `rgba(${g.rgb}, ${0.22 * pulse})`);
-    grad.addColorStop(1, `rgba(${g.rgb}, 0)`);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(gx, gy, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-// ─────────────────────────────────────────────────────────────────────
-//  LIVE PREVIEW  (C.0)
-// ─────────────────────────────────────────────────────────────────────
 /**
  * Draw a SINGLE preview frame onto a canvas, reusing the exact same drawing
  * code as the export path (drawClipFrame + drawPremiumEffect). This is the

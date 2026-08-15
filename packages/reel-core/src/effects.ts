@@ -1,10 +1,17 @@
 /**
- * Premium visual effects catalog — the single source of truth for the
- * frame overlays the renderer can draw (see drawPremiumEffect in
- * browser-renderer.ts). Both apps derive their effect pickers from this,
- * so the UI can never offer an effect the engine doesn't actually render.
+ * Catalogul de efecte de clip, DERIVAT din registry (fx/registry.ts).
+ *
+ * Nu mai definește nimic — expune ce e înregistrat. Regula scrisă aici de la
+ * început („UI-ul nu poate oferi un efect pe care engine-ul nu-l randează")
+ * e acum structurală, nu o convenție de respectat manual.
  */
+import { CLIP_EFFECT_DEFS } from "./fx/registry";
+import type { ParamDef } from "./fx/types";
 
+/**
+ * Id-urile rămân un tip îngust, nu `string`: aplicațiile le țin în baza de
+ * date, iar o greșeală de scriere trebuie prinsă de compilator.
+ */
 export type EffectId =
   | "none"
   | "sparkle"
@@ -13,32 +20,28 @@ export type EffectId =
   | "dust"
   | "glow"
   | "softLight"
-  | "lensFlare";
+  | "lensFlare"
+  | "lightSweep";
 
 export interface EffectPreset {
   id: EffectId;
   label: string;
   desc: string;
+  /** Ce se poate regla. Studio generează controalele din el. */
+  params?: Record<string, ParamDef>;
 }
 
-export const EFFECTS: Record<EffectId, EffectPreset> = {
-  none:      { id: "none",      label: "Fără efect", desc: "Niciun overlay." },
-  sparkle:   { id: "sparkle",   label: "Sparkle",    desc: "Sclipiri aurii — transformări lux, momente de reveal." },
-  leak:      { id: "leak",      label: "Light leak", desc: "Pete calde care plutesc, cinematic vintage soft." },
-  bokeh:     { id: "bokeh",     label: "Bokeh",      desc: "Pete blurate, dreamy, profunzime de câmp." },
-  dust:      { id: "dust",      label: "Particule",  desc: "Particule fine de aur căzând lent în lumină." },
-  glow:      { id: "glow",      label: "Glow",       desc: "Bloom real — highlight-urile strălucesc din cadru." },
-  softLight: { id: "softLight", label: "Soft light", desc: "Difuzie Orton — piele luminoasă, soft, dreamy." },
-  lensFlare: { id: "lensFlare", label: "Lens flare", desc: "Reflexie anamorfică — miez fierbinte + dâră orizontală." },
-};
+const NONE: EffectPreset = { id: "none", label: "Fără efect", desc: "Niciun overlay." };
 
 export const EFFECT_LIST: EffectPreset[] = [
-  EFFECTS.none,
-  EFFECTS.sparkle,
-  EFFECTS.glow,
-  EFFECTS.softLight,
-  EFFECTS.lensFlare,
-  EFFECTS.leak,
-  EFFECTS.bokeh,
-  EFFECTS.dust,
+  NONE,
+  ...CLIP_EFFECT_DEFS.map((d) => ({
+    id: d.id as EffectId,
+    label: d.label,
+    desc: d.desc,
+    params: d.params,
+  })),
 ];
+
+export const EFFECTS: Record<EffectId, EffectPreset> =
+  Object.fromEntries(EFFECT_LIST.map((e) => [e.id, e])) as Record<EffectId, EffectPreset>;
