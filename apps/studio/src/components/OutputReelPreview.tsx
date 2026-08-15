@@ -24,6 +24,7 @@ import {
   FILTERS,
   TEXT_PRESETS,
   type ConcatProgress,
+  type FxParams,
 } from "@reelcoach/core";
 import type { Composition, ShotLike, TransitionId } from "@/lib/db-types";
 
@@ -63,6 +64,9 @@ export default function OutputReelPreview({
       const transitionTypes: (TransitionId | undefined)[] = [];
       const playbackSpeeds: (number | undefined)[] = [];
       const motionBlurs: (boolean | undefined)[] = [];
+      // Reglajele efectelor, in aceeasi ordine ca restul dimensiunilor.
+      const transitionParams: (FxParams | undefined)[] = [];
+      const effectParams: (FxParams | undefined)[] = [];
 
       for (let i = 0; i < usable.length; i += 1) {
         const { slot, shot } = usable[i];
@@ -86,7 +90,15 @@ export default function OutputReelPreview({
         );
         playbackSpeeds.push(slot.speed ?? shot.playback_speed ?? 1);
         motionBlurs.push(slot.motionBlur ?? shot.motion_blur ?? false);
-        effectIds.push(shot.effect && shot.effect !== "none" ? shot.effect : undefined);
+        // Efectul slotului bate pe cel al momentului: in biblioteca si in
+        // postari, efectul e o decizie de compozitie, nu o proprietate a
+        // materialului filmat.
+        const eId = slot.effect ?? (shot.effect && shot.effect !== "none" ? shot.effect : undefined);
+        effectIds.push(eId);
+        transitionParams.push(
+          slot.transition ? slot.fxParams?.[slot.transition] : undefined,
+        );
+        effectParams.push(eId ? slot.fxParams?.[eId] : undefined);
 
         // Textul: încă de pe moment. Trece pe slot când construim editorul de text
         // per postare — atunci „ZIUA 1" și „Pasul 2" pot sta peste același cadru.
@@ -121,6 +133,8 @@ export default function OutputReelPreview({
           transitionTypes,
           playbackSpeeds,
           motionBlurs,
+          transitionParams,
+          effectParams,
           overlays,
           transitionType: (output.transition ?? "fade") as TransitionId,
         },

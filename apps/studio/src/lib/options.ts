@@ -7,6 +7,7 @@
  * STUDIO_FILTERS subset (the partner-facing palette), not the full catalog.
  */
 
+import type { ParamDef } from "@reelcoach/core";
 import { TRANSITION_LIST, EFFECT_LIST, STUDIO_FILTERS } from "@reelcoach/core";
 import type { TransitionId, EffectId } from "./db-types";
 
@@ -30,6 +31,17 @@ export const PATTERNS: { id: string; label: string; desc: string }[] = [
  */
 export const TRANSITIONS: { id: TransitionId; label: string; desc: string }[] =
   TRANSITION_LIST.map((t) => ({ id: t.id as TransitionId, label: t.label, desc: t.desc }));
+
+/**
+ * Schemele de parametri, pe id. Studio isi genereaza controalele din ele
+ * (vezi FxParams.tsx) — un efect nou apare cu reglajele lui fara cod de
+ * interfata scris de mana.
+ */
+export const TRANSITION_PARAMS: Record<string, Record<string, ParamDef>> =
+  Object.fromEntries(TRANSITION_LIST.filter((t) => t.params).map((t) => [t.id, t.params!]));
+
+export const EFFECT_PARAMS: Record<string, Record<string, ParamDef>> =
+  Object.fromEntries(EFFECT_LIST.filter((e) => e.params).map((e) => [e.id, e.params!]));
 
 /**
  * Effects — likewise derived from the engine's catalog (includes glow /

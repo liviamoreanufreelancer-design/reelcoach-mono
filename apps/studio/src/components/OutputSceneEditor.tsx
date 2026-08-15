@@ -16,7 +16,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
-import { TRANSITIONS } from "@/lib/options";
+import { TRANSITIONS, TRANSITION_PARAMS, EFFECT_PARAMS, EFFECTS } from "@/lib/options";
+import FxParams, { type FxValues } from "./FxParams";
 import type { Composition, OutputSlot, ShotLike, TransitionId } from "@/lib/db-types";
 
 const W = 540;
@@ -72,7 +73,8 @@ export default function OutputSceneEditor({
   const filterId = slot?.filter ?? output.filter ?? "none";
   const speed = slot?.speed ?? shot?.playback_speed ?? 1;
   const trimSec = slot?.sec ?? shot?.final_usage_duration ?? 2;
-  const effectId = shot?.effect ?? "none";
+  // Efectul slotului bate pe cel al momentului — vezi OutputReelPreview.
+  const effectId = slot?.effect ?? shot?.effect ?? "none";
 
   // Bucla de desenare citește prin ref, ca schimbările să apară la următorul
   // cadru fără s-o repornim (repornirea produce sclipiri și cadre negre).
@@ -142,6 +144,15 @@ export default function OutputSceneEditor({
   }, [shot?.sample_video_url]);
 
   // ── Scriere în slot ──────────────────────────────────────────────────
+  /**
+   * Reglajele se tin pe ID DE EFECT, nu pe slot. Daca partenera incearca
+   * Zoom Through, trece pe Light Sweep si se intoarce, reglajele primului o
+   * asteapta acolo — altfel fiecare comutare le-ar sterge si ar reincepe.
+   */
+  const fxValues = (fxId: string): FxValues => (slot?.fxParams?.[fxId] ?? {}) as FxValues;
+  const setFx = (fxId: string, v: FxValues) =>
+    patchSlot({ fxParams: { ...(slot?.fxParams ?? {}), [fxId]: v } });
+
   const patchSlot = (p: Partial<OutputSlot>) =>
     onChangeSlots(output.slots.map((s, i) => (i === idx ? { ...s, ...p } : s)));
 
@@ -354,6 +365,38 @@ export default function OutputSceneEditor({
                 <option key={t.id} value={t.id}>{t.label}</option>
               ))}
             </select>
+            {/* Reglajele efectului ales, generate din schema lui */}
+            {slot?.transition && TRANSITION_PARAMS[slot.transition] && (
+              <FxParams
+                schema={TRANSITION_PARAMS[slot.transition]}
+                values={fxValues(slot.transition)}
+                onChange={(v) => setFx(slot.transition as string, v)}
+                disabled={disabled}
+              />
+            )}
+          </div>
+
+          {/* Efect peste acest moment (Light Sweep, glow, sparkle...) */}
+          <div>
+            <label className="label">Efect peste acest moment</label>
+            <select
+              value={slot?.effect ?? ""}
+              onChange={(e) => patchSlot({ effect: e.target.value || undefined })}
+              className="input"
+            >
+              <option value="">Fără efect</option>
+              {EFFECTS.filter((e) => e.id !== "none").map((e) => (
+                <option key={e.id} value={e.id}>{e.label}</option>
+              ))}
+            </select>
+            {slot?.effect && EFFECT_PARAMS[slot.effect] && (
+              <FxParams
+                schema={EFFECT_PARAMS[slot.effect]}
+                values={fxValues(slot.effect)}
+                onChange={(v) => setFx(slot.effect as string, v)}
+                disabled={disabled}
+              />
+            )}
           </div>
 
           <label className="flex items-center gap-2.5 cursor-pointer">

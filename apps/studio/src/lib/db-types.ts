@@ -53,6 +53,14 @@ export interface OutputSlot {
   /** Viteză de redare (0,5 = slow-mo). */
   speed?: number;
   motionBlur?: boolean;
+  /** Efect peste acest moment, in aceasta postare. */
+  effect?: string;
+  /**
+   * Reglajele efectelor, pe ID DE EFECT: `{ zoomThrough: { focusX: 0.3 } }`.
+   * Pe id, nu global, ca sa nu se piarda cand partenera incearca un efect,
+   * trece la altul si se intoarce — reglajele primului o asteapta acolo.
+   */
+  fxParams?: Record<string, Record<string, number | string | boolean>>;
   /** Text peste acest moment. Diferă aproape mereu de la o postare la alta. */
   textLayers?: unknown[];
   /**
