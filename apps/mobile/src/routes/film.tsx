@@ -348,6 +348,14 @@ function Film() {
     setT(0); setShowGuide(true);
     setIdx((p: number) => Math.max(0, p - 1));
   };
+  // Unde duce sfarsitul filmarii. Cu postari definite in Studio, stilista
+  // vede intai PACHETUL (ce a iesit) si abia apoi alege ce exporta. Fara ele,
+  // ramane drumul vechi, direct in editare.
+  const goAfterFilming = () => {
+    if ((scenario.outputs?.length ?? 0) > 0) nav({ to: "/pachet" });
+    else nav({ to: "/edit" });
+  };
+
   const next = () => {
     if (rec.state === "recording") rec.cancel();
     playNavForward();
@@ -359,7 +367,7 @@ function Film() {
       return;
     }
     if (idx === scenes.length - 1) {
-      nav({ to: "/edit" });
+      goAfterFilming();
     } else {
       setIdx((p: number) => p + 1);
       setPhase("preshot");

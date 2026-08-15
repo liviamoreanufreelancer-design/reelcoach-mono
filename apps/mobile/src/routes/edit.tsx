@@ -18,6 +18,7 @@ import {
 import { PhoneShell } from "@/components/PhoneShell";
 import { BackButton } from "@/components/BackButton";
 import { getSelectedScenario, getSelectedIdeaId, clearLastOpenedIdeaId } from "@/lib/selected-idea";
+import { planAllScenes, planOutput, pickDefaultReel, findOutput } from "@/lib/output-plan";
 import { listClips, clearScenario, type StoredClip } from "@/lib/clip-store";
 import { playSelect, playSuccess, playTap } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
@@ -42,6 +43,11 @@ import { effectiveLayers, sceneHasLayers } from "@/lib/scene-layers";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/edit")({
+  // `output` = postarea aleasa in /pachet. Absent => primul reel al partenerei,
+  // sau toate scenele daca sablonul n-are postari definite.
+  validateSearch: (search: Record<string, unknown>): { output?: string } => ({
+    output: typeof search.output === "string" ? search.output : undefined,
+  }),
   component: Edit,
 });
 
@@ -50,6 +56,7 @@ type Tab = "text" | "style";
 
 function Edit() {
   // Read directly from sessionStorage (sync) — no hydration race.
+  const { output: requestedOutputId } = Route.useSearch();
   const [scenario] = useState(() => getSelectedScenario());
   const [scenarioId] = useState(() => getSelectedIdeaId());
   const { brand, logoUrl } = useBrand();
@@ -230,11 +237,29 @@ function Edit() {
       250,
     );
     try {
-      const clips = await listClips(scenarioId);
-      if (clips.length === 0) {
+      const storedClips = await listClips(scenarioId);
+      if (storedClips.length === 0) {
         setPhase("no-clips");
         return;
       }
+
+      // Ce intra in reel, in ce ordine, cu ce stil. Daca partenera a definit
+      // postari in Studio, randam PRIMUL reel al ei — ordinea, duratele si
+      // stilul vin de acolo. Altfel, comportamentul vechi: toate scenele.
+      // Vezi lib/output-plan.ts pentru ordinea slot -> postare -> moment.
+      const activeOutput = findOutput(scenario, requestedOutputId) ?? pickDefaultReel(scenario);
+      const planned = activeOutput
+        ? planOutput(scenario, activeOutput, storedClips)
+        : planAllScenes(scenario, storedClips);
+      if (planned.length === 0) {
+        setPhase("no-clips");
+        return;
+      }
+      // Durata ceruta de postare bate durata salvata la filmare.
+      const clips = planned.map((pl) => ({
+        ...pl.clip,
+        finalUsageDuration: pl.sec ?? pl.clip.finalUsageDuration,
+      }));
 
       // Ținem live preview-ul existent pe ecran și generăm doar versiunea finală.
       setProgress({ phase: "writing", pct: 8, message: "Pregătesc textele și brandul…" });
@@ -243,15 +268,18 @@ function Edit() {
       const logoBmp = await logoToBitmap(brand?.logoBlob);
 
       const overlays: (Blob | undefined)[] = [];
-      for (let i = 0; i < clips.length; i++) {
-        const c = clips[i];
+      for (let i = 0; i < planned.length; i++) {
+        const pl = planned[i];
+        const c = pl.clip;
         const cap = state.captions[c.sceneIdx];
         // Straturi de text libere (Studio) — au prioritate peste caption vechi,
         // aceeasi regula ca in renderPreviewFrame (preview = export). Aplic
         // editarile in-place ale stilistei (doar .text) prin effectiveLayers.
-        const _scene = scenario.scenes[c.sceneIdx];
+        // Straturile vin din plan: partenera poate scrie alt text peste
+        // acelasi moment in alta postare ("ZIUA 1" vs "Pasul 2").
+        const _scene = { ...pl.scene, textLayers: pl.textLayers } as typeof pl.scene;
         const textLayers =
-          _scene && sceneHasLayers(_scene)
+          sceneHasLayers(_scene)
             ? effectiveLayers(_scene, state.layerTextEdits?.[c.sceneIdx])
             : undefined;
         // Preset per scena: "original" => fontul scenei din Studio; vibe => fontul stilului.
@@ -268,7 +296,7 @@ function Edit() {
         setProgress({
           phase: "writing",
           pct: 8 + ((i + 1) / clips.length) * 12,
-          message: `Pregătesc overlay scena ${i + 1}/${clips.length}…`,
+          message: `Pregătesc overlay ${i + 1}/${planned.length}…`,
         });
         const cached = overlayCacheRef.current.get(overlayKey);
         if (cached) {
@@ -374,20 +402,17 @@ function Edit() {
           // renderer applies them per-clip (champagne on scene 1, cinema on
           // scene 2, etc.) rather than one global setting for the whole reel.
           // Falls back to the global value (above) when a clip leaves a slot empty.
-          filters: clips.map((c) => {
-            const fid = scenario.scenes[c.sceneIdx]?.filterId;
-            return fid ? (FILTERS[fid as keyof typeof FILTERS] ?? undefined) : undefined;
-          }),
-          transitionTypes: clips.map(
-            (c) => scenario.scenes[c.sceneIdx]?.transitionType as TransitionId | undefined,
+          filters: planned.map((pl) =>
+            pl.filterId ? (FILTERS[pl.filterId as keyof typeof FILTERS] ?? undefined) : undefined,
           ),
-          playbackSpeeds: clips.map((c) => scenario.scenes[c.sceneIdx]?.playbackSpeed),
-          motionBlurs: clips.map((c) => scenario.scenes[c.sceneIdx]?.motionBlur),
+          transitionTypes: planned.map((pl) => pl.transitionType),
+          playbackSpeeds: planned.map((pl) => pl.playbackSpeed),
+          motionBlurs: planned.map((pl) => pl.motionBlur),
           // Premium per-shot effects (sparkle/leak/bokeh/dust). Each clip
           // carries the effect chosen by its shot pattern; the master
           // toggle in state lets the user kill them all.
           effectsEnabled: state.effectsEnabled,
-          effectIds: clips.map((c) => scenario.scenes[c.sceneIdx]?.effectId),
+          effectIds: planned.map((pl) => pl.scene?.effectId),
         },
         (p) =>
           setProgress({

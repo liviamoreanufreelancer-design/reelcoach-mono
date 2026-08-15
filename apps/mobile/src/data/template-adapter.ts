@@ -99,5 +99,8 @@ export function templateToScenario(t: ReelTemplate): Scenario {
     // daca template-ul n-o are setata. Inainte era hardcodat => se pierdea.
     difficulty: t.difficulty ?? "easy",
     goal: t.promise,
+    // Postarile trec neatinse: legatura cu scenele se face prin slotKey,
+    // care e deja pe Scene. Nimic de tradus aici.
+    outputs: t.outputs,
   };
 }

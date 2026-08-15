@@ -80,6 +80,41 @@ export interface LightSource {
   position: "front" | "left" | "right" | "back" | "top" | "bottom";
 }
 
+/**
+ * Un moment in compozitia unei postari (migratia 015). Ordinea din array e
+ * ordinea din montaj. Referinta e `slot`, un slot_key — NU un shots.id:
+ * publicarea recreeaza momentele cu id-uri noi, deci un id ar rupe legatura.
+ */
+export interface DbOutputSlot {
+  slot: string;
+  sec?: number;
+  /** Exceptii peste implicitele postarii. Absente = se foloseste postarea. */
+  filter?: string;
+  transition?: string;
+  speed?: number;
+  motionBlur?: boolean;
+  textLayers?: TextLayer[];
+}
+
+/**
+ * O postare care iese din sesiune (migratiile 014-016). Un sablon nu mai
+ * inseamna un reel: aceleasi momente filmate dau mai multe rezultate.
+ */
+export interface DbOutputRow {
+  id: string;
+  template_id: string;
+  name: string;
+  kind: "reel" | "carousel" | "stories";
+  slots: DbOutputSlot[];
+  caption: string | null;
+  /** Implicitele de stil ale postarii; slot-urile le pot suprascrie. */
+  filter: string | null;
+  transition: string | null;
+  /** Migratia 016: slot_key-ul momentului care da cadrul de coperta. */
+  cover_slot: string | null;
+  sort_order: number;
+}
+
 export interface DbShotRow {
   id: string;
   template_id: string;

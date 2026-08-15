@@ -1,3 +1,6 @@
+// Import doar de tip — scenarios.ts si shots.ts se refera reciproc, iar
+// `import type` nu creeaza dependenta la runtime.
+import type { SessionOutput } from "./shots";
 import beforeAfter from "@/assets/template-before-after.jpg";
 import luxury from "@/assets/template-luxury.jpg";
 import fear from "@/assets/template-fear.jpg";
@@ -233,6 +236,11 @@ export interface Scenario {
   };
   /** Optional cinematic goal line shown on overview. */
   goal?: string;
+  /**
+   * Postarile sesiunii (migratiile 014-016). Mirrors ReelTemplate.outputs.
+   * Absent = comportamentul vechi: un reel din toate scenele, in ordinea lor.
+   */
+  outputs?: SessionOutput[];
 }
 
 /** Default professional materials per category (Par). */

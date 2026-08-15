@@ -19,6 +19,7 @@
 
 import type {
   ReelTemplate,
+  SessionOutput,
   Shot,
   Section,
   ShotPatternId,
@@ -27,7 +28,7 @@ import type { Profession } from "./scenarios";
 import type { FilterId } from "@reelcoach/core";
 import type { TransitionId } from "@reelcoach/core";
 import type { EffectId } from "./shots";
-import type { DbTemplateRow, DbShotRow } from "./supabase-client";
+import type { DbTemplateRow, DbShotRow, DbOutputRow } from "./supabase-client";
 // Cover fallback bundlat (offline-safe). Inainte era un URL catre bucket-ul
 // Supabase (`covers/_fallback.jpg`) care lipsea => 404 in consola.
 import fallbackCover from "@/assets/template-luxury.jpg";
@@ -39,6 +40,7 @@ import fallbackCover from "@/assets/template-luxury.jpg";
 export function dbToReelTemplate(
   template: DbTemplateRow,
   shots: DbShotRow[],
+  outputs: DbOutputRow[] = [],
 ): ReelTemplate {
   const cover = template.cover_url ?? FALLBACK_COVER;
 
@@ -66,6 +68,25 @@ export function dbToReelTemplate(
     subcategoryId: template.category_id,
     professions: ["par"] as Profession[],
     sections: [section],
+    // Postarile sesiunii. Lista goala devine `undefined`, ca sa se distinga
+    // "sablon fara rezultate definite" de "sablon vechi, un singur reel".
+    outputs: outputs.length > 0 ? outputs.map(dbOutputToSessionOutput) : undefined,
+  };
+}
+
+/** Convert one DB output row -> mobile SessionOutput. */
+function dbOutputToSessionOutput(row: DbOutputRow): SessionOutput {
+  return {
+    id: row.id,
+    name: row.name,
+    kind: row.kind,
+    // `slots` vine din jsonb; daca e null/gresit tipat, nu vrem sa crape
+    // filmarea — o postare fara momente e doar o postare care nu se poate face.
+    slots: Array.isArray(row.slots) ? row.slots : [],
+    caption: row.caption ?? undefined,
+    filter: row.filter ?? undefined,
+    transition: row.transition ?? undefined,
+    coverSlot: row.cover_slot ?? undefined,
   };
 }
 

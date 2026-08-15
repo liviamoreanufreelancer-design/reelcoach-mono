@@ -26,7 +26,7 @@ import { get as idbGet, set as idbSet } from "idb-keyval";
 import type { ReelTemplate } from "./shots";
 import { SEED_TEMPLATES, setRuntimeTemplates } from "./catalog";
 import { supabase, isSupabaseConfigured } from "./supabase-client";
-import type { DbTemplateRow, DbShotRow } from "./supabase-client";
+import type { DbTemplateRow, DbShotRow, DbOutputRow } from "./supabase-client";
 import { dbToReelTemplate } from "./db-to-template";
 
 // ════════════════════════════════════════════════════════════════════
@@ -191,7 +191,7 @@ function mergeWithSeed(fetched: ReelTemplate[]): ReelTemplate[] {
 async function fetchPublishedTemplates(): Promise<ReelTemplate[]> {
   if (!supabase) return [];
 
-  const [templatesRes, shotsRes] = await Promise.all([
+  const [templatesRes, shotsRes, outputsRes] = await Promise.all([
     supabase
       .from("templates")
       .select("*")
@@ -201,13 +201,24 @@ async function fetchPublishedTemplates(): Promise<ReelTemplate[]> {
       .from("shots")
       .select("*, diagram:diagrams(image_url)")
       .order("sort_order", { ascending: true }),
+    supabase
+      .from("outputs")
+      .select("*")
+      .order("sort_order", { ascending: true }),
   ]);
 
   if (templatesRes.error) throw new Error(templatesRes.error.message);
   if (shotsRes.error) throw new Error(shotsRes.error.message);
+  // Postarile NU sunt blocante: un sablon fara ele ramane un reel din toate
+  // momentele, exact ca inainte. O eroare aici n-are voie sa opreasca filmarea.
+  if (outputsRes.error) {
+    // eslint-disable-next-line no-console
+    console.warn("[templates] Nu am putut citi postarile:", outputsRes.error.message);
+  }
 
   const templates = (templatesRes.data ?? []) as DbTemplateRow[];
   const allShots = (shotsRes.data ?? []) as DbShotRow[];
+  const allOutputs = (outputsRes.data ?? []) as DbOutputRow[];
 
   // Group shots by template_id.
   const shotsByTemplate = new Map<string, DbShotRow[]>();
@@ -215,6 +226,13 @@ async function fetchPublishedTemplates(): Promise<ReelTemplate[]> {
     const list = shotsByTemplate.get(shot.template_id) ?? [];
     list.push(shot);
     shotsByTemplate.set(shot.template_id, list);
+  }
+
+  const outputsByTemplate = new Map<string, DbOutputRow[]>();
+  for (const o of allOutputs) {
+    const list = outputsByTemplate.get(o.template_id) ?? [];
+    list.push(o);
+    outputsByTemplate.set(o.template_id, list);
   }
 
   // Build ReelTemplate objects, skipping templates with no shots.
@@ -226,7 +244,7 @@ async function fetchPublishedTemplates(): Promise<ReelTemplate[]> {
       console.warn(`[templates] Skipping "${t.id}" — published but no shots`);
       continue;
     }
-    result.push(dbToReelTemplate(t, shots));
+    result.push(dbToReelTemplate(t, shots, outputsByTemplate.get(t.id) ?? []));
   }
 
   return result;

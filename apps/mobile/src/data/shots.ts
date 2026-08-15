@@ -257,6 +257,41 @@ export interface Section {
   shots: Shot[];
 }
 
+/** Un moment din compozitia unei postari, cu exceptiile lui de stil. */
+export interface OutputSlot {
+  /** slotKey-ul momentului. Se imperecheaza cu Scene.slotKey. */
+  slot: string;
+  /** Cat tine in ACEASTA postare — poate diferi de finalUsageDuration. */
+  sec?: number;
+  filter?: string;
+  transition?: string;
+  speed?: number;
+  motionBlur?: boolean;
+  textLayers?: TextLayer[];
+}
+
+/**
+ * O postare care iese din sesiune: reel, carusel sau story-uri.
+ *
+ * Un sablon nu mai inseamna un reel. Aceleasi momente filmate dau mai multe
+ * rezultate, fiecare cu ordinea, ritmul si stilul lui — de aici si regula
+ * "niciodata zero": cate postari au toate momentele filmate, atatea ies.
+ */
+export interface SessionOutput {
+  id: string;
+  name: string;
+  kind: "reel" | "carousel" | "stories";
+  /** ORDONAT: ordinea din array e ordinea din montaj. */
+  slots: OutputSlot[];
+  /** Textul de sub postare in IG/TikTok. NU se deseneaza pe video. */
+  caption?: string;
+  /** Implicitele postarii; un slot le poate suprascrie. */
+  filter?: string;
+  transition?: string;
+  /** Momentul din care se ia cadrul de coperta. Lipsa = primul slot. */
+  coverSlot?: string;
+}
+
 export interface ReelTemplate {
   id: string;
   subcategoryId: string;
@@ -279,6 +314,12 @@ export interface ReelTemplate {
   difficulty?: "easy" | "medium" | "hard";
   professions: Profession[];
   sections: Section[];
+  /**
+   * Postarile care ies din sesiune (migratiile 014-016). Absent pe
+   * template-urile vechi si pe cele bundlate — atunci ramane comportamentul
+   * de pana acum: un singur reel, din toate momentele, in ordinea lor.
+   */
+  outputs?: SessionOutput[];
 }
 
 export interface Subcategory {

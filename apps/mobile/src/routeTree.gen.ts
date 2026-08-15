@@ -15,6 +15,7 @@ import { Route as SettingsBrandEditRouteImport } from './routes/settings-brand-e
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ProfessionRouteImport } from './routes/profession'
+import { Route as PachetRouteImport } from './routes/pachet'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MyReelsRouteImport } from './routes/my-reels'
 import { Route as FilmRouteImport } from './routes/film'
@@ -54,6 +55,11 @@ const SavedRoute = SavedRouteImport.update({
 const ProfessionRoute = ProfessionRouteImport.update({
   id: '/profession',
   path: '/profession',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PachetRoute = PachetRouteImport.update({
+  id: '/pachet',
+  path: '/pachet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/film': typeof FilmRoute
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
+  '/pachet': typeof PachetRoute
   '/profession': typeof ProfessionRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/film': typeof FilmRoute
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
+  '/pachet': typeof PachetRoute
   '/profession': typeof ProfessionRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/film': typeof FilmRoute
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
+  '/pachet': typeof PachetRoute
   '/profession': typeof ProfessionRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/film'
     | '/my-reels'
     | '/onboarding'
+    | '/pachet'
     | '/profession'
     | '/saved'
     | '/settings'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/film'
     | '/my-reels'
     | '/onboarding'
+    | '/pachet'
     | '/profession'
     | '/saved'
     | '/settings'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/film'
     | '/my-reels'
     | '/onboarding'
+    | '/pachet'
     | '/profession'
     | '/saved'
     | '/settings'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   FilmRoute: typeof FilmRoute
   MyReelsRoute: typeof MyReelsRoute
   OnboardingRoute: typeof OnboardingRoute
+  PachetRoute: typeof PachetRoute
   ProfessionRoute: typeof ProfessionRoute
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
@@ -280,6 +293,13 @@ declare module '@tanstack/react-router' {
       path: '/profession'
       fullPath: '/profession'
       preLoaderRoute: typeof ProfessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pachet': {
+      id: '/pachet'
+      path: '/pachet'
+      fullPath: '/pachet'
+      preLoaderRoute: typeof PachetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   FilmRoute: FilmRoute,
   MyReelsRoute: MyReelsRoute,
   OnboardingRoute: OnboardingRoute,
+  PachetRoute: PachetRoute,
   ProfessionRoute: ProfessionRoute,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,
