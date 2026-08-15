@@ -594,3 +594,107 @@ export async function deleteOutput(outputId: string, templateId: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/dashboard/templates/${templateId}`);
 }
+
+// ════════════════════════════════════════════════════════════════════
+//  BIBLIOTECA DE REELURI (migrația 017)
+//
+//  Variante de reel, nu postări. Nu ating `outputs`, deci nu pot ajunge din
+//  greșeală în pachetul stilistei. Fără ciornă/publicare: e unealta de lucru
+//  a partenerei, nu conținut care ajunge la cineva.
+// ════════════════════════════════════════════════════════════════════
+
+export async function createReelDesign(formData: FormData) {
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const name = String(formData.get("name") ?? "").trim();
+  const reelType = String(formData.get("reel_type") ?? "").trim();
+  const referenceTemplateId = String(formData.get("reference_template_id") ?? "").trim();
+
+  if (!name) throw new Error("Numele e obligatoriu");
+  if (!reelType) throw new Error("Tipul e obligatoriu");
+  if (!referenceTemplateId) throw new Error("Alege un șablon de referință — de acolo vin filmările");
+
+  const { data: last } = await supabase
+    .from("reel_designs").select("sort_order").eq("reel_type", reelType)
+    .order("sort_order", { ascending: false }).limit(1).maybeSingle();
+
+  const { data, error } = await supabase.from("reel_designs").insert({
+    name,
+    reel_type: reelType,
+    reference_template_id: referenceTemplateId,
+    slots: [],
+    sort_order: ((last?.sort_order as number | undefined) ?? -1) + 1,
+    created_by: user.id,
+  }).select("id").single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/biblioteca");
+  redirect(`/dashboard/biblioteca/${data.id}`);
+}
+
+export async function updateReelDesign(
+  designId: string,
+  patch: {
+    name?: string;
+    reel_type?: string;
+    slots?: OutputSlot[];
+    caption?: string | null;
+    filter?: string | null;
+    transition?: string | null;
+    cover_slot?: string | null;
+  },
+) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("reel_designs").update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", designId);
+  // Aceeasi regula ca la updateOutput: intoarcem eroarea in loc s-o aruncam.
+  // O exceptie dintr-o server action ajunge in UI ca "An error occurred in the
+  // Server Components render", cu mesajul ascuns in productie.
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/biblioteca/${designId}`);
+  revalidatePath("/dashboard/biblioteca");
+  return { ok: true as const };
+}
+
+/**
+ * Duplicarea e cheia bibliotecii: nu faci 10 variante de la zero, faci una
+ * bună și o ciupești. Fără ea, cele 10 sunt de zece ori munca.
+ */
+export async function duplicateReelDesign(designId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: src, error: readErr } = await supabase
+    .from("reel_designs").select("*").eq("id", designId).single();
+  if (readErr || !src) throw new Error(readErr?.message ?? "Varianta nu există");
+
+  const { data, error } = await supabase.from("reel_designs").insert({
+    name: `${src.name} (copie)`,
+    reel_type: src.reel_type,
+    category_id: src.category_id,
+    reference_template_id: src.reference_template_id,
+    slots: src.slots,
+    caption: src.caption,
+    filter: src.filter,
+    transition: src.transition,
+    cover_slot: src.cover_slot,
+    sort_order: (src.sort_order ?? 0) + 1,
+    created_by: user.id,
+  }).select("id").single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/biblioteca");
+  redirect(`/dashboard/biblioteca/${data.id}`);
+}
+
+export async function deleteReelDesign(designId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.from("reel_designs").delete().eq("id", designId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/biblioteca");
+  redirect("/dashboard/biblioteca");
+}

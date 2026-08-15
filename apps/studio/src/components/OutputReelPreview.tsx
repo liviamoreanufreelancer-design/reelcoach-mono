@@ -25,7 +25,7 @@ import {
   TEXT_PRESETS,
   type ConcatProgress,
 } from "@reelcoach/core";
-import type { OutputRow, ShotRow, TransitionId } from "@/lib/db-types";
+import type { Composition, ShotRow, TransitionId } from "@/lib/db-types";
 
 const W = 1080;
 const H = 1920;
@@ -34,7 +34,7 @@ export default function OutputReelPreview({
   output,
   shots,
 }: {
-  output: OutputRow;
+  output: Composition;
   shots: ShotRow[];
 }) {
   const [phase, setPhase] = useState<"idle" | "rendering" | "done" | "error">("idle");

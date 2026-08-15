@@ -57,6 +57,42 @@ export interface OutputSlot {
   textLayers?: unknown[];
 }
 
+/**
+ * Ce citesc editorul si preview-ul: compozitia + stilul, atat.
+ *
+ * Exista ca sa poata lucra pe orice are forma asta — o postare (`outputs`) sau
+ * o varianta din biblioteca (`reel_designs`). Fara tipul asta ar fi trebuit
+ * copiat editorul, iar doua copii incep sa dea drift din prima saptamana.
+ */
+export type Composition = Pick<
+  OutputRow,
+  "slots" | "filter" | "transition" | "cover_slot"
+>;
+
+/**
+ * O varianta de reel din biblioteca (migratia 017). Aceeasi forma ca OutputRow
+ * pe partea de compozitie, plus de ce tip e si de unde isi ia filmarile.
+ *
+ * NU e o postare: appul nu o citeste. E unealta de lucru a partenerei.
+ */
+export interface ReelDesignRow {
+  id: string;
+  name: string;
+  /** Tipul al carui varianta este. Text liber — taxonomia inca se descopera. */
+  reel_type: string;
+  category_id: string | null;
+  /** Sablonul din care se iau filmarile de proba. */
+  reference_template_id: string | null;
+  slots: OutputSlot[];
+  caption: string | null;
+  filter: string | null;
+  transition: string | null;
+  cover_slot: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface OutputRow {
   id: string;
   template_id: string;

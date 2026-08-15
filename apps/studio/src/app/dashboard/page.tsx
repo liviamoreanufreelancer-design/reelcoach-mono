@@ -7,6 +7,7 @@
  * Click "+ Șablon nou" → opens dialog → creates draft → redirects to edit.
  */
 import { getSupabaseServerClient } from "@/lib/supabase-server";
+import Link from "next/link";
 import NewTemplateButton from "@/components/NewTemplateButton";
 import TemplateList, { type TemplateRow } from "@/components/TemplateList";
 
@@ -55,7 +56,12 @@ export default async function DashboardPage() {
               : `${templates.length} șabloane în total · ${drafts.length} drafts · ${published.length} publicate`}
           </p>
         </div>
-        <NewTemplateButton />
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Link href="/dashboard/biblioteca" className="btn-glass whitespace-nowrap">
+            Bibliotecă
+          </Link>
+          <NewTemplateButton />
+        </div>
       </div>
 
       <TemplateList templates={templates} categoryLabels={categoryLabels} parentsWithDraft={Array.from(parentsWithDraft)} />

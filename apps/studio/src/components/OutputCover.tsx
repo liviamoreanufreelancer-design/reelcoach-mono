@@ -22,7 +22,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ImageOff } from "lucide-react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
-import type { OutputRow, ShotRow } from "@/lib/db-types";
+import type { Composition, ShotRow } from "@/lib/db-types";
 
 /** Mic — e un cartonaș, nu un preview. Ține și memoria jos la 9 bucăți. */
 const W = 270;
@@ -32,7 +32,7 @@ export default function OutputCover({
   shots,
   aspect,
 }: {
-  output: OutputRow;
+  output: Composition;
   shots: ShotRow[];
   /** 9/16 pentru reel și story, 4/5 pentru carusel. */
   aspect: number;
