@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Smartphone, ChevronLeft, ChevronRight, ArrowRight, Check, RefreshCw, Square, Upload, AlertCircle, Sparkles, Package, Play, ListChecks, Sun, MoveRight, Clock, Info, Ruler } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
+import { SessionPromise } from "@/components/SessionPromise";
+import { NextUpPanel } from "@/components/NextUpPanel";
 import { BackButton } from "@/components/BackButton";
 import { CinematicBg } from "@/components/CinematicBg";
 import { ShotIcon } from "@/components/ShotIcon";
@@ -53,12 +55,14 @@ function Film() {
   // The reel preview screen (/reel/$id) sets the storyboard as "seen",
   // so when user comes from there, we skip storyboard and go straight
   // to the shot-first preshot screen.
-  const [phase, setPhase] = useState<"overview" | "materials" | "preshot" | "film">(() => {
+  const [phase, setPhase] = useState<"promise" | "overview" | "materials" | "preshot" | "film">(() => {
     const templateId = getSelectedIdeaId();
     if (templateId && hasSeenStoryboardRecently(templateId)) {
       return "preshot";
     }
-    return "materials";
+    // Cu postari definite, primul ecran spune CE PRIMESTE — 15 secunde inainte
+    // de orice efort. Sabloanele vechi pastreaza storyboard-ul de dinainte.
+    return (scenario.outputs?.length ?? 0) > 0 ? "promise" : "materials";
   });
   const search = Route.useSearch();
   const targetScene = search.scene;
@@ -389,6 +393,21 @@ function Film() {
     (kindOf(i) === "video" || photoCaptured.has(i));
   const sceneDone = isSceneDone(idx);
   const allDone = scenes.every((_, i) => isSceneDone(i));
+
+  // ---------- Promisiunea sesiunii: ce primeste, inainte de orice efort ----------
+  if (phase === "promise") {
+    return (
+      <SessionPromise
+        scenario={scenario}
+        onBack={() => nav({ to: "/" })}
+        onStart={() => {
+          light();
+          playTap();
+          setPhase("preshot");
+        }}
+      />
+    );
+  }
 
   // ---------- Pre-shot: shot-first card (what to see + how to film + example) ----------
   if (phase === "preshot") {
@@ -723,23 +742,39 @@ function Film() {
             </>
           )}
 
-          <button
-            onClick={next}
-            disabled={false}
-            className="mt-3 w-full h-12 rounded-full text-sm font-medium flex items-center justify-center gap-2 text-white/85 bg-white/5 border border-white/10 hover:bg-white/10 transition-all active:scale-[0.98] disabled:opacity-40"
-          >
-            {idx === scenes.length - 1 ? (
-              <>
-                <Check className="w-4 h-4" />
-                Mergi la editare
-              </>
-            ) : (
-              <>
-                Următoarea scenă
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+          {/* Dupa ce momentul e salvat: ce urmeaza, si cele doua iesiri reale.
+              Sesiunea se intinde pe ore — "revin mai tarziu" e cazul obisnuit,
+              nu abandon, deci are aceeasi greutate ca "filmez acum". */}
+          {sceneDone && !isRecording && idx < scenes.length - 1 && scenes[idx + 1] ? (
+            <NextUpPanel
+              next={scenes[idx + 1]}
+              remaining={scenes.length - 1 - idx}
+              onContinue={next}
+              onLater={() => {
+                light();
+                playTap();
+                nav({ to: "/" });
+              }}
+            />
+          ) : (
+            <button
+              onClick={next}
+              disabled={false}
+              className="mt-3 w-full h-12 rounded-full text-sm font-medium flex items-center justify-center gap-2 text-white/85 bg-white/5 border border-white/10 hover:bg-white/10 transition-all active:scale-[0.98] disabled:opacity-40"
+            >
+              {idx === scenes.length - 1 ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  {(scenario.outputs?.length ?? 0) > 0 ? "Vezi ce ai" : "Mergi la editare"}
+                </>
+              ) : (
+                <>
+                  Următoarea scenă
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
 
 
         </div>
