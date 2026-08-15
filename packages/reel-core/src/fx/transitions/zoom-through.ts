@@ -28,7 +28,7 @@
  */
 import type { TransitionDef } from "../types";
 import { num } from "../types";
-import { accelerate, settle, clamp01 } from "../easing";
+import { accelerate, settle, clamp01, px } from "../easing";
 
 export const zoomThrough: TransitionDef = {
   id: "zoomThrough",
@@ -61,9 +61,10 @@ export const zoomThrough: TransitionDef = {
     const fy = clamp01(num(params, "focusY", 0.42));
     const soft = num(params, "softness", 5);
 
-    // Punctul de pătrundere, în pixeli.
-    const px = fx * width;
-    const py = fy * height;
+    // Punctul de pătrundere, în pixeli. (`cx/cy`, nu `px` — `px()` e
+    // convertorul de unități din fx/easing.ts.)
+    const cx = fx * width;
+    const cy = fy * height;
 
     // Cadrul care IESE: accelerează spre punct. Accelerarea (nu easeInOut) e
     // ce face mișcarea să pară că trece PRIN imagine, nu că se oprește în ea.
@@ -71,12 +72,12 @@ export const zoomThrough: TransitionDef = {
     const outScale = 1 + (depth - 1) * a;
     ctx.save();
     ctx.globalAlpha = 1 - a;
-    if (soft > 0) ctx.filter = `blur(${(a * soft).toFixed(2)}px)`;
+    if (soft > 0) ctx.filter = `blur(${px(width, a * soft)}px)`;
     // Scalăm în jurul punctului ales: translatăm punctul în origine, scalăm,
     // îl punem la loc. Fără asta, zoom-ul ar fi mereu pe centrul geometric.
-    ctx.translate(px, py);
+    ctx.translate(cx, cy);
     ctx.scale(outScale, outScale);
-    ctx.translate(-px, -py);
+    ctx.translate(-cx, -cy);
     ctx.drawImage(from, 0, 0, width, height);
     ctx.restore();
 
@@ -86,10 +87,10 @@ export const zoomThrough: TransitionDef = {
     const inScale = depth - (depth - 1) * s;
     ctx.save();
     ctx.globalAlpha = s;
-    if (soft > 0) ctx.filter = `blur(${((1 - s) * soft * 0.6).toFixed(2)}px)`;
-    ctx.translate(px, py);
+    if (soft > 0) ctx.filter = `blur(${px(width, (1 - s) * soft * 0.6)}px)`;
+    ctx.translate(cx, cy);
     ctx.scale(inScale, inScale);
-    ctx.translate(-px, -py);
+    ctx.translate(-cx, -cy);
     ctx.drawImage(to, 0, 0, width, height);
     ctx.restore();
   },

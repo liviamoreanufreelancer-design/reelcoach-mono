@@ -28,8 +28,24 @@ import {
 } from "@reelcoach/core";
 import type { Composition, ShotLike, TransitionId } from "@/lib/db-types";
 
-const W = 1080;
-const H = 1920;
+/**
+ * Preview-ul randează la JUMĂTATE de rezoluție, nu la 1080×1920.
+ *
+ * Randarea merge în timp real: la 1080×1920 fiecare cadru înseamnă 2 milioane
+ * de pixeli de desenat și encodat, iar dacă bucla nu ține pasul se pierd cadre
+ * — iar cadrele pierdute nu se recuperează, se văd ca sacadare. La 540×960
+ * costul per cadru scade de patru ori.
+ *
+ * Nu se pierde nimic din ce judecă partenera: cartonașul se afișează la 220px
+ * lățime, deci 540 e încă de 2,4 ori mai mult decât se vede. Ritmul, filtrul,
+ * tranzițiile și textul sunt identice — valorile în pixeli din efecte sunt
+ * relative la lățime (`px()` din fx/easing.ts), deci un blur arată la fel la
+ * ambele rezoluții.
+ *
+ * Exportul de pe telefon rămâne 1080×1920.
+ */
+const W = 540;
+const H = 960;
 
 export default function OutputReelPreview({
   output,

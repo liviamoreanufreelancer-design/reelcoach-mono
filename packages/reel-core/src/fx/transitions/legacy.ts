@@ -10,7 +10,7 @@
  * una câte una, când o cere un caz real — nu preventiv.
  */
 import type { TransitionDef } from "../types";
-import { easeInOut } from "../easing";
+import { easeInOut, px } from "../easing";
 
 export const flashTransition: TransitionDef = {
   id: "flash",
@@ -110,13 +110,13 @@ export const blurTransition: TransitionDef = {
     const eT = easeInOut(t);
     // Outgoing: increasing blur, fading out
     ctx.save();
-    ctx.filter = `blur(${eT * 20}px)`;
+    ctx.filter = `blur(${px(width, eT * 20)}px)`;
     ctx.globalAlpha = 1 - eT;
     ctx.drawImage(snap, 0, 0);
     ctx.restore();
     // Incoming: decreasing blur, fading in
     ctx.save();
-    ctx.filter = `blur(${(1 - eT) * 20}px)`;
+    ctx.filter = `blur(${px(width, (1 - eT) * 20)}px)`;
     ctx.globalAlpha = eT;
     ctx.drawImage(incoming, 0, 0);
     ctx.restore();
@@ -232,7 +232,7 @@ export const smoothZoomTransition: TransitionDef = {
     const eT = easeInOut(t);
     ctx.save();
     ctx.globalAlpha = 1 - eT;
-    ctx.filter = `blur(${eT * 6}px)`;
+    ctx.filter = `blur(${px(width, eT * 6)}px)`;
     const outS = 1 + eT * 0.35;
     ctx.translate(width / 2, height / 2);
     ctx.scale(outS, outS);

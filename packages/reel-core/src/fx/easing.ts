@@ -42,3 +42,21 @@ export type EasingId = keyof typeof EASINGS;
 export function easingBy(id: string): (t: number) => number {
   return (EASINGS as Record<string, (t: number) => number>)[id] ?? settle;
 }
+
+/**
+ * Rezoluția la care au fost proiectate efectele. Orice valoare în pixeli din
+ * bibliotecă e gândită aici.
+ */
+export const DESIGN_WIDTH = 1080;
+
+/**
+ * Convertește o valoare gândită la 1080 lățime în pixeli pentru rezoluția
+ * curentă.
+ *
+ * Fără asta, un blur de 20px arată de două ori mai puternic la 540 lățime —
+ * adică preview-ul din Studio ar minți exact la efectele care depind de blur.
+ * La 1080 e identitate, deci exportul rămâne neschimbat.
+ */
+export function px(width: number, atDesignWidth: number): number {
+  return (atDesignWidth * width) / DESIGN_WIDTH;
+}
