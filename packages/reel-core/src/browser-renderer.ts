@@ -429,6 +429,25 @@ export async function renderReelInBrowser(
   const outroMs = opts.outroPng ? (opts.outroDuration ?? 1.4) * 1000 : 0;
   const transitionType: TransitionId = opts.transitionType ?? "fade";
   const transMs = effects.transitions ? (opts.transitionDuration ?? 0.25) * 1000 : 0;
+
+  /**
+   * Durata tranziției care IESE din clipul `i`.
+   *
+   * Era o singură valoare pentru tot reel-ul, deși fiecare tranziție își
+   * declară durata în catalog. Consecința: un Zoom Through gândit pentru
+   * 560ms rula în 250ms — la 30fps, 7 cadre în loc de 17. Mișcarea nu era
+   * „rapidă", era SĂRITĂ, și exact tranzițiile cu mișcare multă (zoom, spin,
+   * whip) sufereau cel mai tare, fiindcă au cel mai mult de parcurs.
+   *
+   * Acum fiecare tranziție rulează cât a fost proiectată. Valoarea globală
+   * rămâne implicitul, pentru clipurile care n-au una proprie.
+   */
+  const transMsAt = (i: number): number => {
+    if (!effects.transitions) return 0;
+    const id = perClipTransitions[i];
+    const def = id ? findTransition(id) : undefined;
+    return def ? def.durationMs : transMs;
+  };
   const effectsEnabled = opts.effectsEnabled ?? true;
   const effectIds = opts.effectIds ?? [];
 
@@ -488,7 +507,10 @@ export async function renderReelInBrowser(
   const clipsTotal = clipDursMs.reduce((a, b) => a + b, 0);
   const transitionsCount = Math.max(0, loadedClips.length - 1);
   const outroOverlap = outroImg && transMs ? transMs : 0;
-  const totalMs = introMs + clipsTotal - transitionsCount * transMs + outroMs - outroOverlap;
+  // Suprapunerile diferă acum de la o tranziție la alta, deci se însumează.
+  let overlapTotal = 0;
+  for (let i = 0; i < transitionsCount; i++) overlapTotal += transMsAt(i);
+  const totalMs = introMs + clipsTotal - overlapTotal + outroMs - outroOverlap;
 
   // ── Bugetul de decodoare video ────────────────────────────────────────
   // WebKit poate decoda doar câteva videouri simultan, iar randarea merge în
@@ -607,7 +629,7 @@ export async function renderReelInBrowser(
   let cursor = introMs;
   for (let i = 0; i < loadedClips.length; i++) {
     clipStarts.push(cursor);
-    cursor += clipDursMs[i] - (i < loadedClips.length - 1 ? transMs : 0);
+    cursor += clipDursMs[i] - (i < loadedClips.length - 1 ? transMsAt(i) : 0);
   }
   const outroStart = outroImg ? cursor - outroOverlap : Infinity;
   let outroSnapTaken = false;
@@ -838,9 +860,10 @@ export async function renderReelInBrowser(
     startPreroll(preIdx);
     primeAhead((nextActive !== -1 ? nextActive : active) + 1);
 
-    if (active !== -1 && nextActive !== -1 && transMs > 0) {
+    const activeTransMs = active !== -1 ? transMsAt(active) : 0;
+    if (active !== -1 && nextActive !== -1 && activeTransMs > 0) {
       const start = clipStarts[nextActive];
-      const t = clamp01((tMs - start) / transMs);
+      const t = clamp01((tMs - start) / activeTransMs);
       ensurePlaying(active, tMs - clipStarts[active]);
       ensurePlaying(nextActive, tMs - clipStarts[nextActive]);
       drawClipWithOverlay(active, tMs - clipStarts[active], snapCtx);

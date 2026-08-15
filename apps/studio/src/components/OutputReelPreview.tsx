@@ -126,7 +126,11 @@ export default function OutputReelPreview({
         {
           width: W,
           height: H,
-          fps: 24,
+          // 30, ca pe telefon. La 24, o tranziție de 400ms are 12 cadre în
+          // Studio și 12 la export doar din întâmplare — orice altă durată
+          // diferă, iar partenera ar judeca un ritm care nu e cel livrat.
+          // „Preview = export" e și despre framerate.
+          fps: 30,
           filter: FILTERS[(output.filter || "none") as keyof typeof FILTERS] ?? FILTERS.none,
           filters,
           effectIds,
