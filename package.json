@@ -5,5 +5,14 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "build:mobile": "npm --prefix apps/mobile run build:mobile",
+    "build:studio": "npm --prefix apps/studio run build",
+    "dev:mobile": "npm --prefix apps/mobile run dev",
+    "dev:studio": "npm --prefix apps/studio run dev",
+    "check": "npm run check:mobile && npm run check:studio",
+    "check:mobile": "cd apps/mobile && npx tsc --noEmit",
+    "check:studio": "cd apps/studio && npx tsc --noEmit"
+  }
 }

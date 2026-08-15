@@ -71,12 +71,19 @@ Buckets: `previews`, `samples`, `covers`, `examples`.
 
 ### Build mobile (secvență strictă)
 
+Din **rădăcina** monorepo-ului (`~/Code/reelcoach-mono`):
+
 ```
-npm run build:mobile        # NU "npm run build" — ăla e doar web
+npm run build:mobile        # NU "npm run build" — ăla nici nu există în rădăcină
 cd apps/mobile && npx cap sync ios
 # Xcode: Cmd+Shift+K, apoi Cmd+R
 # Șterge și reinstalează appul pe device (curăță cache-ul IndexedDB)
 ```
+
+Rădăcina n-avea niciun script — comenzile mergeau doar din `apps/mobile`, iar
+secvența de mai sus eșua exact cum era scrisă. Acum rădăcina deleagă în
+workspace: `build:mobile`, `build:studio`, `dev:mobile`, `dev:studio`, plus
+`npm run check` (tsc pe ambele apps, verificarea de dinainte de commit).
 
 ---
 
