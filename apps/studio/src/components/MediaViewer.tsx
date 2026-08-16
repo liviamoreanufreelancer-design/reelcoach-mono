@@ -12,7 +12,8 @@
  */
 import { useCallback, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
-import { MEDIA_MAX_WIDTH, type MediaAsset } from "@/lib/db-types";
+import type { MediaAsset } from "@/lib/db-types";
+import { isOversized } from "@/lib/media-display";
 
 export default function MediaViewer({
   assets,
@@ -51,7 +52,7 @@ export default function MediaViewer({
   const asset = assets[index];
   if (!asset) return null;
 
-  const tooBig = (asset.width ?? 0) > MEDIA_MAX_WIDTH;
+  const tooBig = isOversized(asset);
   const mb = asset.size_bytes ? asset.size_bytes / (1024 * 1024) : null;
 
   return (

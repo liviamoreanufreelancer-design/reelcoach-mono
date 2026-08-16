@@ -14,7 +14,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Upload, Search, X, AlertTriangle, Maximize2 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { uploadToLibrary } from "@/lib/media-upload";
-import { MEDIA_MAX_WIDTH, type MediaAsset } from "@/lib/db-types";
+import type { MediaAsset } from "@/lib/db-types";
+import { isOversized, tileAspect } from "@/lib/media-display";
 import MediaViewer from "./MediaViewer";
 
 export default function MediaPicker({
@@ -162,10 +163,10 @@ function AssetTile({
   onPick: () => void;
   onView: () => void;
 }) {
-  // Semnalul se dă AICI, la alegere, nu la randare. Peste 1080 lățime
-  // înseamnă randare mai lentă fără niciun câștig — reel-ul final e 1080×1920,
-  // deci pixelii în plus se aruncă după ce ai plătit pentru ei.
-  const tooBig = (asset.width ?? 0) > MEDIA_MAX_WIDTH;
+  // Semnalul se dă AICI, la alegere, nu la randare: o filmare peste 1080 e
+  // randare mai lentă fără niciun câștig, fiindcă reel-ul final e 1080×1920.
+  // La poze nu se aplică — vezi lib/media-display.ts.
+  const tooBig = isOversized(asset);
 
   return (
     <div className="text-left group relative">
@@ -179,7 +180,10 @@ function AssetTile({
         <Maximize2 className="w-3 h-3" />
       </button>
       <button type="button" onClick={onPick} className="w-full text-left">
-      <div className="relative w-full aspect-[9/16] rounded-lg overflow-hidden bg-[#EFECF8] border-2 border-transparent group-hover:border-[#5B34FF] transition">
+      <div
+        style={{ aspectRatio: `${tileAspect(asset)}` }}
+        className="relative w-full rounded-lg overflow-hidden bg-[#EFECF8] border-2 border-transparent group-hover:border-[#5B34FF] transition"
+      >
         {asset.kind === "video" ? (
           // `preload="metadata"` + `#t=0.5`: browserul aduce doar începutul și
           // arată un cadru, în loc să descarce tot fișierul pentru o miniatură.

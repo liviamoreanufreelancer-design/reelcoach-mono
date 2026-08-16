@@ -14,7 +14,8 @@ import { Upload, Trash2, AlertTriangle } from "lucide-react";
 import { uploadToLibrary } from "@/lib/media-upload";
 import { renameMediaAsset, deleteMediaAsset } from "@/lib/template-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { MEDIA_MAX_WIDTH, type MediaAsset } from "@/lib/db-types";
+import type { MediaAsset } from "@/lib/db-types";
+import { isOversized, tileAspect } from "@/lib/media-display";
 import MediaViewer from "./MediaViewer";
 
 export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
@@ -48,7 +49,7 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
     await reload();
   };
 
-  const oversized = assets.filter((a) => (a.width ?? 0) > MEDIA_MAX_WIDTH).length;
+  const oversized = assets.filter(isOversized).length;
 
   return (
     <div>
@@ -75,7 +76,7 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
         {oversized > 0 && (
           <span className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 inline-flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
-            {oversized} peste 1080 — încetinesc randarea
+            {oversized} {oversized === 1 ? "filmare peste" : "filmări peste"} 1080 — încetinesc randarea
           </span>
         )}
       </div>
@@ -137,7 +138,7 @@ function Tile({
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
-  const tooBig = (asset.width ?? 0) > MEDIA_MAX_WIDTH;
+  const tooBig = isOversized(asset);
   const mb = asset.size_bytes ? asset.size_bytes / (1024 * 1024) : null;
 
   return (
@@ -148,7 +149,8 @@ function Tile({
         onClick={onOpen}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
         title="Deschide materialul"
-        className="relative w-full aspect-[9/16] rounded-lg overflow-hidden bg-[#EFECF8] group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5B34FF]"
+        style={{ aspectRatio: `${tileAspect(asset)}` }}
+        className="relative w-full rounded-lg overflow-hidden bg-[#EFECF8] group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5B34FF]"
       >
         {asset.kind === "video" ? (
           <video

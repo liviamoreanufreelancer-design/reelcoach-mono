@@ -1,0 +1,32 @@
+import { MEDIA_MAX_WIDTH, type MediaAsset } from "./db-types";
+
+/**
+ * Avertismentul de mărime e DOAR pentru filmări.
+ *
+ * Costul rezoluției vine din randarea în timp real: fiecare cadru de sursă
+ * trebuie decodat în bugetul de ~33ms, iar un 4K îl depășește singur (măsurat:
+ * 9fps din 24). Pozele nu trec pe acolo — devin postări-imagine separate, nu
+ * intră în montaj. O poză mare nu încetinește nimic, iar rezoluția în plus e
+ * chiar utilă: Instagram o scalează el, gratis pentru noi.
+ *
+ * Un avertisment pus și pe poze ar fi fost zgomot — iar un avertisment care
+ * apare unde nu trebuie e primul pas spre a fi ignorat și acolo unde trebuie.
+ */
+export function isOversized(asset: MediaAsset): boolean {
+  if (asset.kind !== "video") return false;
+  return (asset.width ?? 0) > MEDIA_MAX_WIDTH;
+}
+
+/**
+ * Ce formă are cartonașul materialului.
+ *
+ * Filmările sunt 9:16 — se fac pentru reeluri, atât. Pozele își păstrează
+ * forma lor reală: o poză de rezultat e 4:5 sau pătrată, iar afișată ca 9:16 ar
+ * fi tăiată exact acolo unde e subiectul. În plus, forma reală arată dintr-o
+ * privire dacă cineva a urcat din greșeală o poză orizontală.
+ */
+export function tileAspect(asset: MediaAsset): number {
+  if (asset.kind === "video") return 9 / 16;
+  if (asset.width && asset.height) return asset.width / asset.height;
+  return 4 / 5; // formatul obișnuit de postare-imagine
+}

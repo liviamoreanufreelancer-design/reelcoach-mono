@@ -151,7 +151,10 @@ export interface MediaAsset {
   created_at: string;
 }
 
-/** Latimea peste care un material incetineste randarea fara sa aduca nimic. */
+/**
+ * Latimea peste care o FILMARE incetineste randarea fara sa aduca nimic.
+ * Nu se aplica pozelor — vezi lib/media-display.ts.
+ */
 export const MEDIA_MAX_WIDTH = 1080;
 
 export interface OutputRow {
