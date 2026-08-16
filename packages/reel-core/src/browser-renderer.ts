@@ -3,7 +3,7 @@ import type { FilterPreset } from "./filters";
 import { FILTERS } from "./filters";
 import type { TransitionId } from "./transitions";
 import type { FxParams } from "./fx/types";
-import { findTransition, findClipEffect } from "./fx/registry";
+import { findTransition, findClipEffect, findTransform } from "./fx/registry";
 import { drawPremiumEffect } from "./fx/effects/legacy";
 import { fadeTransition } from "./fx/transitions/legacy";
 import { drawCaption, drawTextLayers, makeSurface, type Caption, type TextLayer } from "./overlay-renderer";
@@ -180,6 +180,12 @@ function drawClipFrame(
   t: number,
   enableKenBurns: boolean,
   filter: FilterPreset,
+  /**
+   * Mișcarea cerută de un efect de tip `transform` (ex. Photo → Motion).
+   * Când e prezentă, bate Ken Burns-ul automat: unul e alegerea partenerei,
+   * celălalt e o valoare aleasă după indexul clipului.
+   */
+  motion?: { scale: number; dx: number; dy: number },
 ) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, width, height);
@@ -193,12 +199,22 @@ function drawClipFrame(
   ctx.filter = `${ENHANCE} ${partnerFilter}`.trim();
 
   let zoom = 1;
-  if (enableKenBurns && variant !== "static") {
+  if (motion) {
+    zoom = motion.scale;
+  } else if (enableKenBurns && variant !== "static") {
     const e = easeInOut(clamp01(t));
     if (variant === "zoom-in") zoom = 1.0 + 0.04 * e;
     else if (variant === "zoom-out") zoom = 1.04 - 0.04 * e;
   }
-  drawCover(ctx, source, width, height, zoom);
+  if (motion && (motion.dx !== 0 || motion.dy !== 0)) {
+    // Deplasarea e în fracțiuni de cadru, ca efectul să nu știe rezoluția.
+    ctx.save();
+    ctx.translate(motion.dx * width, motion.dy * height);
+    drawCover(ctx, source, width, height, zoom);
+    ctx.restore();
+  } else {
+    drawCover(ctx, source, width, height, zoom);
+  }
 
   ctx.filter = prevFilter;
 
@@ -774,7 +790,17 @@ export async function renderReelInBrowser(
     // on scene 1, cinema on scene 2, warm on scene 3, etc.) as set in
     // Studio rather than one filter applied to the whole reel.
     const clipFilter = perClipFilters[idx] ?? filter;
-    drawClipFrame(target, lc.source, width, height, variants[idx], tNorm, effects.kenBurns, clipFilter);
+    // Un singur selector în Studio: dacă id-ul e o transformare, schimbă cum
+    // se desenează cadrul; dacă e efect de clip, se pune peste (mai jos).
+    const fxId = effectIds[idx];
+    const transform = fxId ? findTransform(fxId) : undefined;
+    const motion = transform
+      ? transform.motion({
+          ctx: target, localMs, clipMs: clipDursMs[idx], width, height,
+          params: effectParams[idx] ?? {},
+        })
+      : undefined;
+    drawClipFrame(target, lc.source, width, height, variants[idx], tNorm, effects.kenBurns, clipFilter, motion);
     // Per-clip motion blur: a decaying feedback trail of the CLIP FRAME only,
     // captured before effects/overlay so text captions and sparkles never
     // ghost. Off unless Studio enabled it for this scene → zero regression.
@@ -806,7 +832,9 @@ export async function renderReelInBrowser(
       if (effectId && effectId !== "none") {
         // Întâi registry-ul (efectele noi, parametrizate); dacă id-ul nu e
         // acolo, cade pe catalogul istoric din drawPremiumEffect.
-        const fx = findClipEffect(effectId);
+        // Transformările s-au aplicat deja, la desenarea cadrului — aici nu
+        // mai au ce căuta, altfel s-ar desena de două ori.
+        const fx = findTransform(effectId) ? undefined : findClipEffect(effectId);
         if (fx) {
           fx.draw({
             ctx: target,
@@ -816,7 +844,7 @@ export async function renderReelInBrowser(
             height,
             params: effectParams[idx] ?? {},
           });
-        } else {
+        } else if (!findTransform(effectId)) {
           drawPremiumEffect(target, effectId, localMs, clipDursMs[idx], width, height);
         }
       }

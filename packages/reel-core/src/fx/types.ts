@@ -12,6 +12,7 @@
  *
  *   transition  două cadre (cel care iese, cel care intră) + t 0→1
  *   clip        cadrul deja desenat + timpul local în clip
+ *   transform   CUM se desenează cadrul (scară, deplasare) — nu peste el
  *   time        durata cadrului — schimbă timeline-ul, nu desenul
  *
  * Al treilea încă n-are implementare (vine cu Freeze + Detail Zoom); e declarat
@@ -84,7 +85,30 @@ export interface ClipEffectDef extends FxBase {
   draw(f: ClipFrame): void;
 }
 
-export type FxDef = TransitionDef | ClipEffectDef;
+/**
+ * Ce mișcare are cadrul în sine.
+ *
+ * Un efect de clip desenează PESTE cadrul deja pus; ăsta schimbă cum e pus.
+ * Fără felul ăsta, „Photo → Motion" ar fi fost imposibil: nu poți face o poză
+ * să se miște desenând ceva deasupra ei.
+ *
+ * Înlocuiește și Ken Burns-ul vechi, care era ±4% ales automat după indexul
+ * clipului — nici configurabil, nici alegere a partenerei.
+ */
+export interface ClipMotion {
+  /** 1 = neschimbat. */
+  scale: number;
+  /** Deplasare, ca fracțiune din lățime/înălțime. 0 = centrat. */
+  dx: number;
+  dy: number;
+}
+
+export interface TransformDef extends FxBase {
+  kind: "transform";
+  motion(f: ClipFrame): ClipMotion;
+}
+
+export type FxDef = TransitionDef | ClipEffectDef | TransformDef;
 
 /** Valorile implicite ale unui efect, din schema lui. */
 export function defaultParams(def: FxDef): FxParams {

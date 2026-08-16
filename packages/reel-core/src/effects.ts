@@ -5,7 +5,7 @@
  * început („UI-ul nu poate oferi un efect pe care engine-ul nu-l randează")
  * e acum structurală, nu o convenție de respectat manual.
  */
-import { CLIP_EFFECT_DEFS } from "./fx/registry";
+import { CLIP_EFFECT_DEFS, TRANSFORM_DEFS } from "./fx/registry";
 import type { ParamDef } from "./fx/types";
 
 /**
@@ -21,7 +21,9 @@ export type EffectId =
   | "glow"
   | "softLight"
   | "lensFlare"
-  | "lightSweep";
+  | "lightSweep"
+  | "editorialFrame"
+  | "photoMotion";
 
 export interface EffectPreset {
   id: EffectId;
@@ -35,7 +37,9 @@ const NONE: EffectPreset = { id: "none", label: "Fără efect", desc: "Niciun ov
 
 export const EFFECT_LIST: EffectPreset[] = [
   NONE,
-  ...CLIP_EFFECT_DEFS.map((d) => ({
+  // Transformările apar în același selector: pentru parteneră e tot „un efect
+  // pe momentul ăsta", iar engine-ul decide unde se aplică.
+  ...[...CLIP_EFFECT_DEFS, ...TRANSFORM_DEFS].map((d) => ({
     id: d.id as EffectId,
     label: d.label,
     desc: d.desc,

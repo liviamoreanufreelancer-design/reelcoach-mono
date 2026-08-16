@@ -25,7 +25,10 @@ export type TransitionId =
   | "whipPan"
   | "smoothZoom"
   | "motionBlur"
-  | "zoomThrough";
+  | "zoomThrough"
+  | "matchCut"
+  | "splitReveal"
+  | "whip";
 
 export interface TransitionPreset {
   id: TransitionId;
