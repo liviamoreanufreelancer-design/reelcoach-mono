@@ -16,16 +16,24 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { uploadToLibrary } from "@/lib/media-upload";
 import type { MediaAsset } from "@/lib/db-types";
 import { isOversized, tileAspect } from "@/lib/media-display";
+import MediaKindFilter, { filterByKind, type MediaKindFilterValue } from "./MediaKindFilter";
 import MediaViewer from "./MediaViewer";
 
 export default function MediaPicker({
   open,
   onClose,
   onPick,
+  prefer = "all",
 }: {
   open: boolean;
   onClose: () => void;
   onPick: (asset: MediaAsset) => void;
+  /**
+   * Ce fel de material caută locul de unde s-a deschis. Cadrele variantelor
+   * cer filmări, deci se deschide direct pe ele — un filtru pe care oricum
+   * l-ai apăsa e o apăsare irosită.
+   */
+  prefer?: MediaKindFilterValue;
 }) {
   const [assets, setAssets] = useState<MediaAsset[] | null>(null);
   const [q, setQ] = useState("");
@@ -33,6 +41,7 @@ export default function MediaPicker({
   const [error, setError] = useState<string | null>(null);
   /** Ce material se privește la mărime, fără să-l alegi. */
   const [viewing, setViewing] = useState<number | null>(null);
+  const [kind, setKind] = useState<MediaKindFilterValue>(prefer);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Citim din browser, nu printr-o pagină de server: dialogul se deschide
@@ -45,16 +54,19 @@ export default function MediaPicker({
     setAssets((data ?? []) as MediaAsset[]);
   };
 
-  useEffect(() => { if (open) { setError(null); void load(); } }, [open]);
+  useEffect(() => {
+    if (open) { setError(null); setKind(prefer); void load(); }
+  }, [open, prefer]);
 
   const shown = useMemo(() => {
+    const base = filterByKind(assets ?? [], kind);
     const needle = q.trim().toLowerCase();
-    if (!needle || !assets) return assets ?? [];
-    return assets.filter(
+    if (!needle) return base;
+    return base.filter(
       (a) => a.name.toLowerCase().includes(needle) ||
              a.tags.some((t) => t.toLowerCase().includes(needle)),
     );
-  }, [assets, q]);
+  }, [assets, q, kind]);
 
   const onFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -87,8 +99,13 @@ export default function MediaPicker({
           </button>
         </div>
 
-        <div className="px-5 py-3 border-b border-[#E7E3F5] flex gap-2 items-center">
-          <div className="relative flex-1">
+        <div className="px-5 py-3 border-b border-[#E7E3F5] flex gap-2 items-center flex-wrap">
+          <MediaKindFilter
+            assets={assets ?? []}
+            value={kind}
+            onChange={(v) => { setKind(v); setViewing(null); }}
+          />
+          <div className="relative flex-1 min-w-[160px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9A9A9A]" />
             <input
               value={q}

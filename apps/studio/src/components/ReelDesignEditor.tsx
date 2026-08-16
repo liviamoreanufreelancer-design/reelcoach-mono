@@ -136,6 +136,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onPick={onPicked}
+        prefer="video"
       />
 
       <div className="flex items-center gap-2 px-5 py-4 border-b border-[#E7E3F5]">

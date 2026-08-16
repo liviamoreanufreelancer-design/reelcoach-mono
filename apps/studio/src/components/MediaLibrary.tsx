@@ -16,6 +16,7 @@ import { renameMediaAsset, deleteMediaAsset } from "@/lib/template-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { MediaAsset } from "@/lib/db-types";
 import { isOversized, tileAspect } from "@/lib/media-display";
+import MediaKindFilter, { filterByKind, type MediaKindFilterValue } from "./MediaKindFilter";
 import MediaViewer from "./MediaViewer";
 
 export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
@@ -23,6 +24,7 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
   const [busy, setBusy] = useState<string | null>(null);
   /** Ce material e deschis la mărime. null = niciunul. */
   const [viewing, setViewing] = useState<number | null>(null);
+  const [kind, setKind] = useState<MediaKindFilterValue>("all");
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -49,6 +51,9 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
     await reload();
   };
 
+  // Vizualizarea lucrează pe lista AFIȘATĂ, nu pe toate: săgețile trebuie să
+  // treacă prin ce vezi, nu prin ce e ascuns de filtru.
+  const shown = filterByKind(assets, kind);
   const oversized = assets.filter(isOversized).length;
 
   return (
@@ -70,9 +75,7 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
         >
           <Upload className="w-4 h-4" /> Urcă materiale
         </button>
-        <span className="text-[12.5px] text-[#9A9A9A]">
-          {assets.length} {assets.length === 1 ? "material" : "materiale"}
-        </span>
+        <MediaKindFilter assets={assets} value={kind} onChange={(v) => { setKind(v); setViewing(null); }} />
         {oversized > 0 && (
           <span className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 inline-flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -88,17 +91,22 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
         </p>
       )}
 
-      {assets.length === 0 ? (
+      {shown.length === 0 ? (
         <div className="card px-6 py-10 text-center">
-          <p className="text-[14px] font-medium text-[#1F1F1F]">Nimic urcat încă.</p>
+          <p className="text-[14px] font-medium text-[#1F1F1F]">
+            {assets.length === 0 ? "Nimic urcat încă." : "Nimic aici."}
+          </p>
           <p className="text-[13px] text-[#6B6B6B] mt-1.5 leading-relaxed max-w-[440px] mx-auto">
-            Urcă filmările de probă o dată, aici. Apoi le alegi din editor de
-            câte ori ai nevoie, fără să le mai urci.
+            {assets.length === 0
+              ? "Urcă materialele o dată, aici. Apoi le alegi din editor de câte ori ai nevoie, fără să le mai urci."
+              : kind === "video"
+                ? "Nicio filmare urcată încă."
+                : "Nicio poză urcată încă."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] gap-4">
-          {assets.map((a, i) => (
+          {shown.map((a, i) => (
             <Tile
               key={a.id}
               asset={a}
@@ -121,7 +129,7 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
       )}
 
       <MediaViewer
-        assets={assets}
+        assets={shown}
         index={viewing}
         onIndex={setViewing}
         onClose={() => setViewing(null)}
