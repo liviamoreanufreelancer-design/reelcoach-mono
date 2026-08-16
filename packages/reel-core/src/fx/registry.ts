@@ -23,9 +23,12 @@ import {
 import { zoomThrough } from "./transitions/zoom-through";
 import { splitReveal } from "./transitions/split-reveal";
 import { whipPan } from "./transitions/whip-pan";
+import { hairSweep } from "./transitions/hair-sweep";
 import { lightSweep } from "./effects/light-sweep";
 import { editorialFrame } from "./effects/editorial-frame";
 import { photoMotion } from "./transforms/photo-motion";
+import { focusPull } from "./transforms/focus-pull";
+import { freezeZoom } from "./transforms/freeze-zoom";
 import {
   sparkleEffect, leakEffect, bokehEffect, dustEffect,
   glowEffect, softLightEffect, lensFlareEffect,
@@ -35,6 +38,7 @@ import {
 export const TRANSITION_DEFS: TransitionDef[] = [
   fadeTransition,
   zoomThrough,        // premium — mișcare de aparat
+  hairSweep,          // premium — citește imaginea, nu o presupune
   splitReveal,        // premium — transformare grafică
   whipPan,            // premium — versiunea parametrizată a lui whipPan
   smoothZoomTransition,
@@ -68,6 +72,8 @@ export const CLIP_EFFECT_DEFS: ClipEffectDef[] = [
  * tot „un efect pe momentul ăsta", iar engine-ul decide unde se aplică.
  */
 export const TRANSFORM_DEFS: TransformDef[] = [
+  focusPull,
+  freezeZoom,
   photoMotion,
 ];
 

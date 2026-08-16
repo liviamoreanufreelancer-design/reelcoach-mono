@@ -2,7 +2,7 @@ import type { ConcatProgress } from "./render-progress";
 import type { FilterPreset } from "./filters";
 import { FILTERS } from "./filters";
 import type { TransitionId } from "./transitions";
-import type { FxParams } from "./fx/types";
+import type { FxParams, ClipMotion } from "./fx/types";
 import { findTransition, findClipEffect, findTransform } from "./fx/registry";
 import { drawPremiumEffect } from "./fx/effects/legacy";
 import { fadeTransition } from "./fx/transitions/legacy";
@@ -185,7 +185,7 @@ function drawClipFrame(
    * Când e prezentă, bate Ken Burns-ul automat: unul e alegerea partenerei,
    * celălalt e o valoare aleasă după indexul clipului.
    */
-  motion?: { scale: number; dx: number; dy: number },
+  motion?: ClipMotion,
 ) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, width, height);
@@ -196,7 +196,13 @@ function drawClipFrame(
   const prevFilter = ctx.filter;
   const ENHANCE = "contrast(1.08) saturate(1.12) brightness(1.02)";
   const partnerFilter = filter.cssFilter && filter.cssFilter !== "none" ? filter.cssFilter : "";
-  ctx.filter = `${ENHANCE} ${partnerFilter}`.trim();
+  // Estomparea cerută de un transform (Focus Pull) se adaugă în ACELAȘI lanț,
+  // deci nu costă nicio desenare în plus. Sub 0,1px n-o mai punem: un filtru
+  // inutil în lanț tot forțează o trecere de compunere.
+  const blur = motion?.blurPx && motion.blurPx > 0.1
+    ? `blur(${((motion.blurPx * width) / 1080).toFixed(2)}px)`
+    : "";
+  ctx.filter = `${ENHANCE} ${partnerFilter} ${blur}`.trim();
 
   let zoom = 1;
   if (motion) {
@@ -954,9 +960,29 @@ export async function renderReelInBrowser(
     }
 
     if (active !== -1) {
-      ensurePlaying(active, tMs - clipStarts[active]);
-      drawClipWithOverlay(active, tMs - clipStarts[active], ctx);
+      const localMs = tMs - clipStarts[active];
+      // Înghețare: oprim avansarea sursei, nu ceasul. Clipul își consumă
+      // durata mai departe, dar pe ecran rămâne ultimul cadru redat — deci
+      // freeze-ul nu lungește reel-ul, mănâncă din durata lui.
+      if (isFrozen(active, localMs)) pauseClip(active);
+      else ensurePlaying(active, localMs);
+      drawClipWithOverlay(active, localMs, ctx);
     }
+  }
+
+  /** Cere transformului clipului dacă imaginea trebuie oprită acum. */
+  function isFrozen(idx: number, localMs: number): boolean {
+    const t = findTransform(effectIds[idx]);
+    if (!t?.freeze) return false;
+    return t.freeze({
+      ctx, localMs, clipMs: clipDursMs[idx], width, height,
+      params: effectParams[idx] ?? {},
+    });
+  }
+
+  function pauseClip(idx: number) {
+    const v = loadedClips[idx]?.video;
+    if (v && !v.paused) v.pause();
   }
 
   function ensurePlaying(idx: number, localMs: number) {

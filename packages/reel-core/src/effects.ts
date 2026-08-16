@@ -23,7 +23,9 @@ export type EffectId =
   | "lensFlare"
   | "lightSweep"
   | "editorialFrame"
-  | "photoMotion";
+  | "photoMotion"
+  | "focusPull"
+  | "freezeZoom";
 
 export interface EffectPreset {
   id: EffectId;

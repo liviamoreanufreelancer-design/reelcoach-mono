@@ -27,7 +27,8 @@ export type TransitionId =
   | "motionBlur"
   | "zoomThrough"
   | "splitReveal"
-  | "whip";
+  | "whip"
+  | "hairSweep";
 
 export interface TransitionPreset {
   id: TransitionId;

@@ -9,15 +9,24 @@
  *
  * Aici se ține una singură, redimensionată doar când se schimbă formatul.
  */
-let scratch: HTMLCanvasElement | null = null;
-let sctx: CanvasRenderingContext2D | null = null;
+type Slot = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D | null };
+const slots = new Map<number, Slot>();
 
-export function scratchCtx(width: number, height: number): CanvasRenderingContext2D | null {
-  if (!scratch) {
+/**
+ * `slot` permite unui efect să folosească două pânze deodată — de exemplu una
+ * pentru imagine și una pentru masca ei (Hair Sweep). Fără indice, al doilea
+ * apel l-ar șterge pe primul.
+ */
+export function scratchCtx(width: number, height: number, slot = 0): CanvasRenderingContext2D | null {
+  let e = slots.get(slot);
+  if (!e) {
     if (typeof document === "undefined") return null;
-    scratch = document.createElement("canvas");
-    sctx = scratch.getContext("2d");
+    const canvas = document.createElement("canvas");
+    e = { canvas, ctx: canvas.getContext("2d") };
+    slots.set(slot, e);
   }
+  const scratch = e.canvas;
+  const sctx = e.ctx;
   if (!sctx) return null;
   if (scratch.width !== width || scratch.height !== height) {
     scratch.width = width;
@@ -34,6 +43,6 @@ export function scratchCtx(width: number, height: number): CanvasRenderingContex
 }
 
 /** Pânza din spatele contextului — pentru `drawImage` înapoi pe cea finală. */
-export function scratchCanvas(): HTMLCanvasElement | null {
-  return scratch;
+export function scratchCanvas(slot = 0): HTMLCanvasElement | null {
+  return slots.get(slot)?.canvas ?? null;
 }

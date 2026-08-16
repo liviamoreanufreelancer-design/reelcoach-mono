@@ -101,11 +101,30 @@ export interface ClipMotion {
   /** Deplasare, ca fracțiune din lățime/înălțime. 0 = centrat. */
   dx: number;
   dy: number;
+  /**
+   * Estompare aplicată CADRULUI, în pixeli la 1080 lățime.
+   *
+   * Stă aici, nu într-un efect de clip, dintr-un motiv de cost: cadrul se
+   * desenează oricum printr-un lanț de filtre (gradarea automată + filtrul
+   * partenerei), iar o estompare adăugată acolo nu costă nicio desenare în
+   * plus. Un efect de clip ar fi trebuit să redeseneze tot cadrul ca să-l
+   * poată estompa.
+   */
+  blurPx?: number;
 }
 
 export interface TransformDef extends FxBase {
   kind: "transform";
   motion(f: ClipFrame): ClipMotion;
+  /**
+   * Dacă imaginea trebuie ÎNGHEȚATĂ la momentul ăsta.
+   *
+   * Nu oprește timpul — clipul își consumă durata mai departe. Oprește doar
+   * avansarea sursei, deci pe ecran rămâne ultimul cadru redat. Așa freeze-ul
+   * nu lungește reel-ul: mănâncă din propria lui durată, iar `sec` din editor
+   * înseamnă în continuare ce scrie.
+   */
+  freeze?(f: ClipFrame): boolean;
 }
 
 export type FxDef = TransitionDef | ClipEffectDef | TransformDef;
