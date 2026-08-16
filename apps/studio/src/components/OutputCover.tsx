@@ -87,25 +87,54 @@ export default function OutputCover({
 
     if (src) {
       const video = document.createElement("video");
-      video.crossOrigin = "anonymous";
+      // FĂRĂ crossOrigin. Nu citim niciodată pixeli înapoi din canvas (doar
+      // îl afișăm), deci „murdărirea" lui nu ne costă nimic — dar cerută pe
+      // un fișier care nu întoarce antetele CORS, încărcarea eșuează cu totul.
+      // Editorul de cadru merge tocmai fiindcă acolo crossOrigin e setat DUPĂ
+      // `src`, adică prea târziu ca să aibă efect. Aici era setat înainte.
       video.muted = true;
       video.playsInline = true;
       video.preload = "auto";
-      video.src = src;
+
+      // `removeAttribute` + `load()`, nu `src = ""`: șirul gol e o adresă
+      // invalidă, iar browserul raportează degeaba o eroare de încărcare.
+      const cleanup = () => { video.removeAttribute("src"); video.load(); };
+
+      let settled = false;
+      const paintOnce = () => {
+        if (settled || cancelled) return;
+        settled = true;
+        draw(video);
+        cleanup();
+      };
+
       const onReady = () => {
         // Mijlocul clipului: începutul prinde des mâna care apasă butonul.
-        const t = (video.duration || 2) / 2;
-        const onSeeked = () => { draw(video); video.src = ""; };
-        video.addEventListener("seeked", onSeeked, { once: true });
-        try { video.currentTime = t; } catch { draw(video); }
+        const dur = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+        if (dur === 0) { paintOnce(); return; }
+        video.addEventListener("seeked", paintOnce, { once: true });
+        try { video.currentTime = dur / 2; } catch { paintOnce(); }
       };
+
       video.addEventListener("loadeddata", onReady, { once: true });
       video.addEventListener("error", () => { if (!cancelled) setState("empty"); }, { once: true });
-      return () => { cancelled = true; video.src = ""; };
+      // Plasă de siguranță: dacă `seeked` nu vine (durată necunoscută, fișier
+      // fără index de căutare), desenăm cadrul pe care îl avem. Mai bine un
+      // cadru de la început decât un cerc care se învârte la nesfârșit.
+      video.src = src;
+      const guard = window.setTimeout(() => {
+        if (video.readyState >= 2) paintOnce();
+        else if (!cancelled) setState("empty");
+      }, 4000);
+
+      return () => {
+        cancelled = true;
+        window.clearTimeout(guard);
+        cleanup();
+      };
     }
 
     const el = new Image();
-    el.crossOrigin = "anonymous";
     el.onload = () => draw(el);
     el.onerror = () => { if (!cancelled) setState("empty"); };
     el.src = img as string;
