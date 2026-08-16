@@ -15,7 +15,7 @@ import { Upload, Search, X, AlertTriangle, Maximize2 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { uploadToLibrary } from "@/lib/media-upload";
 import type { MediaAsset } from "@/lib/db-types";
-import { isOversized, tileAspect } from "@/lib/media-display";
+import { isOversized, tileAspect, tileFit } from "@/lib/media-display";
 import MediaKindFilter, { filterByKind, type MediaKindFilterValue } from "./MediaKindFilter";
 import MediaViewer from "./MediaViewer";
 
@@ -213,7 +213,17 @@ function AssetTile({
           />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={asset.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <img
+            src={asset.url}
+            alt=""
+            // Numele de clasa scrise intreg: Tailwind isi scaneaza sursele dupa
+            // literale, iar o clasa compusa in cod n-ar ajunge in CSS.
+            className={
+              tileFit(asset) === "contain"
+                ? "absolute inset-0 w-full h-full object-contain"
+                : "absolute inset-0 w-full h-full object-cover"
+            }
+          />
         )}
         {tooBig && (
           <span

@@ -30,3 +30,19 @@ export function tileAspect(asset: MediaAsset): number {
   if (asset.width && asset.height) return asset.width / asset.height;
   return 4 / 5; // formatul obișnuit de postare-imagine
 }
+
+/**
+ * Cum se așază materialul în cartonașul lui.
+ *
+ * `cover` umple și taie ce iese. E corect când cartonașul are exact forma
+ * materialului — la o poză cu dimensiuni cunoscute, „taie" zero.
+ *
+ * Când dimensiunile n-au putut fi citite (codec pe care browserul nu-l
+ * deschide), forma cartonașului e o presupunere, iar `cover` ar tăia după ea.
+ * Acolo trecem pe `contain`: mai bine niște margini goale decât o poză
+ * ciuntită fără ca cineva să știe.
+ */
+export function tileFit(asset: MediaAsset): "cover" | "contain" {
+  if (asset.kind === "video") return "cover";
+  return asset.width && asset.height ? "cover" : "contain";
+}
