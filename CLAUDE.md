@@ -456,6 +456,17 @@ Alte măsuri (fără cod):
   Riscul principal al modelului de sesiune (4 postări cu aceeași clientă par
   aceeași postare) e infirmat pe date reale, nu pe presupuneri.
   Poarta e deschisă: VIZIUNEA poate fi construită.
+- **Un efect n-are voie să presupună CE E ÎN CADRU.** Efectele se aplică pe
+  filmarea stilistei, pe care partenera n-o vede niciodată — ea proiectează pe
+  material de probă. Deci durata, intensitatea și direcția sunt corecte
+  (decizii de compoziție, valabile pe orice imagine); conținutul nu e.
+  Un punct de interes e la limită: merge fiindcă instrucțiunile de filmare
+  constrâng încadrarea și fiindcă se degradează blând (un zoom descentrat tot
+  arată bine). **Match Cut a fost construit și scos** exact aici: alinia două
+  puncte declarate pe footage de probă, iar pe footage real alinierea greșită
+  nu e „un pic mai slabă", e vizibil stricată. Varianta corectă a ideii sunt
+  efectele care CITESC imaginea în loc s-o presupună (Hair Sweep, condus de
+  luminozitate).
 - **Uman la poarta finală de publicare**, cel puțin primul an.
 
 ---

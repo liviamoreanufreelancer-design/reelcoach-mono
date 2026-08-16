@@ -21,7 +21,6 @@ import {
   whipPanTransition, smoothZoomTransition, motionBlurTransition,
 } from "./transitions/legacy";
 import { zoomThrough } from "./transitions/zoom-through";
-import { matchCut } from "./transitions/match-cut";
 import { splitReveal } from "./transitions/split-reveal";
 import { whipPan } from "./transitions/whip-pan";
 import { lightSweep } from "./effects/light-sweep";
@@ -35,7 +34,6 @@ import {
 /** Tranzițiile, în ordinea în care apar în Studio. */
 export const TRANSITION_DEFS: TransitionDef[] = [
   fadeTransition,
-  matchCut,           // premium — continuitate
   zoomThrough,        // premium — mișcare de aparat
   splitReveal,        // premium — transformare grafică
   whipPan,            // premium — versiunea parametrizată a lui whipPan
