@@ -15,10 +15,13 @@ import { uploadToLibrary } from "@/lib/media-upload";
 import { renameMediaAsset, deleteMediaAsset } from "@/lib/template-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { MEDIA_MAX_WIDTH, type MediaAsset } from "@/lib/db-types";
+import MediaViewer from "./MediaViewer";
 
 export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
   const [assets, setAssets] = useState<MediaAsset[]>(initial);
   const [busy, setBusy] = useState<string | null>(null);
+  /** Ce material e deschis la mărime. null = niciunul. */
+  const [viewing, setViewing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -94,10 +97,11 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] gap-4">
-          {assets.map((a) => (
+          {assets.map((a, i) => (
             <Tile
               key={a.id}
               asset={a}
+              onOpen={() => setViewing(i)}
               onRename={(name) => startTransition(async () => {
                 await renameMediaAsset(a.id, name);
                 setAssets((cur) => cur.map((x) => (x.id === a.id ? { ...x, name } : x)));
@@ -114,14 +118,22 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
           ))}
         </div>
       )}
+
+      <MediaViewer
+        assets={assets}
+        index={viewing}
+        onIndex={setViewing}
+        onClose={() => setViewing(null)}
+      />
     </div>
   );
 }
 
 function Tile({
-  asset, onRename, onDelete,
+  asset, onOpen, onRename, onDelete,
 }: {
   asset: MediaAsset;
+  onOpen: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
@@ -130,7 +142,14 @@ function Tile({
 
   return (
     <div>
-      <div className="relative w-full aspect-[9/16] rounded-lg overflow-hidden bg-[#EFECF8] group">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+        title="Deschide materialul"
+        className="relative w-full aspect-[9/16] rounded-lg overflow-hidden bg-[#EFECF8] group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5B34FF]"
+      >
         {asset.kind === "video" ? (
           <video
             src={`${asset.url}#t=0.5`}
@@ -153,7 +172,7 @@ function Tile({
         )}
         <button
           type="button"
-          onClick={onDelete}
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
           aria-label="Șterge materialul"
           className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 backdrop-blur-sm text-white grid place-items-center opacity-0 group-hover:opacity-100 transition"
         >

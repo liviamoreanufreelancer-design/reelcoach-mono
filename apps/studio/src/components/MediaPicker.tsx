@@ -11,10 +11,11 @@
  * biblioteca ar rămâne un depozit, nu o unealtă.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, Search, X, AlertTriangle } from "lucide-react";
+import { Upload, Search, X, AlertTriangle, Maximize2 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { uploadToLibrary } from "@/lib/media-upload";
 import { MEDIA_MAX_WIDTH, type MediaAsset } from "@/lib/db-types";
+import MediaViewer from "./MediaViewer";
 
 export default function MediaPicker({
   open,
@@ -29,6 +30,8 @@ export default function MediaPicker({
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Ce material se privește la mărime, fără să-l alegi. */
+  const [viewing, setViewing] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Citim din browser, nu printr-o pagină de server: dialogul se deschide
@@ -127,25 +130,55 @@ export default function MediaPicker({
             </p>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-3">
-              {shown.map((a) => (
-                <AssetTile key={a.id} asset={a} onPick={() => { onPick(a); onClose(); }} />
+              {shown.map((a, i) => (
+                <AssetTile
+                  key={a.id}
+                  asset={a}
+                  onPick={() => { onPick(a); onClose(); }}
+                  onView={() => setViewing(i)}
+                />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Privitul la mărime nu alege nimic: la 3 secunde de material,
+          miniatura nu-ți spune dacă filmarea e bună. */}
+      <MediaViewer
+        assets={shown}
+        index={viewing}
+        onIndex={setViewing}
+        onClose={() => setViewing(null)}
+      />
     </div>
   );
 }
 
-function AssetTile({ asset, onPick }: { asset: MediaAsset; onPick: () => void }) {
+function AssetTile({
+  asset, onPick, onView,
+}: {
+  asset: MediaAsset;
+  onPick: () => void;
+  onView: () => void;
+}) {
   // Semnalul se dă AICI, la alegere, nu la randare. Peste 1080 lățime
   // înseamnă randare mai lentă fără niciun câștig — reel-ul final e 1080×1920,
   // deci pixelii în plus se aruncă după ce ai plătit pentru ei.
   const tooBig = (asset.width ?? 0) > MEDIA_MAX_WIDTH;
 
   return (
-    <button type="button" onClick={onPick} className="text-left group">
+    <div className="text-left group relative">
+      <button
+        type="button"
+        onClick={onView}
+        aria-label="Vezi materialul la mărime"
+        title="Vezi la mărime"
+        className="absolute z-10 top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 backdrop-blur-sm text-white grid place-items-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
+      >
+        <Maximize2 className="w-3 h-3" />
+      </button>
+      <button type="button" onClick={onPick} className="w-full text-left">
       <div className="relative w-full aspect-[9/16] rounded-lg overflow-hidden bg-[#EFECF8] border-2 border-transparent group-hover:border-[#5B34FF] transition">
         {asset.kind === "video" ? (
           // `preload="metadata"` + `#t=0.5`: browserul aduce doar începutul și
@@ -175,6 +208,7 @@ function AssetTile({ asset, onPick }: { asset: MediaAsset; onPick: () => void })
         {asset.width ? `${asset.width}×${asset.height}` : "—"}
         {asset.duration_sec ? ` · ${asset.duration_sec.toFixed(1)}s` : ""}
       </div>
-    </button>
+      </button>
+    </div>
   );
 }
