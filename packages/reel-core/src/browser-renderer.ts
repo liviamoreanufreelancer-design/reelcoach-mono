@@ -428,6 +428,9 @@ export async function renderReelInBrowser(
   const introMs = effects.intro && opts.introPng ? (opts.introDuration ?? 0.9) * 1000 : 0;
   const outroMs = opts.outroPng ? (opts.outroDuration ?? 1.4) * 1000 : 0;
   const transitionType: TransitionId = opts.transitionType ?? "fade";
+  /** Vezi comentariul de la drawClipWithOverlay: unde se duce timpul. */
+  const cost = { clip: 0, trans: 0, overlay: 0 };
+
   const transMs = effects.transitions ? (opts.transitionDuration ?? 0.25) * 1000 : 0;
 
   /**
@@ -724,6 +727,13 @@ export async function renderReelInBrowser(
       `${(frameIdx / elapsedSec).toFixed(1)} fps efectiv (tinta ${fps}) · ` +
       `${width}x${height} · ${loadedClips.length} scene`,
     );
+    // Defalcarea pe faze: ms totali si ms per cadru. Suma lor sub durata
+    // totala inseamna ca restul s-a dus in decodare/encodare, nu in desen.
+    const per = (v: number) => (v / Math.max(1, frameIdx)).toFixed(1);
+    console.log(
+      `[render] buget/cadru: clip ${per(cost.clip)}ms · tranzitie ${per(cost.trans)}ms · ` +
+      `total desen ${per(cost.clip + cost.trans)}ms din ${(1000 / fps).toFixed(1)}ms disponibili`,
+    );
     onProgress?.({ phase: "done", pct: 100, message: "Gata" });
     return blob;
   } finally {
@@ -734,7 +744,29 @@ export async function renderReelInBrowser(
     canvas.remove();
   }
 
+  /**
+   * Unde se duce timpul, pe faze.
+   *
+   * Randarea merge in timp real, deci un cadru pierdut nu se recupereaza. Cand
+   * fps-ul efectiv scade, singura intrebare utila e CE anume a depasit bugetul
+   * — decodarea si gradarea clipului, tranzitia, sau textul. Fara cifrele
+   * astea am fi reparat pe ghicite, ceea ce am si facut o data (trei runde de
+   * presupuneri pe cadrele negre, cauza era alta).
+   *
+   * Costul masurarii: doua apeluri performance.now() per faza, sub o
+   * microsecunda. Ramane pornit permanent — la zeci de efecte, intrebarea
+   * "cat ma costa asta" se pune la fiecare.
+   */
   function drawClipWithOverlay(idx: number, localMs: number, target: CanvasRenderingContext2D) {
+    const _t0 = performance.now();
+    try {
+      return drawClipWithOverlayInner(idx, localMs, target);
+    } finally {
+      cost.clip += performance.now() - _t0;
+    }
+  }
+
+  function drawClipWithOverlayInner(idx: number, localMs: number, target: CanvasRenderingContext2D) {
     const lc = loadedClips[idx];
     const tNorm = clamp01(localMs / clipDursMs[idx]);
     // Use per-clip filter if provided, otherwise fall back to the global one.
@@ -879,6 +911,7 @@ export async function renderReelInBrowser(
       // (efect șters, date mai vechi) trebuie să dea o tranziție corectă, nu
       // un cadru negru.
       const def = findTransition(currentTransition) ?? fadeTransition;
+      const _tt = performance.now();
       def.draw({
         ctx,
         from: snap,
@@ -888,6 +921,7 @@ export async function renderReelInBrowser(
         height,
         params: transitionParams[active] ?? {},
       });
+      cost.trans += performance.now() - _tt;
       return;
     }
 
