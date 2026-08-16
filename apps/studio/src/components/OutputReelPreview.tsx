@@ -25,6 +25,7 @@ import {
   TEXT_PRESETS,
   type ConcatProgress,
   type FxParams,
+  type TextLayer,
 } from "@reelcoach/core";
 import type { Composition, ShotLike, TransitionId } from "@/lib/db-types";
 
@@ -116,10 +117,28 @@ export default function OutputReelPreview({
         );
         effectParams.push(eId ? slot.fxParams?.[eId] : undefined);
 
-        // Textul: încă de pe moment. Trece pe slot când construim editorul de text
-        // per postare — atunci „ZIUA 1" și „Pasul 2" pot sta peste același cadru.
-        if (shot.overlay_text && shot.overlay_text.trim()) {
-          const presetId = shot.caption_preset || "hookBold";
+        // TEXTUL VINE DE PE SLOT, nu de pe moment.
+        //
+        // Randarea citea `shot.overlay_text`, in timp ce editorul desena
+        // `slot.textLayers` — doua surse pentru acelasi lucru. Textul scris
+        // in editor se vedea in preview si disparea la randare, iar in
+        // biblioteca (unde momentele n-au overlay_text) nu aparea niciodata.
+        // Exact driftul pe care „preview = export" exista sa-l previna.
+        //
+        // `overlay_text` ramane ca rezerva pentru sabloanele vechi, care si-au
+        // pus textul inainte sa existe straturile.
+        const layers = (slot.textLayers as TextLayer[] | undefined) ?? [];
+        const presetId = shot.caption_preset || "hookBold";
+        if (layers.length > 0) {
+          overlays.push(
+            await renderOverlay({
+              textLayers: layers,
+              preset: TEXT_PRESETS[presetId] ?? TEXT_PRESETS.hookBold,
+              width: W,
+              height: H,
+            }),
+          );
+        } else if (shot.overlay_text && shot.overlay_text.trim()) {
           overlays.push(
             await renderOverlay({
               caption: {

@@ -61,6 +61,8 @@ export default function OutputSceneEditor({
 
   const [paused, setPaused] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  /** Ce text se editează pe loc, peste cadru. */
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [guides, setGuides] = useState<{ v: boolean; h: boolean; vs: number[]; hs: number[] }>(
     { v: false, h: false, vs: [], hs: [] },
   );
@@ -179,23 +181,44 @@ export default function OutputSceneEditor({
   // ── Tragere + ghidaje, identic cu editorul de momente ──────────────────
   const SNAP = 0.02;
 
-  const onDown = (e: React.PointerEvent) => {
-    if (disabled || layers.length === 0) return;
-    const stage = stageRef.current;
-    if (!stage) return;
-    const r = stage.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
+  /** Stratul cel mai apropiat de un punct, dacă e destul de aproape. */
+  const layerNear = (px: number, py: number, radius: number): string | null => {
     let best: string | null = null;
     let bestD = Infinity;
     for (const l of layers) {
       const d = (l.x - px) ** 2 + (l.y - py) ** 2;
       if (d < bestD) { bestD = d; best = l.id; }
     }
-    if (best && bestD < 0.18 * 0.18) {
+    return best && bestD < radius * radius ? best : null;
+  };
+
+  const pointOn = (e: { clientX: number; clientY: number }) => {
+    const r = stageRef.current!.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height] as const;
+  };
+
+  const onDown = (e: React.PointerEvent) => {
+    if (disabled || editingId || layers.length === 0 || !stageRef.current) return;
+    const [px, py] = pointOn(e);
+    const best = layerNear(px, py, 0.18);
+    if (best) {
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       setDragId(best);
     }
+  };
+
+  /**
+   * Dublu-click pe un text => se editează pe loc, peste el.
+   *
+   * Raza e mai mare decât la tragere (0,25 față de 0,18): la dublu-click
+   * intenția e neîndoielnică, deci merită să fie ușor de nimerit. La tragere,
+   * o rază mare ar apuca textul când vrei de fapt altceva.
+   */
+  const onDoubleClick = (e: React.MouseEvent) => {
+    if (disabled || layers.length === 0 || !stageRef.current) return;
+    const [px, py] = pointOn(e);
+    const best = layerNear(px, py, 0.25);
+    if (best) { setDragId(null); setEditingId(best); }
   };
 
   const onMove = (e: React.PointerEvent) => {
@@ -246,6 +269,7 @@ export default function OutputSceneEditor({
           className="relative w-full rounded-2xl overflow-hidden bg-black border border-[#EDE8FF]"
           style={{ aspectRatio: "9 / 16", touchAction: "none" }}
           onPointerDown={onDown}
+          onDoubleClick={onDoubleClick}
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerLeave={onUp}
@@ -266,9 +290,39 @@ export default function OutputSceneEditor({
             </div>
           )}
 
-          {!disabled && layers.length > 0 && (
+          {!disabled && layers.length > 0 && !editingId && (
             <div className="absolute inset-0 z-10" style={{ cursor: dragId ? "grabbing" : "move" }} />
           )}
+
+          {/* Editare pe loc: input exact peste text. Scrie direct în strat,
+              iar bucla de desen îl redesenează — deci vezi cum arată în timp
+              ce scrii, cu fontul și poziția lui, nu într-un câmp de alături. */}
+          {editingId && (() => {
+            const l = layers.find((x) => x.id === editingId);
+            if (!l) return null;
+            return (
+              <input
+                autoFocus
+                value={l.text}
+                onChange={(e) => patchLayer(l.id, { text: e.target.value })}
+                onBlur={() => setEditingId(null)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === "Escape") {
+                    e.preventDefault();
+                    setEditingId(null);
+                  }
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="absolute z-30 text-center rounded-md border-2 border-[#5B34FF] bg-white/95 px-2 py-1 text-[12px] text-[#1F1F1F] shadow-lg outline-none"
+                style={{
+                  left: `${l.x * 100}%`,
+                  top: `${l.y * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                  width: "88%",
+                }}
+              />
+            );
+          })()}
 
           {!shot?.sample_video_url && (
             // In biblioteca, cadrul gol E locul unde urci filmarea — acolo se
@@ -307,7 +361,7 @@ export default function OutputSceneEditor({
 
         {layers.length > 0 && (
           <p className="text-[10.5px] text-[#9A9A9A] leading-snug text-center">
-            Trage textul pe imagine ca să-l poziționezi.
+            Trage textul ca să-l muți · dublu-click ca să-l editezi
           </p>
         )}
       </div>
