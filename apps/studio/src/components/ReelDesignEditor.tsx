@@ -30,10 +30,10 @@ import {
   duplicateReelDesign,
   deleteReelDesign,
 } from "@/lib/template-actions";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { FILTERS } from "@/lib/options";
 import { framesAsShots, newFrameKey } from "@/lib/design-frames";
-import type { ReelDesignRow, OutputSlot } from "@/lib/db-types";
+import type { ReelDesignRow, OutputSlot, MediaAsset } from "@/lib/db-types";
+import MediaPicker from "./MediaPicker";
 import OutputSceneEditor from "./OutputSceneEditor";
 import OutputReelPreview from "./OutputReelPreview";
 
@@ -45,10 +45,8 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
   const [coverSlot, setCoverSlot] = useState<string | null>(design.cover_slot);
   const [activeIdx, setActiveIdx] = useState(0);
   const [showRender, setShowRender] = useState(false);
-  /** Ce cadru se urcă acum — indexul, ca să arătăm starea pe rândul lui. */
-  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const pickTargetRef = useRef<number | null>(null);
 
   useEffect(() => { setSlots(design.slots); }, [design.slots]);
@@ -112,51 +110,32 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
     writeSlots(slots.map((s, x) => (x === i ? { ...s, ...p } : s)));
   };
 
+  /**
+   * Filmarea vine din BIBLIOTECĂ, nu de pe disc.
+   *
+   * Înainte fiecare cadru urca fișierul lui, deci aceeași „mișcare de păr"
+   * folosită în zece variante însemna zece urcări și zece fișiere identice.
+   * Dialogul are și el buton de urcare — dar după listă, ca să te uiți întâi
+   * la ce există.
+   */
   const pickVideo = (i: number) => {
     pickTargetRef.current = i;
-    fileInputRef.current?.click();
+    setPickerOpen(true);
   };
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const onPicked = (asset: MediaAsset) => {
     const i = pickTargetRef.current;
-    e.target.value = "";
-    if (!file || i === null || !slots[i]) return;
-
-    setUploadingIdx(i);
-    setError(null);
-    try {
-      // Urcare DIRECT din browser: footage real de telefon depășește body-ul
-      // unei server action (413). Prin acțiune trece doar URL-ul.
-      const sb = getSupabaseBrowserClient();
-      const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
-      const path = `designs/${design.id}/${slots[i].slot}-${Date.now()}.${ext}`;
-      const { error: upErr } = await sb.storage
-        .from("samples")
-        .upload(path, file, { contentType: file.type || "video/mp4", upsert: true });
-      if (upErr) throw upErr;
-      const { data: pub } = sb.storage.from("samples").getPublicUrl(path);
-      writeSlotsNow(slots.map((s, x) => (x === i ? { ...s, demoUrl: pub.publicUrl } : s)));
-      setActiveIdx(i);
-    } catch (err) {
-      // Fără asta, eșecul ar muri în tăcere: spinnerul dispare, cadrul pare
-      // încărcat, dar n-are filmare — exact bifa falsă pe care am scos-o
-      // din filmare.
-      console.error("[design-upload] urcare esuata:", err);
-      setError("Filmarea NU s-a urcat. Cadrul rămâne gol. Încearcă din nou.");
-    } finally {
-      setUploadingIdx(null);
-    }
+    if (i === null || !slots[i]) return;
+    writeSlotsNow(slots.map((s, x) => (x === i ? { ...s, demoUrl: asset.url } : s)));
+    setActiveIdx(i);
   };
 
   return (
     <div className="card overflow-hidden">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="video/*"
-        onChange={onFile}
-        className="hidden"
+      <MediaPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={onPicked}
       />
 
       <div className="flex items-center gap-2 px-5 py-4 border-b border-[#E7E3F5]">
@@ -234,7 +213,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
               {slots.map((s, i) => {
                 const active = i === activeIdx;
                 const isCover = s.slot === effectiveCover;
-                const busy = uploadingIdx === i;
+
                 return (
                   <div
                     key={s.slot}
@@ -284,22 +263,17 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); pickVideo(i); }}
-                      disabled={busy}
-                      title={s.demoUrl ? "Înlocuiește filmarea de probă" : "Urcă o filmare de probă"}
+                      title={s.demoUrl ? "Schimbă filmarea de probă" : "Alege o filmare din bibliotecă"}
                       className={`shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition ${
                         s.demoUrl
                           ? "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
                           : "text-[#5B34FF] border-[#D8D0F5] bg-white hover:bg-[#EDE8FF]"
                       }`}
                     >
-                      {busy ? (
-                        <span className="w-3 h-3 rounded-full border-2 border-[#C9C0E8] border-t-transparent animate-spin" />
-                      ) : s.demoUrl ? (
-                        <Check className="w-3.5 h-3.5" strokeWidth={2.4} />
-                      ) : (
-                        <Upload className="w-3.5 h-3.5" />
-                      )}
-                      {busy ? "urc…" : s.demoUrl ? "filmare" : "urcă filmare"}
+                      {s.demoUrl
+                        ? <Check className="w-3.5 h-3.5" strokeWidth={2.4} />
+                        : <Upload className="w-3.5 h-3.5" />}
+                      {s.demoUrl ? "filmare" : "alege filmare"}
                     </button>
 
                     <button

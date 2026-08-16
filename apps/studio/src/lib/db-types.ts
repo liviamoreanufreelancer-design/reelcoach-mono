@@ -130,6 +130,30 @@ export interface ReelDesignRow {
   updated_at: string;
 }
 
+/**
+ * O filmare sau imagine din biblioteca de materiale (migratia 019).
+ *
+ * Urcata o data, folosita oriunde: in cadrele variantelor si in momentele
+ * sabloanelor. Inainte, fiecare urcare era de unica folosinta.
+ */
+export interface MediaAsset {
+  id: string;
+  name: string;
+  kind: "video" | "image";
+  url: string;
+  storage_path: string;
+  /** Masurate la urcare. Peste 1080 latime incetineste randarea fara castig. */
+  width: number | null;
+  height: number | null;
+  duration_sec: number | null;
+  size_bytes: number | null;
+  tags: string[];
+  created_at: string;
+}
+
+/** Latimea peste care un material incetineste randarea fara sa aduca nimic. */
+export const MEDIA_MAX_WIDTH = 1080;
+
 export interface OutputRow {
   id: string;
   template_id: string;

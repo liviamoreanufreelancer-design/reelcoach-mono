@@ -694,3 +694,70 @@ export async function deleteReelDesign(designId: string) {
   revalidatePath("/dashboard/biblioteca");
   redirect("/dashboard/biblioteca");
 }
+
+// ════════════════════════════════════════════════════════════════════
+//  BIBLIOTECA DE MATERIALE (migrația 019)
+//
+//  Fișierul se urcă DIRECT din browser (footage de telefon depășește body-ul
+//  unei server action → 413). Aici trece doar rândul de catalog.
+// ════════════════════════════════════════════════════════════════════
+
+export async function createMediaAsset(input: {
+  name: string;
+  kind: "video" | "image";
+  url: string;
+  storagePath: string;
+  width?: number | null;
+  height?: number | null;
+  durationSec?: number | null;
+  sizeBytes?: number | null;
+}) {
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Nu ești autentificat" };
+
+  const { data, error } = await supabase.from("media_assets").insert({
+    name: input.name,
+    kind: input.kind,
+    url: input.url,
+    storage_path: input.storagePath,
+    width: input.width ?? null,
+    height: input.height ?? null,
+    duration_sec: input.durationSec ?? null,
+    size_bytes: input.sizeBytes ?? null,
+    created_by: user.id,
+  }).select("id").single();
+
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/dashboard/media");
+  return { ok: true as const, id: data.id as string };
+}
+
+export async function renameMediaAsset(assetId: string, name: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("media_assets")
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq("id", assetId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/dashboard/media");
+  return { ok: true as const };
+}
+
+/**
+ * Șterge și rândul, și fișierul.
+ *
+ * Fișierul se șterge PRIMUL: dacă rândul ar pleca întâi și ștergerea din
+ * bucket ar eșua, fișierul ar rămâne pe disc fără nimic care să-l mai
+ * pomenească — un cost care crește tăcut. Invers, un fișier șters cu rândul
+ * rămas se vede imediat (materialul nu se mai încarcă) și se poate curăța.
+ */
+export async function deleteMediaAsset(assetId: string, storagePath: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error: rmErr } = await supabase.storage.from("samples").remove([storagePath]);
+  if (rmErr) return { ok: false as const, error: rmErr.message };
+  const { error } = await supabase.from("media_assets").delete().eq("id", assetId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/dashboard/media");
+  return { ok: true as const };
+}

@@ -338,7 +338,7 @@ export default function OutputSceneEditor({
                   <span className="w-11 h-11 rounded-full bg-[#EDE8FF] grid place-items-center group-hover:bg-[#DFD6FF] transition">
                     <Upload className="w-5 h-5" strokeWidth={1.8} />
                   </span>
-                  <span className="text-[12px] font-medium">Urcă filmarea</span>
+                  <span className="text-[12px] font-medium">Alege filmarea</span>
                 </button>
               ) : (
                 <span className="text-[#9A9A9A] text-[11px]">
