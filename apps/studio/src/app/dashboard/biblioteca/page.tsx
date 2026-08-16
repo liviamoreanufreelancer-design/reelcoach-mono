@@ -16,6 +16,7 @@ import { getSupabaseServerClient } from "@/lib/supabase-server";
 import type { ReelDesignRow } from "@/lib/db-types";
 import NewReelDesignButton from "@/components/NewReelDesignButton";
 import ReelDesignGrid from "@/components/ReelDesignGrid";
+import DerivedShotList from "@/components/DerivedShotList";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,13 @@ export default async function BibliotecaPage() {
         </div>
       )}
 
-      <p className="text-[12px] text-[#9A9A9A] mt-10 leading-relaxed max-w-[620px]">
+      {designs.length > 0 && (
+        <div className="mt-10">
+          <DerivedShotList designs={designs} />
+        </div>
+      )}
+
+      <p className="text-[12px] text-[#9A9A9A] mt-8 leading-relaxed max-w-[620px]">
         Variantele nu ajung încă pe telefon. Se construiesc și se privesc —
         alegerea lor la fiecare programare vine după ce se vede că ideea merge.
       </p>
