@@ -15,6 +15,7 @@ import type {
   Difficulty,
   HowShootItem,
   LightSource,
+  ShotType,
   CaptureKind,
   OutputRow,
   OutputKind,
@@ -815,6 +816,17 @@ export async function syncShotsFromOutputs(templateId: string) {
   const bySlot = new Map(existing.filter((s) => s.slot_key).map((s) => [s.slot_key as string, s]));
   const keys = Array.from(needed.keys());
 
+  // Instrucțiunile vin din CATALOG, nu se scriu per șablon. Cadrul „before"
+  // se filmează la fel la balayage și la tuns, deci se descrie o dată.
+  const { data: typesData } = await supabase
+    .from("shot_types").select("*").in("id", keys.length > 0 ? keys : ["-"]);
+  const types = new Map(
+    ((typesData ?? []) as ShotType[]).map((t) => [t.id, t]),
+  );
+  // Ordinea de filmare e a SERVICIULUI, deci a tipului — nu ordinea în care
+  // le folosește o variantă anume. Cele fără tip în catalog rămân la coadă.
+  keys.sort((a, b) => (types.get(a)?.sort_order ?? 9999) - (types.get(b)?.sort_order ?? 9999));
+
   // Ce nu mai cere nimeni pleacă — inclusiv momentele vechi fără etichetă,
   // rămase de pe vremea când se scriau de mână.
   const stale = existing.filter((s) => !s.slot_key || !needed.has(s.slot_key));
@@ -830,7 +842,12 @@ export async function syncShotsFromOutputs(templateId: string) {
     const recording = Math.max(3, Math.ceil(want.sec + 2));
     const found = bySlot.get(key);
 
+    const type = types.get(key);
+
     if (found) {
+      // Doar ce se deduce: ordinea și duratele. Instrucțiunile scrise de
+      // parteneră PE ȘABLON rămân neatinse — un import n-are voie să șteargă
+      // o excepție pe care a scris-o pentru serviciul ăsta.
       await supabase.from("shots").update({
         sort_order: i + 1,
         recording_duration: recording,
@@ -843,7 +860,7 @@ export async function syncShotsFromOutputs(templateId: string) {
       template_id: templateId,
       slot_key: key,
       sort_order: i + 1,
-      title: want.label,
+      title: type?.name ?? want.label,
       pattern: null,
       recording_duration: recording,
       final_usage_duration: want.sec,
@@ -852,6 +869,16 @@ export async function syncShotsFromOutputs(templateId: string) {
       filter_style: "none",
       effect: "none",
       hands_busy: false,
+      // Din catalog, la prima creare. De aici încolo se pot suprascrie pe
+      // șablon, unde chiar diferă.
+      hook: type?.hook ?? null,
+      instructions: type?.instructions ?? [],
+      phone_hold: type?.phone_hold ?? null,
+      shot_distance: type?.shot_distance ?? null,
+      phone_movement: type?.phone_movement ?? null,
+      light_sources: type?.light_sources ?? [],
+      capture_kind: type?.capture_kind ?? "video",
+      example_image_url: type?.example_image_url ?? null,
     });
   }
 
@@ -900,5 +927,84 @@ export async function removeImportedOutput(outputId: string, templateId: string)
   const { error } = await supabase.from("outputs").delete().eq("id", outputId);
   if (error) return { ok: false as const, error: error.message };
   await syncShotsFromOutputs(templateId);
+  return { ok: true as const };
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  CATALOGUL DE TIPURI DE CADRU (migrația 021)
+// ════════════════════════════════════════════════════════════════════
+
+/** Slug din nume: stabil, fără diacritice, folosibil ca cheie. */
+function slugifyType(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "cadru";
+}
+
+export async function createShotType(name: string, family?: string) {
+  const supabase = await getSupabaseServerClient();
+  const clean = name.trim();
+  if (!clean) return { ok: false as const, error: "Numele e obligatoriu" };
+
+  // Slug-ul e CHEIA care leagă cadrele de momente, deci trebuie unic. La
+  // coliziune adăugăm un sufix în loc să refuzăm: partenera poate avea două
+  // tipuri cu nume asemănătoare, iar un refuz ar opri-o din lucru.
+  const base = slugifyType(clean);
+  let id = base;
+  for (let i = 2; i < 40; i += 1) {
+    const { data } = await supabase.from("shot_types").select("id").eq("id", id).maybeSingle();
+    if (!data) break;
+    id = `${base}-${i}`;
+  }
+
+  const { data: last } = await supabase
+    .from("shot_types").select("sort_order")
+    .order("sort_order", { ascending: false }).limit(1).maybeSingle();
+
+  const { error } = await supabase.from("shot_types").insert({
+    id,
+    name: clean,
+    family: family?.trim() || null,
+    sort_order: ((last?.sort_order as number | undefined) ?? 0) + 10,
+  });
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/dashboard/cadre");
+  return { ok: true as const, id };
+}
+
+export async function updateShotType(
+  id: string,
+  patch: {
+    name?: string;
+    family?: string | null;
+    hook?: string | null;
+    instructions?: string[];
+    phone_hold?: string | null;
+    shot_distance?: string | null;
+    phone_movement?: string | null;
+    light_sources?: LightSource[];
+    capture_kind?: CaptureKind;
+    example_image_url?: string | null;
+    sort_order?: number;
+  },
+) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase
+    .from("shot_types")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/dashboard/cadre");
+  return { ok: true as const };
+}
+
+export async function deleteShotType(id: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.from("shot_types").delete().eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/dashboard/cadre");
   return { ok: true as const };
 }

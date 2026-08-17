@@ -30,10 +30,12 @@ import {
   duplicateReelDesign,
   deleteReelDesign,
 } from "@/lib/template-actions";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { FILTERS } from "@/lib/options";
-import { framesAsShots, newFrameKey } from "@/lib/design-frames";
-import type { ReelDesignRow, OutputSlot, MediaAsset } from "@/lib/db-types";
+import { framesAsShots, isLegacyFrameKey } from "@/lib/design-frames";
+import type { ReelDesignRow, OutputSlot, MediaAsset, ShotType } from "@/lib/db-types";
 import MediaPicker from "./MediaPicker";
+import ShotTypePicker from "./ShotTypePicker";
 import OutputSceneEditor from "./OutputSceneEditor";
 import OutputReelPreview from "./OutputReelPreview";
 
@@ -46,10 +48,21 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
   const [activeIdx, setActiveIdx] = useState(0);
   const [showRender, setShowRender] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  /** Ce cadru își alege tipul acum. null = dialogul e închis. */
+  const [typeForIdx, setTypeForIdx] = useState<number | null>(null);
+  const [types, setTypes] = useState<ShotType[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pickTargetRef = useRef<number | null>(null);
 
   useEffect(() => { setSlots(design.slots); }, [design.slots]);
+
+  // Catalogul, o dată: numele afișate ale cadrelor vin de aici, nu din slot.
+  useEffect(() => {
+    const sb = getSupabaseBrowserClient();
+    void sb.from("shot_types").select("*").order("sort_order")
+      .then(({ data }) => setTypes((data ?? []) as ShotType[]));
+  }, []);
+  const typeName = (slot: string) => types.find((t) => t.id === slot)?.name ?? slot;
 
   const shots = framesAsShots(slots);
   const live = {
@@ -89,10 +102,26 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
     save({ slots: next });
   };
 
-  const addFrame = () => {
-    const next = [...slots, { slot: newFrameKey(slots), sec: 2, label: "" }];
-    writeSlots(next);
-    setActiveIdx(next.length - 1);
+  /**
+   * Un cadru nu se mai adaugă gol: îți alegi întâi TIPUL din catalog.
+   * Tipul e cheia care leagă cadrul de momentul filmat, deci nu poate fi
+   * decis mai târziu fără să rămână un cadru care nu trimite nicăieri.
+   */
+  const addFrame = () => setTypeForIdx(-1);
+
+  const onTypeChosen = (type: ShotType) => {
+    const i = typeForIdx;
+    setTypeForIdx(null);
+    if (i === null) return;
+    if (i < 0) {
+      const next = [...slots, { slot: type.id, sec: 2, label: type.name }];
+      writeSlots(next);
+      setActiveIdx(next.length - 1);
+      return;
+    }
+    // Schimbarea tipului unui cadru existent îi păstrează durata și stilul —
+    // se schimbă ce se filmează, nu cum arată.
+    writeSlots(slots.map((s, x) => (x === i ? { ...s, slot: type.id, label: type.name } : s)));
   };
   const removeFrame = (i: number) => {
     writeSlots(slots.filter((_, x) => x !== i));
@@ -132,6 +161,15 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
 
   return (
     <div className="card overflow-hidden">
+      <ShotTypePicker
+        open={typeForIdx !== null}
+        types={types}
+        used={new Set(slots.map((s) => s.slot))}
+        onClose={() => setTypeForIdx(null)}
+        onPick={onTypeChosen}
+        onCreated={(t) => { setTypes((cur) => [...cur, t].sort((a, b) => a.sort_order - b.sort_order)); onTypeChosen(t); }}
+      />
+
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
@@ -243,18 +281,21 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                       >▼</button>
                     </div>
 
-                    {/* Numele cadrului: cerinta pe care o umple filmarea stilistei */}
-                    <input
-                      type="text"
-                      defaultValue={s.label ?? ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v !== (s.label ?? "")) patchFrame(i, { label: v });
-                      }}
-                      placeholder="numele cadrului (ex. before)"
-                      className="flex-1 min-w-0 bg-transparent text-[12.5px] outline-none placeholder:text-[#B8B8C8] focus:bg-white focus:px-1.5 focus:rounded"
-                    />
+                    {/* Tipul de cadru — vine din catalog. Instrucțiunile lui
+                        ajung în orice șablon care cere cadrul, scrise o dată. */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setTypeForIdx(i); }}
+                      title="Schimbă tipul de cadru"
+                      className="flex-1 min-w-0 text-left text-[12.5px] truncate hover:text-[#5B34FF] transition"
+                    >
+                      {typeName(s.slot)}
+                      {isLegacyFrameKey(s.slot) && (
+                        <span className="ml-1.5 text-[10.5px] text-amber-600">
+                          fără tip — alege unul
+                        </span>
+                      )}
+                    </button>
 
                     {s.sec ? (
                       <span className="text-[11px] text-[#6B6B6B] tabular-nums">{s.sec}s</span>

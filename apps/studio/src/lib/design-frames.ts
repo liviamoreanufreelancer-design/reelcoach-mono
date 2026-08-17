@@ -30,15 +30,17 @@ export function framesAsShots(slots: OutputSlot[]): ShotLike[] {
 }
 
 /**
- * Cheia stabilă a unui cadru.
+ * Cheia unui cadru NU se mai generează — e slug-ul tipului din catalog.
  *
- * Se generează din nume, dar NU se reface când numele se schimbă: cheia e
- * identitatea cadrului, iar sloturile deja legate de ea (durată, text, stil)
- * s-ar rupe la fiecare redenumire. Numele e pentru om, cheia e pentru sistem.
+ * Înainte se numerota după poziția în variantă (`cadru-1`, `cadru-2`), ceea ce
+ * producea o coliziune tăcută și gravă: primul cadru al fiecărei variante
+ * primea aceeași cheie, deși una era „before" și alta „aplicare". Importate în
+ * același șablon, derivarea le unea într-un singur moment — stilista filma un
+ * singur lucru, iar a doua variantă randa altceva decât voia. Fără eroare.
+ *
+ * Cheile trebuie să însemne ceva GLOBAL, deci vin dintr-un vocabular comun.
+ * Funcția rămâne doar pentru cadrele vechi, care încă au chei numerotate.
  */
-export function newFrameKey(existing: OutputSlot[]): string {
-  const used = new Set(existing.map((s) => s.slot));
-  let n = existing.length + 1;
-  while (used.has(`cadru-${n}`)) n += 1;
-  return `cadru-${n}`;
+export function isLegacyFrameKey(slot: string): boolean {
+  return /^cadru-\d+$/.test(slot);
 }

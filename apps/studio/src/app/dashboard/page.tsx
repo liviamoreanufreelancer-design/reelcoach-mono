@@ -57,6 +57,9 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">
+          <Link href="/dashboard/cadre" className="btn-glass whitespace-nowrap">
+            Cadre
+          </Link>
           <Link href="/dashboard/media" className="btn-glass whitespace-nowrap">
             Materiale
           </Link>

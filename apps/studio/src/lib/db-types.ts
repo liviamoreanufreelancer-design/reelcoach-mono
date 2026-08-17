@@ -157,6 +157,31 @@ export interface MediaAsset {
  */
 export const MEDIA_MAX_WIDTH = 1080;
 
+/**
+ * Un tip de cadru din catalog (migrația 021).
+ *
+ * Instrucțiunile se scriu O DATĂ aici și ajung în orice șablon care cere
+ * cadrul. Stilista filmează „before"-ul o singură dată, indiferent câte
+ * variante îl cer — deci se și descrie o singură dată.
+ *
+ * `id` e slug-ul stabil: cheia care leagă cadrul unei variante de momentul
+ * filmat. Numele afișat se poate schimba oricând, slug-ul nu.
+ */
+export interface ShotType {
+  id: string;
+  name: string;
+  family: string | null;
+  hook: string | null;
+  instructions: string[];
+  phone_hold: string | null;
+  shot_distance: string | null;
+  phone_movement: string | null;
+  light_sources: LightSource[];
+  capture_kind: CaptureKind;
+  example_image_url: string | null;
+  sort_order: number;
+}
+
 export interface OutputRow {
   id: string;
   template_id: string;
