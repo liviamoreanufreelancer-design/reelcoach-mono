@@ -761,3 +761,144 @@ export async function deleteMediaAsset(assetId: string, storagePath: string) {
   revalidatePath("/dashboard/media");
   return { ok: true as const };
 }
+
+// ════════════════════════════════════════════════════════════════════
+//  IMPORT DIN BIBLIOTECĂ + GENERAREA MOMENTELOR (migrația 020)
+// ════════════════════════════════════════════════════════════════════
+
+/**
+ * Regenerează momentele șablonului din rezultatele lui.
+ *
+ * Momentele nu se mai scriu de mână: sunt reuniunea cadrelor cerute de
+ * rezultatele importate. Se apelează după fiecare import sau scoatere.
+ *
+ * TREI REGULI CARE CONTEAZĂ:
+ *
+ *   1. Instrucțiunile se PĂSTREAZĂ. Potrivirea se face pe `slot_key`, deci un
+ *      moment care există deja își ține tot ce a scris partenera — poziția
+ *      telefonului, lumina, propoziția de acțiune. Se actualizează doar
+ *      duratele. Fără asta, fiecare import ar șterge ore de muncă.
+ *
+ *   2. Durata e un MAXIM. Stilista filmează o dată; dacă un rezultat cere 2s
+ *      și altul 3,5s, filmează 3,5 și fiecare taie din el. O sumă ar cere
+ *      timp degeaba, un minim ar lăsa al doilea rezultat fără material.
+ *
+ *   3. Momentele rămase fără niciun rezultat se ȘTERG. Ăsta e chiar rostul
+ *      inversării: nu se mai poate filma ceva ce nu folosește nimic.
+ */
+export async function syncShotsFromOutputs(templateId: string) {
+  const supabase = await getSupabaseServerClient();
+
+  const [{ data: outputsData }, { data: shotsData }] = await Promise.all([
+    supabase.from("outputs").select("slots").eq("template_id", templateId),
+    supabase.from("shots").select("id, slot_key, sort_order").eq("template_id", templateId),
+  ]);
+
+  const outputs = (outputsData ?? []) as { slots: OutputSlot[] }[];
+  const existing = (shotsData ?? []) as { id: string; slot_key: string | null; sort_order: number }[];
+
+  // Ce cere fiecare cadru, adunat peste toate rezultatele.
+  const needed = new Map<string, { label: string; sec: number }>();
+  for (const o of outputs) {
+    for (const slot of Array.isArray(o.slots) ? o.slots : []) {
+      if (!slot?.slot) continue;
+      const sec = slot.sec ?? 2;
+      const cur = needed.get(slot.slot);
+      if (!cur) needed.set(slot.slot, { label: slot.label?.trim() || slot.slot, sec });
+      else {
+        cur.sec = Math.max(cur.sec, sec);
+        if (cur.label === slot.slot && slot.label?.trim()) cur.label = slot.label.trim();
+      }
+    }
+  }
+
+  const bySlot = new Map(existing.filter((s) => s.slot_key).map((s) => [s.slot_key as string, s]));
+  const keys = Array.from(needed.keys());
+
+  // Ce nu mai cere nimeni pleacă — inclusiv momentele vechi fără etichetă,
+  // rămase de pe vremea când se scriau de mână.
+  const stale = existing.filter((s) => !s.slot_key || !needed.has(s.slot_key));
+  if (stale.length > 0) {
+    await supabase.from("shots").delete().in("id", stale.map((s) => s.id));
+  }
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    const want = needed.get(key)!;
+    // Rezervă de filmare peste ce se folosește: auto-trim-ul păstrează mijlocul
+    // clipului, iar începutul și sfârșitul au mereu tremur și ezitare.
+    const recording = Math.max(3, Math.ceil(want.sec + 2));
+    const found = bySlot.get(key);
+
+    if (found) {
+      await supabase.from("shots").update({
+        sort_order: i + 1,
+        recording_duration: recording,
+        final_usage_duration: want.sec,
+      }).eq("id", found.id);
+      continue;
+    }
+
+    await supabase.from("shots").insert({
+      template_id: templateId,
+      slot_key: key,
+      sort_order: i + 1,
+      title: want.label,
+      pattern: null,
+      recording_duration: recording,
+      final_usage_duration: want.sec,
+      countdown: 3,
+      transition_type: "cut",
+      filter_style: "none",
+      effect: "none",
+      hands_busy: false,
+    });
+  }
+
+  revalidatePath(`/dashboard/templates/${templateId}`);
+}
+
+/** Importă variante din bibliotecă în șablon, ca rezultate. */
+export async function importDesigns(templateId: string, designIds: string[]) {
+  const supabase = await getSupabaseServerClient();
+  if (designIds.length === 0) return { ok: true as const };
+
+  const { data: designs, error: readErr } = await supabase
+    .from("reel_designs").select("*").in("id", designIds);
+  if (readErr) return { ok: false as const, error: readErr.message };
+
+  const { data: last } = await supabase
+    .from("outputs").select("sort_order").eq("template_id", templateId)
+    .order("sort_order", { ascending: false }).limit(1).maybeSingle();
+  let order = ((last?.sort_order as number | undefined) ?? -1) + 1;
+
+  const rows = (designs ?? []).map((d) => ({
+    template_id: templateId,
+    name: d.name,
+    kind: d.kind ?? "reel",
+    // Copie, nu referință: un șablon publicat n-are voie să se schimbe
+    // fiindcă cineva a editat varianta în bibliotecă. Vezi migrația 020.
+    slots: d.slots,
+    caption: d.caption,
+    filter: d.filter,
+    transition: d.transition,
+    cover_slot: d.cover_slot,
+    from_design_id: d.id,
+    sort_order: order++,
+  }));
+
+  const { error } = await supabase.from("outputs").insert(rows);
+  if (error) return { ok: false as const, error: error.message };
+
+  await syncShotsFromOutputs(templateId);
+  return { ok: true as const };
+}
+
+/** Scoate un rezultat importat și regenerează momentele. */
+export async function removeImportedOutput(outputId: string, templateId: string) {
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.from("outputs").delete().eq("id", outputId);
+  if (error) return { ok: false as const, error: error.message };
+  await syncShotsFromOutputs(templateId);
+  return { ok: true as const };
+}

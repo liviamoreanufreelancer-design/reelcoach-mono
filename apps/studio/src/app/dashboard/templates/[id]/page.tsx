@@ -20,7 +20,7 @@ import CoverUploadCard from "@/components/CoverUploadCard";
 import ScenesEditor from "@/components/ScenesEditor";
 import LiveScenePreview from "@/components/LiveScenePreview";
 import TemplateSidebar from "@/components/TemplateSidebar";
-import ResultsEditor from "@/components/ResultsEditor";
+import ImportedResults from "@/components/ImportedResults";
 import EditorSteps from "@/components/EditorSteps";
 import { getDraftFor } from "@/lib/template-actions";
 
@@ -134,10 +134,10 @@ export default async function TemplateDetailPage({
               </div>
             }
             rezultate={
-              <ResultsEditor
+              <ImportedResults
                 templateId={template.id}
-                shots={shots}
                 outputs={outputs}
+                shots={shots}
                 disabled={!canEdit}
               />
             }

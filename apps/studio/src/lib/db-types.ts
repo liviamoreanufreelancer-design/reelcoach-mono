@@ -171,6 +171,11 @@ export interface OutputRow {
   transition: string | null;
   /** Migrația 016: slot_key-ul momentului din care se desenează coperta. NULL = primul. */
   cover_slot: string | null;
+  /**
+   * Migrația 020: varianta din bibliotecă din care a fost importat.
+   * Informativ — rezultatul e o COPIE, nu o referință (vezi migrația).
+   */
+  from_design_id: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;

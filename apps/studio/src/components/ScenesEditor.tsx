@@ -15,9 +15,9 @@
 
 import { useState, useTransition } from "react";
 import {
-  Plus, Trash2, ChevronUp, ChevronDown, ChevronRight,
+  ChevronUp, ChevronDown, ChevronRight,
 } from "lucide-react";
-import { addShot, deleteShot, reorderShots } from "@/lib/template-actions";
+import { reorderShots } from "@/lib/template-actions";
 import type { ShotRow } from "@/lib/db-types";
 import ScenePanel from "./ScenePanel";
 
@@ -34,19 +34,6 @@ export default function ScenesEditor({
   const [expandedId, setExpandedId] = useState<string | null>(
     shots.length === 1 ? shots[0].id : null,
   );
-
-  const onAdd = () => {
-    startTransition(async () => {
-      await addShot(templateId);
-    });
-  };
-
-  const onDelete = (shotId: string) => {
-    if (!window.confirm("Sigur vrei să ștergi scena? Acțiunea nu poate fi anulată.")) return;
-    startTransition(async () => {
-      await deleteShot(shotId, templateId);
-    });
-  };
 
   const onMove = (index: number, direction: -1 | 1) => {
     const newIndex = index + direction;
@@ -70,21 +57,20 @@ export default function ScenesEditor({
             {shots.length} scen{shots.length === 1 ? "ă" : "e"}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onAdd}
-          disabled={disabled || pending}
-          className="btn-glass inline-flex items-center gap-1.5 disabled:opacity-30"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Adaugă moment</span>
-        </button>
+        {/* Momentele nu se mai adaugă și nu se mai șterg de mână: se
+            generează din rezultatele importate. Un buton aici ar fi însemnat
+            momente pe care nu le cere nimic — exact ce a eliminat inversarea. */}
+        <span className="text-[11.5px] text-[#9A9A9A] text-right leading-snug max-w-[220px]">
+            Generate din rezultate
+        </span>
       </div>
 
       {shots.length === 0 ? (
         <div className="border border-dashed border-[#5B34FF]/20 rounded-xl p-8 text-center">
-          <p className="text-[13px] text-[#6B6B6B]">
-            Niciun moment încă. Adaugă prima moment pentru a construi șablonul.
+          <p className="text-[13px] text-[#6B6B6B] leading-relaxed">
+            Niciun moment încă. Importă rezultate la pasul{" "}
+            <strong>Rezultate</strong> — lista de filmat se completează singură
+            din cadrele lor.
           </p>
         </div>
       ) : (
@@ -144,15 +130,6 @@ export default function ScenesEditor({
                       className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-[#6B6B6B] disabled:opacity-25 active:scale-95"
                     >
                       <ChevronDown className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(shot.id)}
-                      disabled={disabled || pending}
-                      aria-label="Șterge momentul"
-                      className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 disabled:opacity-25 active:scale-95"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
