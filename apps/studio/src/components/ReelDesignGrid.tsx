@@ -26,7 +26,7 @@ export default function ReelDesignGrid({ designs }: { designs: ReelDesignRow[] }
         return (
           <Link
             key={d.id}
-            href={`/dashboard/biblioteca/${d.id}`}
+            href={`/dashboard/reeluri/${d.id}`}
             style={{ width: TILE }}
             className="group shrink-0"
           >

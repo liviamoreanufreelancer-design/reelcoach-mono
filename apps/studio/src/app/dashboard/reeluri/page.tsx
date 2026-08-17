@@ -1,5 +1,5 @@
 /**
- * /dashboard/biblioteca — variantele de reel, grupate pe tip.
+ * /dashboard/reeluri — variantele de reel, grupate pe tip.
  *
  * Nu sunt postări. Appul nu le citește. E locul unde partenera construiește
  * mai multe abordări ale aceluiași tip de reel, ca stilista să nu posteze
@@ -10,10 +10,10 @@
  * lângă alta, cu coperțile desenate, exact ca să răspundă la întrebarea care
  * decide totul — „chiar arată diferit?".
  */
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import type { ReelDesignRow } from "@/lib/db-types";
+import PageHeader from "@/components/PageHeader";
 import NewReelDesignButton from "@/components/NewReelDesignButton";
 import ReelDesignGrid from "@/components/ReelDesignGrid";
 import DerivedShotList from "@/components/DerivedShotList";
@@ -42,23 +42,12 @@ export default async function BibliotecaPage() {
 
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-8">
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-2">
-        <div>
-          <p className="eyebrow">Bibliotecă</p>
-          <h1 className="text-[26px] font-semibold text-[#1F1F1F] leading-tight mt-1">
-            Variante de reel
-          </h1>
-        </div>
-        <NewReelDesignButton knownTypes={knownTypes} />
-      </div>
-
-      <p className="text-[13px] text-[#6B6B6B] leading-relaxed max-w-[620px] mb-7">
-        Mai multe abordări ale aceluiași tip de reel, construite pe filmări de
-        probă urcate de voi. Se fac întâi, se aplică apoi pe ce filmează
-        stilista. Testul care contează: pune trei una lângă alta — dacă cineva
-        din afară nu poate spune imediat că sunt diferite, schimbă abordarea în
-        loc s-o adaugi pe a patra.
-      </p>
+      <PageHeader
+        eyebrow="Reeluri"
+        title="Variantele construite"
+        description="Mai multe abordări ale aceluiași tip de reel, pe filmări de probă. Se fac întâi, se importă apoi în sesiuni. Testul care contează: pune trei una lângă alta — dacă cineva din afară nu poate spune imediat că sunt diferite, schimbă abordarea în loc s-o adaugi pe a patra."
+        action={<NewReelDesignButton knownTypes={knownTypes} />}
+      />
 
       {designs.length === 0 ? (
         <div className="card px-6 py-10 text-center">
@@ -98,12 +87,7 @@ export default async function BibliotecaPage() {
         alegerea lor la fiecare programare vine după ce se vede că ideea merge.
       </p>
 
-      <Link
-        href="/dashboard"
-        className="inline-block mt-6 text-[13px] text-[#5B34FF] hover:underline"
-      >
-        ← Șabloane
-      </Link>
+
     </main>
   );
 }

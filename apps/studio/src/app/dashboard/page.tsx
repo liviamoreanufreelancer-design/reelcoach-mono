@@ -1,14 +1,17 @@
 /**
- * Dashboard — lists all templates with status (draft/published), category,
- * recommended flag, and last updated date. Rendering + live search live in
- * the TemplateList client component.
+ * Sesiuni — ecranul de pornire al Studio.
  *
- * Click a card → opens the template edit page.
- * Click "+ Șablon nou" → opens dialog → creates draft → redirects to edit.
+ * O sesiune e un serviciu din app: Balayage, Tuns, Machiaj mireasă. Se numea
+ * „șablon", dar viziunea din CLAUDE.md o numește sesiune de la început:
+ * partenera vede servicii, nu template-uri.
+ *
+ * Sus stă starea lanțului (PipelineStatus), fiindcă ecranul de pornire trebuie
+ * să răspundă la „unde am rămas", nu doar să înșire ce există.
  */
 import { getSupabaseServerClient } from "@/lib/supabase-server";
-import Link from "next/link";
 import NewTemplateButton from "@/components/NewTemplateButton";
+import PageHeader from "@/components/PageHeader";
+import PipelineStatus from "@/components/PipelineStatus";
 import TemplateList, { type TemplateRow } from "@/components/TemplateList";
 
 type CategoryRow = {
@@ -19,16 +22,24 @@ type CategoryRow = {
 export default async function DashboardPage() {
   const supabase = await getSupabaseServerClient();
 
-  const [templatesRes, categoriesRes] = await Promise.all([
+  const [templatesRes, categoriesRes, typesRes, mediaRes, designsRes] = await Promise.all([
     supabase
       .from("templates")
       .select("id, title, status, is_recommended, category_id, updated_at, cover_url, parent_id")
       .order("updated_at", { ascending: false }),
     supabase.from("categories").select("id, label").order("sort_order"),
+    supabase.from("shot_types").select("id, hook"),
+    supabase.from("media_assets").select("id"),
+    supabase.from("reel_designs").select("id"),
   ]);
 
   const all = (templatesRes.data ?? []) as TemplateRow[];
   const categories = (categoriesRes.data ?? []) as CategoryRow[];
+  // Tabelele noi pot lipsi până se rulează migrațiile — atunci arătăm 0, nu
+  // o pagină căzută. Ecranul de pornire n-are voie să pice pentru un contor.
+  const types = (typesRes.data ?? []) as { id: string; hook: string | null }[];
+  const mediaCount = (mediaRes.data ?? []).length;
+  const reelCount = (designsRes.data ?? []).length;
 
   // Draft-copy-urile (parent_id setat) nu apar separat in lista;
   // marcheaza doar originalul ca avand modificari nepublicate.
@@ -40,35 +51,22 @@ export default async function DashboardPage() {
   const categoryLabels: Record<string, string> = {};
   for (const c of categories) categoryLabels[c.id] = c.label;
 
-  const drafts = templates.filter((t) => t.status === "draft");
-  const published = templates.filter((t) => t.status === "published");
-
   return (
     <div>
-      {/* Header row */}
-      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div>
-          <p className="eyebrow mb-2">Șabloane</p>
-          <h1 className="h-display text-[26px] sm:text-[32px] text-[#1F1F1F] leading-tight">Toate șabloanele</h1>
-          <p className="text-sm text-[#6B6B6B] mt-2">
-            {templates.length === 0
-              ? "Niciun șablon încă. Creează primul șablon."
-              : `${templates.length} șabloane în total · ${drafts.length} drafts · ${published.length} publicate`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Link href="/dashboard/cadre" className="btn-glass whitespace-nowrap">
-            Cadre
-          </Link>
-          <Link href="/dashboard/media" className="btn-glass whitespace-nowrap">
-            Materiale
-          </Link>
-          <Link href="/dashboard/biblioteca" className="btn-glass whitespace-nowrap">
-            Bibliotecă
-          </Link>
-          <NewTemplateButton />
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Sesiuni"
+        title="Serviciile din app"
+        description="Fiecare sesiune e un serviciu pe care îl alege stilista. Rezultatele se importă din reelurile construite, iar lista de filmat se generează din ele."
+        action={<NewTemplateButton />}
+      />
+
+      <PipelineStatus
+        moments={types.length}
+        momentsWithoutHook={types.filter((t) => !t.hook).length}
+        media={mediaCount}
+        reels={reelCount}
+        sessions={templates.length}
+      />
 
       <TemplateList templates={templates} categoryLabels={categoryLabels} parentsWithDraft={Array.from(parentsWithDraft)} />
     </div>

@@ -2,10 +2,10 @@
  * Dashboard layout — wraps all authenticated pages with a header
  * showing the user email + role and a logout button.
  */
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import LogoutButton from "@/components/LogoutButton";
+import StudioNav from "@/components/StudioNav";
 
 export default async function DashboardLayout({
   children,
@@ -35,14 +35,6 @@ export default async function DashboardLayout({
           <p className="eyebrow text-[9px] sm:text-[10px] hidden sm:block">ReelCoach</p>
           <span className="text-[#B8B8B8] text-xs hidden sm:inline">·</span>
           <span className="h-display text-[16px] sm:text-[18px] text-[#1F1F1F]">Studio</span>
-          <nav className="flex items-center gap-1 ml-2 sm:ml-4">
-            <Link href="/dashboard" className="text-[12px] text-[#4B4B4B] hover:text-[#1F1F1F] px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
-              Șabloane
-            </Link>
-            <Link href="/dashboard/diagrams" className="text-[12px] text-[#4B4B4B] hover:text-[#1F1F1F] px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
-              Diagrame
-            </Link>
-          </nav>
         </div>
 
         {/* Right side — role badge + logout. Email shown only on desktop. */}
@@ -59,10 +51,15 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      {/* Page content — tighter padding on mobile */}
-      <main className="flex-1 px-4 sm:px-5 py-6 sm:py-8 max-w-[1200px] mx-auto w-full">
-        {children}
-      </main>
+      {/* Bara laterală permanentă + conținut. Pe ecrane înguste bara urcă
+          deasupra, ca să nu mănânce lățimea — dar rămâne vizibilă: navigația
+          ascunsă în spatele unui buton e exact ce am reparat aici. */}
+      <div className="flex-1 w-full max-w-[1280px] mx-auto flex flex-col md:flex-row gap-6 px-4 sm:px-5 py-6 sm:py-8">
+        <aside className="md:w-[196px] shrink-0">
+          <StudioNav />
+        </aside>
+        <main className="flex-1 min-w-0">{children}</main>
+      </div>
     </div>
   );
 }
