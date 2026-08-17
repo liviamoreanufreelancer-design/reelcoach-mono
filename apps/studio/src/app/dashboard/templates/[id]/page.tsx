@@ -113,7 +113,7 @@ export default async function TemplateDetailPage({
           stacks below. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-6 items-start">
 
-        {/* ── MAIN: cei trei pasi ai sesiunii ── */}
+        {/* ── MAIN: cei doi pasi ai sesiunii ── */}
         <div className="min-w-0">
           <EditorSteps
             momenteCount={shots.length}
@@ -121,11 +121,6 @@ export default async function TemplateDetailPage({
             momente={
               <div className="flex flex-col gap-6">
                 <LiveScenePreview templateId={template.id} shots={shots} globalFilter={template.global_filter} disabled={!canEdit} />
-                <TemplateFormCard
-                  template={template}
-                  categories={categories}
-                  disabled={!canEdit}
-                />
                 <ScenesEditor
                   templateId={template.id}
                   shots={shots}
@@ -134,12 +129,19 @@ export default async function TemplateDetailPage({
               </div>
             }
             rezultate={
-              <ImportedResults
-                templateId={template.id}
-                outputs={outputs}
-                shots={shots}
-                disabled={!canEdit}
-              />
+              <div className="flex flex-col gap-6">
+                <TemplateFormCard
+                  template={template}
+                  categories={categories}
+                  disabled={!canEdit}
+                />
+                <ImportedResults
+                  templateId={template.id}
+                  outputs={outputs}
+                  shots={shots}
+                  disabled={!canEdit}
+                />
+              </div>
             }
           />
         </div>

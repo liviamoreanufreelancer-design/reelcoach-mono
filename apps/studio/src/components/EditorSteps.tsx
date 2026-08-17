@@ -2,13 +2,18 @@
 /**
  * EditorSteps — cei doi pași ai editorului de sesiune.
  *
- *   1. Momente     ce se filmează, cum se filmează
- *   2. Rezultate   ce iese din ele — și se compune pe loc, nu în alt pas
+ *   1. Rezultate   ce postări ies din serviciu (importate din bibliotecă)
+ *   2. Momente     ce trebuie filmat — GENERAT din cadrele rezultatelor
  *
- * Ordinea sugerează fluxul real (întâi ce capturezi, apoi ce faci din el),
- * dar NU blochează: orice pas e accesibil oricând. Partenera se întoarce des
- * la un detaliu fără să vrea să reia tot, iar un wizard care o obligă să
- * completeze în ordine ar fi enervant exact în cazul cel mai frecvent.
+ * Ordinea s-a inversat odată cu modelul: momentele nu se mai scriu, se deduc.
+ * Cu „Momente" pe primul loc, primul lucru pe care îl vedea partenera era o
+ * listă goală pe care nu putea s-o completeze — nimic nu poate apărea acolo
+ * până nu importă un rezultat.
+ *
+ * Ordinea sugerează fluxul, dar NU blochează: orice pas e accesibil oricând.
+ * Partenera se întoarce des la un detaliu fără să vrea să reia tot, iar un
+ * wizard care o obligă să completeze în ordine ar fi enervant exact în cazul
+ * cel mai frecvent.
  */
 import { useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
@@ -38,17 +43,17 @@ export default function EditorSteps({
   const steps: Step[] = [
     {
       id: 1,
-      label: "Momente",
-      hint: "Ce se filmează și cum",
-      count: momenteCount,
-      content: momente,
+      label: "Rezultate",
+      hint: "Ce postări ies din serviciu",
+      count: outputsCount,
+      content: rezultate,
     },
     {
       id: 2,
-      label: "Rezultate",
-      hint: "Ce iese din momente",
-      count: outputsCount,
-      content: rezultate,
+      label: "Momente",
+      hint: "Ce se filmează — generat din rezultate",
+      count: momenteCount,
+      content: momente,
     },
   ];
 
