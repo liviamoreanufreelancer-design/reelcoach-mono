@@ -149,130 +149,6 @@ export async function deleteTemplate(id: string) {
 }
 
 // ============================================================================
-// Shots (scenes)
-// ============================================================================
-
-/**
- * Add a new shot to a template at the next available sort_order.
- */
-export async function addShot(templateId: string) {
-  const supabase = await getSupabaseServerClient();
-
-  // Find next sort_order
-  const { data: existing } = await supabase
-    .from("shots")
-    .select("sort_order")
-    .eq("template_id", templateId)
-    .order("sort_order", { ascending: false })
-    .limit(1);
-  const nextOrder = (existing?.[0]?.sort_order ?? 0) + 1;
-
-  const { error } = await supabase.from("shots").insert({
-    template_id: templateId,
-    sort_order: nextOrder,
-    pattern: null,
-    title: `Scena ${nextOrder}`,
-    recording_duration: 4,
-    final_usage_duration: 2,
-    countdown: 3,
-    transition_type: "cut",
-    filter_style: "none",
-    effect: "none",
-    hands_busy: false,
-  });
-  if (error) throw new Error(error.message);
-
-  revalidatePath(`/dashboard/templates/${templateId}`);
-}
-
-/**
- * Update a shot with the given patch. Used by inline editing on the
- * template detail page.
- */
-export async function updateShot(
-  shotId: string,
-  templateId: string,
-  patch: {
-    /** Free-form pattern label. Pass null to clear. */
-    pattern?: string | null;
-    title?: string;
-    hook?: string | null;
-    overlay_text?: string | null;
-    recording_duration?: number;
-    final_usage_duration?: number;
-    countdown?: number;
-    transition_type?: TransitionId;
-    filter_style?: string;
-    effect?: EffectId;
-    hands_busy?: boolean;
-    instructions?: string[];
-    must_show?: string[];
-    must_see?: string[];
-    how_shoot?: HowShootItem[];
-    playback_speed?: number;
-    motion_blur?: boolean;
-    phone_hold?: 'hand' | 'tripod' | null;
-    shot_distance?: 'palm' | 'arm' | 'step' | 'two_steps' | null;
-    light_sources?: LightSource[];
-    phone_movement?: 'fixed' | 'follow' | 'pan' | 'zoom' | null;
-    subject_type?: 'face' | 'hands' | 'hair' | 'product' | null;
-    caption_position?: 'top' | 'center' | 'bottom';
-    caption_preset?: string;
-    text_layers?: unknown[] | null;
-    diagram_id?: string | null;
-    /** Migrațiile 012+013: cum se capturează momentul. */
-    capture_kind?: CaptureKind;
-    /** Migrația 012: identitatea stabilă a momentului (pentru outputuri). */
-    slot_key?: string | null;
-  },
-) {
-  const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.from("shots").update(patch).eq("id", shotId);
-  if (error) throw new Error(error.message);
-
-  revalidatePath(`/dashboard/templates/${templateId}`);
-}
-
-export async function deleteShot(shotId: string, templateId: string) {
-  const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.from("shots").delete().eq("id", shotId);
-  if (error) throw new Error(error.message);
-
-  // Resequence sort_order so there are no gaps.
-  const { data: remaining } = await supabase
-    .from("shots")
-    .select("id")
-    .eq("template_id", templateId)
-    .order("sort_order", { ascending: true });
-
-  if (remaining) {
-    for (let i = 0; i < remaining.length; i += 1) {
-      await supabase.from("shots").update({ sort_order: i + 1 }).eq("id", remaining[i].id);
-    }
-  }
-
-  revalidatePath(`/dashboard/templates/${templateId}`);
-}
-
-/**
- * Reorder shots based on the provided ordered list of shot ids.
- * Caller passes ids in the desired final order; we just rewrite sort_order.
- */
-export async function reorderShots(templateId: string, orderedIds: string[]) {
-  const supabase = await getSupabaseServerClient();
-
-  for (let i = 0; i < orderedIds.length; i += 1) {
-    const { error } = await supabase
-      .from("shots")
-      .update({ sort_order: i + 1 })
-      .eq("id", orderedIds[i]);
-    if (error) throw new Error(error.message);
-  }
-
-  revalidatePath(`/dashboard/templates/${templateId}`);
-}
-
-// ============================================================================
 // Upload cover image
 // ============================================================================
 
@@ -308,7 +184,6 @@ export async function uploadCover(templateId: string, formData: FormData) {
   return publicUrl;
 }
 
-
 /**
  * Save the preview reel URL on the template. The MP4 itself is uploaded
  * directly from the browser to the `previews` bucket (videos are too big to
@@ -323,29 +198,6 @@ export async function setPreviewReelUrl(templateId: string, url: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/dashboard/templates/${templateId}`);
   return url;
-}
-
-
-export async function uploadExampleImage(shotId: string, templateId: string, formData: FormData) {
-  const supabase = await getSupabaseServerClient();
-  const file = formData.get("example") as File | null;
-  if (!file || file.size === 0) throw new Error("Niciun fișier selectat");
-  if (file.size > 5 * 1024 * 1024) throw new Error("Fișierul depășește 5MB");
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
-  const path = `${templateId}/${shotId}-${Date.now()}.${ext}`;
-  const { error: uploadError } = await supabase.storage
-    .from("examples")
-    .upload(path, file, { contentType: file.type, upsert: false });
-  if (uploadError) throw new Error(uploadError.message);
-  const { data: publicData } = supabase.storage.from("examples").getPublicUrl(path);
-  const publicUrl = publicData.publicUrl;
-  const { error: updateError } = await supabase
-    .from("shots")
-    .update({ example_image_url: publicUrl })
-    .eq("id", shotId);
-  if (updateError) throw new Error(updateError.message);
-  revalidatePath(`/dashboard/templates/${templateId}`);
-  return publicUrl;
 }
 
 // ============================================================================
@@ -364,20 +216,6 @@ function slugify(input: string): string {
 
 function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 6);
-}
-
-/**
- * Update the reel-wide global filter (templates.global_filter). One filter for
- * the whole reel — the partner's decision. Mirrors updateShot's pattern.
- */
-export async function updateGlobalFilter(templateId: string, filterId: string) {
-  const supabase = await getSupabaseServerClient();
-  const { error } = await supabase
-    .from("templates")
-    .update({ global_filter: filterId })
-    .eq("id", templateId);
-  if (error) throw new Error(error.message);
-  revalidatePath(`/dashboard/templates/${templateId}`);
 }
 
 /**
@@ -404,22 +242,6 @@ export async function uploadShotSample(shotId: string, templateId: string, formD
   if (updateError) throw new Error(updateError.message);
   revalidatePath(`/dashboard/templates/${templateId}`);
   return publicUrl;
-}
-
-/**
- * Save the shot's sample video URL. The video itself is uploaded DIRECTLY from
- * the browser to the `samples` bucket (real iPhone footage is too big to route
- * through a server action body — causes 413), so here we only persist the URL.
- */
-export async function setShotSampleUrl(shotId: string, templateId: string, url: string) {
-  const supabase = await getSupabaseServerClient();
-  const { error } = await supabase
-    .from("shots")
-    .update({ sample_video_url: url })
-    .eq("id", shotId);
-  if (error) throw new Error(error.message);
-  revalidatePath(`/dashboard/templates/${templateId}`);
-  return url;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -529,7 +351,6 @@ export async function discardDraftChanges(draftId: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════
  * OUTPUTURI (migratia 014) — ce POSTARI ies dintr-o sesiune.
@@ -791,23 +612,39 @@ export async function syncShotsFromOutputs(templateId: string) {
   const supabase = await getSupabaseServerClient();
 
   const [{ data: outputsData }, { data: shotsData }] = await Promise.all([
-    supabase.from("outputs").select("slots").eq("template_id", templateId),
+    supabase.from("outputs").select("slots, kind").eq("template_id", templateId),
     supabase.from("shots").select("id, slot_key, sort_order").eq("template_id", templateId),
   ]);
 
-  const outputs = (outputsData ?? []) as { slots: OutputSlot[] }[];
+  const outputs = (outputsData ?? []) as { slots: OutputSlot[]; kind: OutputKind }[];
   const existing = (shotsData ?? []) as { id: string; slot_key: string | null; sort_order: number }[];
 
   // Ce cere fiecare cadru, adunat peste toate rezultatele.
-  const needed = new Map<string, { label: string; sec: number }>();
+  //
+  // CE SE CAPTUREAZĂ SE DEDUCE, nu se alege. Un moment e „și poză" nu fiindcă
+  // așa e la balayage, ci fiindcă îl cer și un reel, și un carusel. Altfel
+  // rămânea o mină: catalogul putea spune „video" în timp ce un carusel avea
+  // nevoie de poză — stilista n-o făcea niciodată, iar caruselul nu se putea
+  // construi. Tăcut, exact clasa de eroare pe care derivarea a eliminat-o.
+  const needed = new Map<string, { label: string; sec: number; video: boolean; photo: boolean }>();
   for (const o of outputs) {
+    // Reelurile și story-urile cer mișcare; caruselul cere imagine.
+    const wantsPhoto = o.kind === "carousel";
     for (const slot of Array.isArray(o.slots) ? o.slots : []) {
       if (!slot?.slot) continue;
       const sec = slot.sec ?? 2;
       const cur = needed.get(slot.slot);
-      if (!cur) needed.set(slot.slot, { label: slot.label?.trim() || slot.slot, sec });
-      else {
+      if (!cur) {
+        needed.set(slot.slot, {
+          label: slot.label?.trim() || slot.slot,
+          sec,
+          video: !wantsPhoto,
+          photo: wantsPhoto,
+        });
+      } else {
         cur.sec = Math.max(cur.sec, sec);
+        cur.video = cur.video || !wantsPhoto;
+        cur.photo = cur.photo || wantsPhoto;
         if (cur.label === slot.slot && slot.label?.trim()) cur.label = slot.label.trim();
       }
     }
@@ -843,6 +680,13 @@ export async function syncShotsFromOutputs(templateId: string) {
     const found = bySlot.get(key);
 
     const type = types.get(key);
+    // Catalogul e MINIM, nu ultimul cuvânt: dacă tipul spune „ambele", rămâne
+    // ambele chiar dacă rezultatele de aici cer doar filmare — poate fi o
+    // cerință a momentului însuși (before/after se vor și ca poză).
+    const fromType = type?.capture_kind ?? "video";
+    const video = want.video || fromType === "video" || fromType === "both";
+    const photo = want.photo || fromType === "photo" || fromType === "both";
+    const captureKind: CaptureKind = video && photo ? "both" : photo ? "photo" : "video";
 
     if (found) {
       // Doar ce se deduce: ordinea și duratele. Instrucțiunile scrise de
@@ -852,6 +696,7 @@ export async function syncShotsFromOutputs(templateId: string) {
         sort_order: i + 1,
         recording_duration: recording,
         final_usage_duration: want.sec,
+        capture_kind: captureKind,
       }).eq("id", found.id);
       continue;
     }
@@ -877,7 +722,7 @@ export async function syncShotsFromOutputs(templateId: string) {
       shot_distance: type?.shot_distance ?? null,
       phone_movement: type?.phone_movement ?? null,
       light_sources: type?.light_sources ?? [],
-      capture_kind: type?.capture_kind ?? "video",
+      capture_kind: captureKind,
       example_image_url: type?.example_image_url ?? null,
     });
   }

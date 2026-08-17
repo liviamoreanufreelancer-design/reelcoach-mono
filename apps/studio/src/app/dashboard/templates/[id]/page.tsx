@@ -17,10 +17,9 @@ import { getSupabaseServerClient } from "@/lib/supabase-server";
 import type { TemplateRow, ShotRow, Category, OutputRow } from "@/lib/db-types";
 import TemplateFormCard from "@/components/TemplateFormCard";
 import CoverUploadCard from "@/components/CoverUploadCard";
-import ScenesEditor from "@/components/ScenesEditor";
-import LiveScenePreview from "@/components/LiveScenePreview";
 import TemplateSidebar from "@/components/TemplateSidebar";
 import ImportedResults from "@/components/ImportedResults";
+import SessionShotList from "@/components/SessionShotList";
 import EditorSteps from "@/components/EditorSteps";
 import { getDraftFor } from "@/lib/template-actions";
 
@@ -118,16 +117,7 @@ export default async function TemplateDetailPage({
           <EditorSteps
             momenteCount={shots.length}
             outputsCount={outputs.length}
-            momente={
-              <div className="flex flex-col gap-6">
-                <LiveScenePreview templateId={template.id} shots={shots} globalFilter={template.global_filter} disabled={!canEdit} />
-                <ScenesEditor
-                  templateId={template.id}
-                  shots={shots}
-                  disabled={!canEdit}
-                />
-              </div>
-            }
+            momente={<SessionShotList shots={shots} />}
             rezultate={
               <div className="flex flex-col gap-6">
                 <TemplateFormCard
