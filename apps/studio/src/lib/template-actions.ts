@@ -21,6 +21,7 @@ import type {
   OutputKind,
   OutputSlot,
 } from "./db-types";
+import { planShots } from "./shot-plan";
 
 /**
  * Create a brand-new draft template. Used by "+ Șablon nou" on the dashboard.
@@ -624,36 +625,9 @@ export async function syncShotsFromOutputs(templateId: string) {
   const outputs = (outputsData ?? []) as { slots: OutputSlot[]; kind: OutputKind }[];
   const existing = (shotsData ?? []) as { id: string; slot_key: string | null; sort_order: number }[];
 
-  // Ce cere fiecare cadru, adunat peste toate rezultatele.
-  //
-  // CE SE CAPTUREAZĂ SE DEDUCE, nu se alege. Un moment e „și poză" nu fiindcă
-  // așa e la balayage, ci fiindcă îl cer și un reel, și un carusel. Altfel
-  // rămânea o mină: catalogul putea spune „video" în timp ce un carusel avea
-  // nevoie de poză — stilista n-o făcea niciodată, iar caruselul nu se putea
-  // construi. Tăcut, exact clasa de eroare pe care derivarea a eliminat-o.
-  const needed = new Map<string, { label: string; sec: number; video: boolean; photo: boolean }>();
-  for (const o of outputs) {
-    // Reelurile și story-urile cer mișcare; caruselul cere imagine.
-    const wantsPhoto = o.kind === "carousel";
-    for (const slot of Array.isArray(o.slots) ? o.slots : []) {
-      if (!slot?.slot) continue;
-      const sec = slot.sec ?? 2;
-      const cur = needed.get(slot.slot);
-      if (!cur) {
-        needed.set(slot.slot, {
-          label: slot.label?.trim() || slot.slot,
-          sec,
-          video: !wantsPhoto,
-          photo: wantsPhoto,
-        });
-      } else {
-        cur.sec = Math.max(cur.sec, sec);
-        cur.video = cur.video || !wantsPhoto;
-        cur.photo = cur.photo || wantsPhoto;
-        if (cur.label === slot.slot && slot.label?.trim()) cur.label = slot.label.trim();
-      }
-    }
-  }
+  // Aceeași socoteală o face și interfața, prin `planShots` — o singură
+  // regulă, deci nu se pot despărți. Vezi lib/shot-plan.ts.
+  const needed = planShots(outputs);
 
   const bySlot = new Map(existing.filter((s) => s.slot_key).map((s) => [s.slot_key as string, s]));
   const keys = Array.from(needed.keys());
@@ -689,8 +663,8 @@ export async function syncShotsFromOutputs(templateId: string) {
     // ambele chiar dacă rezultatele de aici cer doar filmare — poate fi o
     // cerință a momentului însuși (before/after se vor și ca poză).
     const fromType = type?.capture_kind ?? "video";
-    const video = want.video || fromType === "video" || fromType === "both";
-    const photo = want.photo || fromType === "photo" || fromType === "both";
+    const video = want.capture !== "photo" || fromType === "video" || fromType === "both";
+    const photo = want.capture !== "video" || fromType === "photo" || fromType === "both";
     const captureKind: CaptureKind = video && photo ? "both" : photo ? "photo" : "video";
 
     if (found) {
@@ -767,6 +741,19 @@ export async function importDesigns(templateId: string, designIds: string[]) {
   const { error } = await supabase.from("outputs").insert(rows);
   if (error) return { ok: false as const, error: error.message };
 
+  await syncShotsFromOutputs(templateId);
+  return { ok: true as const };
+}
+
+/**
+ * Recalculează momentele din rezultatele deja importate.
+ *
+ * Derivarea rulează la import. Dacă o regulă s-a schimbat după — cum s-a
+ * întâmplat cu „ce se capturează", adăugată după ce partenera importase deja
+ * — momentele rămân cum au fost create, tăcut. Butonul ăsta le aduce la zi
+ * fără să atingă instrucțiunile scrise de mână.
+ */
+export async function resyncShots(templateId: string) {
   await syncShotsFromOutputs(templateId);
   return { ok: true as const };
 }

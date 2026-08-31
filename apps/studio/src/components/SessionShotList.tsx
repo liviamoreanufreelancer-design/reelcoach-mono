@@ -1,3 +1,4 @@
+"use client";
 /**
  * SessionShotList — ce filmează stilista la serviciul ăsta.
  *
@@ -17,8 +18,11 @@
  * înseamnă că peste șase luni nimeni nu mai știe care e cel viu.
  */
 import Link from "next/link";
-import { Video, Images, Camera, ExternalLink } from "lucide-react";
-import type { ShotRow } from "@/lib/db-types";
+import { useTransition } from "react";
+import { Video, Images, Camera, ExternalLink, RefreshCw, AlertCircle } from "lucide-react";
+import { resyncShots } from "@/lib/template-actions";
+import { planShots, shotsAreStale } from "@/lib/shot-plan";
+import type { OutputRow, ShotRow } from "@/lib/db-types";
 
 const KIND = {
   video: { Icon: Video, label: "filmare" },
@@ -26,7 +30,21 @@ const KIND = {
   both: { Icon: Camera, label: "filmare + poză" },
 } as const;
 
-export default function SessionShotList({ shots }: { shots: ShotRow[] }) {
+export default function SessionShotList({
+  templateId,
+  shots,
+  outputs,
+}: {
+  templateId: string;
+  shots: ShotRow[];
+  outputs: OutputRow[];
+}) {
+  const [pending, startTransition] = useTransition();
+  // Ce AR TREBUI să ceară rezultatele, față de ce e salvat. Derivarea rulează
+  // la import; dacă o regulă s-a schimbat după, lista rămâne în urmă tăcut.
+  const planned = planShots(outputs);
+  const stale = shotsAreStale(shots, planned);
+
   if (shots.length === 0) {
     return (
       <div className="card px-6 py-9 text-center">
@@ -52,6 +70,25 @@ export default function SessionShotList({ shots }: { shots: ShotRow[] }) {
         </Link>
         , o singură dată pentru toate serviciile.
       </p>
+
+      {stale && (
+        <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 leading-snug flex flex-wrap items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span className="flex-1 min-w-[220px]">
+            Lista nu mai corespunde rezultatelor importate — durata sau ce se
+            capturează s-au schimbat de atunci.
+          </span>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => startTransition(async () => { await resyncShots(templateId); })}
+            className="btn-glass shrink-0 !px-3 !py-1.5 text-[12px] inline-flex items-center gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${pending ? "animate-spin" : ""}`} />
+            {pending ? "Recalculez…" : "Recalculează"}
+          </button>
+        </div>
+      )}
 
       {noHook > 0 && (
         <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug">

@@ -117,7 +117,13 @@ export default async function TemplateDetailPage({
           <EditorSteps
             momenteCount={shots.length}
             outputsCount={outputs.length}
-            momente={<SessionShotList shots={shots} />}
+            momente={
+              <SessionShotList
+                templateId={template.id}
+                shots={shots}
+                outputs={outputs}
+              />
+            }
             rezultate={
               <div className="flex flex-col gap-6">
                 <TemplateFormCard
