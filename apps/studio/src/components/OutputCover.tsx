@@ -49,8 +49,14 @@ export default function OutputCover({
   const shot = slot ? shots.find((s) => s.slot_key === slot.slot) : undefined;
   const filterId = slot?.filter ?? output.filter ?? "none";
   const layers = (slot?.textLayers as TextLayer[] | undefined) ?? [];
-  const src = shot?.sample_video_url ?? null;
-  const img = shot?.example_image_url ?? null;
+  // Materialul unui cadru de carusel e o POZĂ, salvată tot în
+  // `sample_video_url` (e „materialul cadrului", nu neapărat un video). Un
+  // JPEG nu se decodează într-un `<video>`, deci îl trimitem pe calea de
+  // imagine — altfel coperta caruselului ar rămâne mereu goală.
+  const raw = shot?.sample_video_url ?? null;
+  const looksLikeImage = !!raw && /\.(jpe?g|png|webp|gif|avif|heic)(\?|$)/i.test(raw);
+  const src = looksLikeImage ? null : raw;
+  const img = (looksLikeImage ? raw : null) ?? shot?.example_image_url ?? null;
 
   // Nu atingem rețeaua până nu e vizibil cartonașul.
   useEffect(() => {

@@ -20,8 +20,14 @@ import { TRANSITIONS, TRANSITION_PARAMS, EFFECT_PARAMS, EFFECTS } from "@/lib/op
 import FxParams, { type FxValues } from "./FxParams";
 import type { Composition, OutputSlot, ShotLike, TransitionId } from "@/lib/db-types";
 
-const W = 540;
-const H = 960;
+/**
+ * Pânza de desen. Reelurile și poveștile sunt 9:16; caruselul e 4:5, formatul
+ * de postare-imagine. Nu e cosmetic: la 9:16, o poză 4:5 se vede tăiată exact
+ * unde e subiectul, iar textul pe care îl pui peste ajunge în altă parte decât
+ * la export.
+ */
+const REEL = { w: 540, h: 960, css: "9 / 16" };
+const CARD = { w: 720, h: 900, css: "4 / 5" };
 const SPEEDS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const TEXT_FONTS = [
@@ -66,6 +72,15 @@ export default function OutputSceneEditor({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  /**
+   * O poză nu se încarcă într-un `<video>`.
+   *
+   * Editorul desena mereu dintr-un element video — pentru carusel asta însemna
+   * pânză neagră, fiindcă un JPEG nu se decodează acolo. Sursa de imagine e
+   * un `<img>` separat, iar bucla desenează din care e potrivit.
+   */
+  const imgRef = useRef<HTMLImageElement>(null);
+  const frame = stills ? CARD : REEL;
   const stageRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -104,11 +119,27 @@ export default function OutputSceneEditor({
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
-    if (!canvas || !video) return;
+    if (!canvas) return;
     let running = true;
     const loop = () => {
       if (!running) return;
-      if (video.readyState >= 2) {
+
+      // Imagine fixă: nu există timp, nici viteză, nici fereastră de tăiere.
+      // Se desenează cadrul, atât.
+      const img = imgRef.current;
+      if (stills) {
+        if (img && img.complete && img.naturalWidth > 0) {
+          renderPreviewFrame(canvas, img as unknown as HTMLVideoElement, {
+            filter: FILTERS[filterRef.current as keyof typeof FILTERS] ?? FILTERS.none,
+            effectId: effectRef.current,
+            textLayers: layersRef.current.length > 0 ? layersRef.current : undefined,
+          });
+        }
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
+
+      if (video && video.readyState >= 2) {
         if (video.playbackRate !== speedRef.current) video.playbackRate = speedRef.current;
         const full = video.duration || 4;
         const win = Math.min(trimRef.current || full, full);
@@ -134,13 +165,24 @@ export default function OutputSceneEditor({
       running = false;
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+    // `stills` decide din ce sursă desenăm — bucla trebuie repornită dacă
+    // se schimbă, altfel ar continua să caute un video care nu există.
+  }, [stills]);
 
-  // Sursa video a momentului selectat.
+  // Sursa momentului selectat — video sau imagine, după felul rezultatului.
   useEffect(() => {
+    const url = shot?.sample_video_url;
+
+    if (stills) {
+      const img = imgRef.current;
+      if (!img) return;
+      if (url) img.src = url;
+      else img.removeAttribute("src");
+      return;
+    }
+
     const video = videoRef.current;
     if (!video) return;
-    const url = shot?.sample_video_url;
     if (url) {
       video.src = url;
       video.crossOrigin = "anonymous";
@@ -277,15 +319,18 @@ export default function OutputSceneEditor({
         <div
           ref={stageRef}
           className="relative w-full rounded-2xl overflow-hidden bg-black border border-[#EDE8FF]"
-          style={{ aspectRatio: "9 / 16", touchAction: "none" }}
+          style={{ aspectRatio: frame.css, touchAction: "none" }}
           onPointerDown={onDown}
           onDoubleClick={onDoubleClick}
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerLeave={onUp}
         >
-          <canvas ref={canvasRef} width={W} height={H} className="absolute inset-0 w-full h-full object-cover" />
+          <canvas ref={canvasRef} width={frame.w} height={frame.h} className="absolute inset-0 w-full h-full object-cover" />
+          {/* Sursele, ascunse: bucla desenează din ele pe canvas. */}
           <video ref={videoRef} className="hidden" playsInline muted />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img ref={imgRef} alt="" className="hidden" crossOrigin="anonymous" />
 
           {dragId && (
             <div className="absolute inset-0 pointer-events-none z-20">

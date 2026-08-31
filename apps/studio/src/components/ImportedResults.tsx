@@ -74,7 +74,11 @@ export default function ImportedResults({
                 <div className="relative rounded-[10px] overflow-hidden border border-[#E7E3F5]">
                   {/* Cadrele rezultatului își poartă filmarea de probă cu ele,
                       deci coperta se desenează fără să atingă momentele. */}
-                  <OutputCover output={o} shots={framesAsShots(o.slots)} aspect={9 / 16} />
+                  <OutputCover
+                    output={o}
+                    shots={framesAsShots(o.slots)}
+                    aspect={o.kind === "carousel" ? 4 / 5 : 9 / 16}
+                  />
                   {!disabled && (
                     <button
                       type="button"
@@ -222,7 +226,11 @@ function DesignPicker({
                           className="text-left shrink-0"
                         >
                           <div className={`relative rounded-lg overflow-hidden border-2 transition ${on ? "border-[#5B34FF]" : "border-transparent hover:border-[#D8D0F5]"}`}>
-                            <OutputCover output={d} shots={framesAsShots(d.slots)} aspect={9 / 16} />
+                            <OutputCover
+                              output={d}
+                              shots={framesAsShots(d.slots)}
+                              aspect={d.kind === "carousel" ? 4 / 5 : 9 / 16}
+                            />
                             {on && (
                               <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#5B34FF] text-white grid place-items-center">
                                 <Check className="w-3 h-3" strokeWidth={3} />
