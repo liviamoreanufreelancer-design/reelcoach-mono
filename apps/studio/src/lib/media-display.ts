@@ -24,6 +24,19 @@ export const VIDEO_ASPECT = 9 / 16;
  * La POVEȘTI decizia e per moment, nu per variantă: aceeași poveste poate
  * avea o imagine 9:16 și o filmare, una după alta.
  */
+/**
+ * Materialul e nefolosibil — a fost urcat, dar browserul nu-l poate afișa.
+ *
+ * O imagine fără dimensiuni măsurate n-a putut fi decodată la urcare, deci
+ * nu se va afișa nicăieri. Cel mai frecvent caz e HEIC, formatul implicit al
+ * iPhone-ului. Fișierele urcate ÎNAINTE de verificarea de la intrare sunt
+ * încă în bibliotecă — semnalul ăsta le găsește fără să fie nevoie de o
+ * curățenie manuală.
+ */
+export function isUnusable(asset: MediaAsset): boolean {
+  return asset.kind === "image" && !asset.width;
+}
+
 export function isImageUrl(url: string | null | undefined): boolean {
   return !!url && /\.(jpe?g|png|webp|gif|avif|heic)(\?|$)/i.test(url);
 }

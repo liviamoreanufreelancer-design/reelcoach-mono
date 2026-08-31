@@ -15,7 +15,7 @@ import { Upload, Search, X, AlertTriangle, Maximize2 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { uploadToLibrary } from "@/lib/media-upload";
 import type { MediaAsset } from "@/lib/db-types";
-import { isOversized, tileAspect, tileFit } from "@/lib/media-display";
+import { isOversized, isUnusable, tileAspect, tileFit } from "@/lib/media-display";
 import MediaKindFilter, { filterByKind, type MediaKindFilterValue } from "./MediaKindFilter";
 import MediaViewer from "./MediaViewer";
 
@@ -184,6 +184,7 @@ function AssetTile({
   // randare mai lentă fără niciun câștig, fiindcă reel-ul final e 1080×1920.
   // La poze nu se aplică — vezi lib/media-display.ts.
   const tooBig = isOversized(asset);
+  const unusable = isUnusable(asset);
 
   return (
     <div className="text-left group relative">
@@ -225,7 +226,15 @@ function AssetTile({
             }
           />
         )}
-        {tooBig && (
+        {unusable && (
+          <span
+            title="Browserul nu poate afișa formatul ăsta — probabil HEIC. Exportă poza ca JPEG."
+            className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-rose-500/90 text-white"
+          >
+            <AlertTriangle className="w-2.5 h-2.5" /> nu se afișează
+          </span>
+        )}
+        {tooBig && !unusable && (
           <span
             title={`${asset.width}×${asset.height} — mai mare decât 1080 lățime. Randarea încetinește, iar reel-ul final e oricum 1080×1920.`}
             className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-amber-500/90 text-white"

@@ -15,7 +15,7 @@ import { uploadToLibrary } from "@/lib/media-upload";
 import { renameMediaAsset, deleteMediaAsset } from "@/lib/template-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { MediaAsset } from "@/lib/db-types";
-import { isOversized, tileAspect, tileFit } from "@/lib/media-display";
+import { isOversized, isUnusable, tileAspect, tileFit } from "@/lib/media-display";
 import MediaKindFilter, { filterByKind, type MediaKindFilterValue } from "./MediaKindFilter";
 import MediaViewer from "./MediaViewer";
 
@@ -55,6 +55,7 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
   // treacă prin ce vezi, nu prin ce e ascuns de filtru.
   const shown = filterByKind(assets, kind);
   const oversized = assets.filter(isOversized).length;
+  const broken = assets.filter(isUnusable).length;
 
   return (
     <div>
@@ -76,6 +77,12 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
           <Upload className="w-4 h-4" /> Urcă materiale
         </button>
         <MediaKindFilter assets={assets} value={kind} onChange={(v) => { setKind(v); setViewing(null); }} />
+        {broken > 0 && (
+          <span className="text-[12px] text-rose-700 bg-rose-50 border border-rose-200 rounded-full px-3 py-1 inline-flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {broken} {broken === 1 ? "poză nu se poate afișa" : "poze nu se pot afișa"} — probabil HEIC
+          </span>
+        )}
         {oversized > 0 && (
           <span className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 inline-flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -147,6 +154,7 @@ function Tile({
   onDelete: () => void;
 }) {
   const tooBig = isOversized(asset);
+  const unusable = isUnusable(asset);
   const mb = asset.size_bytes ? asset.size_bytes / (1024 * 1024) : null;
 
   return (
@@ -182,7 +190,15 @@ function Tile({
             }
           />
         )}
-        {tooBig && (
+        {unusable && (
+          <span
+            title="Browserul nu poate afișa formatul ăsta — cel mai probabil HEIC, formatul implicit al iPhone-ului. Exportă poza ca JPEG și urc-o din nou."
+            className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-rose-500/90 text-white"
+          >
+            <AlertTriangle className="w-2.5 h-2.5" /> nu se afișează
+          </span>
+        )}
+        {tooBig && !unusable && (
           <span
             title={`${asset.width}×${asset.height}. Reel-ul final e 1080×1920, deci pixelii în plus se aruncă după ce ai plătit pentru ei.`}
             className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-amber-500/90 text-white"

@@ -74,6 +74,28 @@ export async function uploadToLibrary(
   const probe = await probeMedia(file);
   const kind: "video" | "image" = file.type.startsWith("image/") ? "image" : "video";
 
+  /**
+   * O imagine pe care browserul n-o poate citi n-are ce căuta în bibliotecă.
+   *
+   * Măsurarea dimensiunilor e și un test de decodare: dacă nu i-am putut afla
+   * lățimea, nici nu se va putea afișa — nicăieri, niciodată. Cel mai frecvent
+   * caz e HEIC, formatul implicit al iPhone-ului: Safari îl deschide, Firefox
+   * și Chrome nu.
+   *
+   * Fără verificarea asta, fișierul se urca, apărea în listă, și eșua abia în
+   * editor — cu o pictogramă care nu spunea de ce. Refuzul la intrare e mai
+   * ieftin decât un material stricat descoperit trei ecrane mai târziu.
+   */
+  if (kind === "image" && !probe.width) {
+    const heic = /\.(heic|heif)$/i.test(file.name);
+    return {
+      ok: false,
+      error: heic
+        ? `„${file.name}" e HEIC — browserul nu poate afișa formatul ăsta. Pe iPhone: Setări → Cameră → Formate → „Cea mai compatibilă", sau exportă poza ca JPEG.`
+        : `„${file.name}" nu poate fi afișat de browser. Încearcă JPEG sau PNG.`,
+    };
+  }
+
   const sb = getSupabaseBrowserClient();
   const ext = file.name.split(".").pop()?.toLowerCase() || (kind === "image" ? "jpg" : "mp4");
   // Prefix `library/` în bucketul existent: un bucket nou ar fi însemnat un
