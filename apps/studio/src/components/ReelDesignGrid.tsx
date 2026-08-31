@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Film } from "lucide-react";
 import type { ReelDesignRow } from "@/lib/db-types";
 import { framesAsShots } from "@/lib/design-frames";
+import { PHOTO_ASPECT } from "@/lib/media-display";
 import OutputCover from "./OutputCover";
 
 const TILE = 132;
@@ -33,7 +34,7 @@ export default function ReelDesignGrid({ designs }: { designs: ReelDesignRow[] }
             <div className="rounded-[10px] overflow-hidden border-2 border-transparent group-hover:border-[#D8D0F5] transition">
               {/* Caruselul e format de postare-imagine; reelul și poveștile
                   sunt verticale. Forma spune ce e, fără etichetă. */}
-              <OutputCover output={d} shots={shots} aspect={d.kind === "carousel" ? 4 / 5 : 9 / 16} />
+              <OutputCover output={d} shots={shots} aspect={d.kind === "carousel" ? PHOTO_ASPECT : 9 / 16} />
             </div>
             <div className="mt-2 px-0.5">
               <div className="text-[12.5px] font-medium text-[#1F1F1F] leading-tight truncate">

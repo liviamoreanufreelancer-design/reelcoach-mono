@@ -17,17 +17,28 @@ import { useEffect, useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
 import { TRANSITIONS, TRANSITION_PARAMS, EFFECT_PARAMS, EFFECTS } from "@/lib/options";
+import { PHOTO_ASPECT } from "@/lib/media-display";
 import FxParams, { type FxValues } from "./FxParams";
 import type { Composition, OutputSlot, ShotLike, TransitionId } from "@/lib/db-types";
 
 /**
- * Pânza de desen. Reelurile și poveștile sunt 9:16; caruselul e 4:5, formatul
- * de postare-imagine. Nu e cosmetic: la 9:16, o poză 4:5 se vede tăiată exact
- * unde e subiectul, iar textul pe care îl pui peste ajunge în altă parte decât
- * la export.
+ * Formatele, și de ce astea.
+ *
+ * REEL — 9:16, verticalul de Reels și TikTok. Exportul e 1080×1920; editorul
+ * desenează la jumătate, fiindcă randarea merge în timp real și fiecare pixel
+ * costă (vezi comentariul din OutputReelPreview).
+ *
+ * POZĂ — 4:5, portretul de Instagram și Facebook (1080×1350). E cel mai înalt
+ * format pe care ambele îl acceptă fără să taie: la 9:16 rețeaua decupează, la
+ * 1:1 pierzi înălțime degeaba. Fiind imagine fixă, nu costă nimic la randare —
+ * dar editorul păstrează același buget de pixeli ca reelul, ca previzualizarea
+ * să rămână la fel de fluidă când tragi textul.
+ *
+ * Poza se așază în cadru prin `drawCover`: umple formatul și taie ce iese, la
+ * fel ca la export. Deci ce vezi aici e ce se postează.
  */
 const REEL = { w: 540, h: 960, css: "9 / 16" };
-const CARD = { w: 720, h: 900, css: "4 / 5" };
+const CARD = { w: 648, h: 810, css: `${PHOTO_ASPECT}` };
 const SPEEDS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const TEXT_FONTS = [
@@ -405,7 +416,8 @@ export default function OutputSceneEditor({
             </div>
           )}
 
-          {shot?.sample_video_url && (
+          {/* Play/pauză n-are ce controla pe o imagine fixă. */}
+          {!stills && shot?.sample_video_url && (
             <button
               type="button"
               onClick={togglePlay}

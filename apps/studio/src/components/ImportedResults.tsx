@@ -22,6 +22,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { importDesigns, removeImportedOutput } from "@/lib/template-actions";
 import { framesAsShots } from "@/lib/design-frames";
 import type { OutputRow, ReelDesignRow, ShotRow } from "@/lib/db-types";
+import { PHOTO_ASPECT } from "@/lib/media-display";
 import OutputCover from "./OutputCover";
 
 const KIND_ICON = { reel: Film, carousel: Images, stories: Layers } as const;
@@ -77,7 +78,7 @@ export default function ImportedResults({
                   <OutputCover
                     output={o}
                     shots={framesAsShots(o.slots)}
-                    aspect={o.kind === "carousel" ? 4 / 5 : 9 / 16}
+                    aspect={o.kind === "carousel" ? PHOTO_ASPECT : 9 / 16}
                   />
                   {!disabled && (
                     <button
@@ -229,7 +230,7 @@ function DesignPicker({
                             <OutputCover
                               output={d}
                               shots={framesAsShots(d.slots)}
-                              aspect={d.kind === "carousel" ? 4 / 5 : 9 / 16}
+                              aspect={d.kind === "carousel" ? PHOTO_ASPECT : 9 / 16}
                             />
                             {on && (
                               <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#5B34FF] text-white grid place-items-center">

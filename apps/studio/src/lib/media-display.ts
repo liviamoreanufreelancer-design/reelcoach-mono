@@ -1,6 +1,16 @@
 import { MEDIA_MAX_WIDTH, type MediaAsset } from "./db-types";
 
 /**
+ * Formatul postării-imagine: 4:5, portretul de Instagram și Facebook
+ * (1080×1350). E cel mai înalt format pe care ambele îl acceptă fără să taie —
+ * la 9:16 rețeaua decupează, la 1:1 pierzi înălțime degeaba.
+ *
+ * Stă aici ca să fie o singură sursă: cartonașele, editorul și exportul
+ * folosesc același raport. Dacă se schimbă vreodată, se schimbă într-un loc.
+ */
+export const PHOTO_ASPECT = 4 / 5;
+
+/**
  * Avertismentul de mărime e DOAR pentru filmări.
  *
  * Costul rezoluției vine din randarea în timp real: fiecare cadru de sursă
