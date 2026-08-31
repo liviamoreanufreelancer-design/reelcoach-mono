@@ -16,11 +16,11 @@
  * pierde sub butoane, iar asta se descoperă abia după ce ai postat. Aici se
  * vede înainte.
  */
-import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useState } from "react";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import type { Composition, ShotLike } from "@/lib/db-types";
 import { VIDEO_ASPECT, isImageUrl } from "@/lib/media-display";
-import OutputCover from "./OutputCover";
+import StoryPlayer from "./StoryPlayer";
 
 export default function StoryPostPreview({
   output,
@@ -30,6 +30,10 @@ export default function StoryPostPreview({
   shots: ShotLike[];
 }) {
   const [i, setI] = useState(0);
+  /** Cât din povestea curentă a trecut, pentru bara de sus. */
+  const [p, setP] = useState(0);
+  /** Seria s-a terminat. Nu reluăm singuri: ai văzut-o, decizi tu. */
+  const [ended, setEnded] = useState(false);
   const total = output.slots.length;
 
   if (total === 0) {
@@ -46,22 +50,69 @@ export default function StoryPostPreview({
     shots.find((s) => s.slot_key === current?.slot)?.sample_video_url,
   );
 
-  const go = (d: number) => setI((v) => (v + d + total) % total);
+  const go = (d: number) => {
+    setP(0);
+    setEnded(false);
+    setI((v) => (v + d + total) % total);
+  };
+
+  /**
+   * Trecerea automată — asta face o serie să fie o serie.
+   *
+   * La ultima nu se reia din prima: cine se uită la povești vede seria O
+   * DATĂ, apoi trece mai departe. O buclă ar ascunde exact senzația care
+   * trebuie judecată — cum se termină.
+   */
+  const onDone = useCallback(() => {
+    setI((v) => {
+      if (v >= total - 1) { setEnded(true); return v; }
+      setP(0);
+      return v + 1;
+    });
+  }, [total]);
 
   return (
     <div className="w-full max-w-[300px] mx-auto">
       <div className="relative rounded-[22px] overflow-hidden bg-black">
-        <OutputCover output={output} shots={shots} aspect={VIDEO_ASPECT} slotIndex={idx} />
+        <div className="relative w-full" style={{ aspectRatio: `${VIDEO_ASPECT}` }}>
+          {!ended && (
+            <StoryPlayer
+              key={idx}
+              output={output}
+              shots={shots}
+              index={idx}
+              onProgress={setP}
+              onDone={onDone}
+            />
+          )}
+          {ended && (
+            <button
+              type="button"
+              onClick={() => { setI(0); setP(0); setEnded(false); }}
+              className="absolute inset-0 z-30 grid place-items-center bg-black/70 text-white"
+            >
+              <span className="flex flex-col items-center gap-2">
+                <RotateCcw className="w-6 h-6" strokeWidth={1.8} />
+                <span className="text-[12.5px]">Vezi seria din nou</span>
+              </span>
+            </button>
+          )}
+        </div>
 
         {/* Barele de progres — câte una per poveste, ca în aplicație. */}
         <div className="absolute top-2.5 left-2.5 right-2.5 flex gap-1 z-10">
           {output.slots.map((_, k) => (
             <span
               key={k}
-              className={`h-[2.5px] flex-1 rounded-full ${
-                k < idx ? "bg-white/85" : k === idx ? "bg-white" : "bg-white/30"
-              }`}
-            />
+              className="h-[2.5px] flex-1 rounded-full bg-white/30 overflow-hidden"
+            >
+              {/* Bara curentă se umple în timp real — de acolo se citește
+                  ritmul, nu din cifre. */}
+              <span
+                className="block h-full bg-white"
+                style={{ width: k < idx ? "100%" : k === idx ? `${Math.round(p * 100)}%` : "0%" }}
+              />
+            </span>
           ))}
         </div>
 
