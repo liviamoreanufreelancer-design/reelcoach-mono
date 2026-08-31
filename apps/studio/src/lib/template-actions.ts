@@ -453,8 +453,8 @@ export async function createReelDesign(formData: FormData) {
   }).select("id").single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/dashboard/biblioteca");
-  redirect(`/dashboard/biblioteca/${data.id}`);
+  revalidatePath("/dashboard/reeluri");
+  redirect(`/dashboard/reeluri/${data.id}`);
 }
 
 export async function updateReelDesign(
@@ -477,8 +477,8 @@ export async function updateReelDesign(
   // O exceptie dintr-o server action ajunge in UI ca "An error occurred in the
   // Server Components render", cu mesajul ascuns in productie.
   if (error) return { ok: false as const, error: error.message };
-  revalidatePath(`/dashboard/biblioteca/${designId}`);
-  revalidatePath("/dashboard/biblioteca");
+  revalidatePath(`/dashboard/reeluri/${designId}`);
+  revalidatePath("/dashboard/reeluri");
   return { ok: true as const };
 }
 
@@ -510,16 +510,16 @@ export async function duplicateReelDesign(designId: string) {
   }).select("id").single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/dashboard/biblioteca");
-  redirect(`/dashboard/biblioteca/${data.id}`);
+  revalidatePath("/dashboard/reeluri");
+  redirect(`/dashboard/reeluri/${data.id}`);
 }
 
 export async function deleteReelDesign(designId: string) {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("reel_designs").delete().eq("id", designId);
   if (error) throw new Error(error.message);
-  revalidatePath("/dashboard/biblioteca");
-  redirect("/dashboard/biblioteca");
+  revalidatePath("/dashboard/reeluri");
+  redirect("/dashboard/reeluri");
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -821,7 +821,7 @@ export async function createShotType(name: string, family?: string) {
     sort_order: ((last?.sort_order as number | undefined) ?? 0) + 10,
   });
   if (error) return { ok: false as const, error: error.message };
-  revalidatePath("/dashboard/cadre");
+  revalidatePath("/dashboard/momente");
   return { ok: true as const, id };
 }
 
@@ -847,7 +847,7 @@ export async function updateShotType(
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { ok: false as const, error: error.message };
-  revalidatePath("/dashboard/cadre");
+  revalidatePath("/dashboard/momente");
   return { ok: true as const };
 }
 
@@ -855,6 +855,6 @@ export async function deleteShotType(id: string) {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("shot_types").delete().eq("id", id);
   if (error) return { ok: false as const, error: error.message };
-  revalidatePath("/dashboard/cadre");
+  revalidatePath("/dashboard/momente");
   return { ok: true as const };
 }
