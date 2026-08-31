@@ -25,7 +25,7 @@
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Film, Camera } from "lucide-react";
+import { ArrowLeft, Film, Images, Camera } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { OutputPoster } from "@/components/OutputPoster";
 import { getSelectedScenario, getSelectedIdeaId } from "@/lib/selected-idea";
@@ -48,17 +48,22 @@ function Pachet() {
     listClips(scenarioId).then(setClips);
   }, [scenarioId]);
 
-  // Doar reelurile deocamdată: caruselul și story-urile n-au încă editor în
-  // Studio, deci n-ar avea ce arăta aici. Cartonașul lor apare când apare și
-  // conținutul — nu punem locuri goale care promit ce nu vine.
   const all: OutputStatus[] = clips ? summarizeOutputs(scenario, clips) : [];
-  const reels = all.filter((s) => s.output.kind === "reel");
-  const next = bestNextMoment(scenario, reels);
+  // Poveștile n-au încă export propriu; până atunci nu le arătăm, ca să nu
+  // promitem un cartonaș care nu duce nicăieri.
+  const ready = all.filter((s) => s.output.kind !== "stories");
+  const next = bestNextMoment(scenario, ready);
+
+  const reels = ready.filter((s) => s.output.kind === "reel").length;
+  const albums = ready.length - reels;
 
   const open = (st: OutputStatus) => {
     light();
     playTap();
-    nav({ to: "/edit", search: { output: st.output.id } });
+    // Fiecare fel are altă cale de ieșire: reel-ul se randează în timp real,
+    // caruselul se desenează într-o clipă. Nu e același ecran.
+    if (st.output.kind === "carousel") nav({ to: "/carusel", search: { output: st.output.id } });
+    else nav({ to: "/edit", search: { output: st.output.id } });
   };
 
   const backToFilming = () => {
@@ -90,13 +95,18 @@ function Pachet() {
 
           {clips === null ? (
             <p className="text-white/50 text-[14px] py-10">Adun ce ai filmat…</p>
-          ) : reels.length === 0 ? (
+          ) : ready.length === 0 ? (
             <NothingYet onFilm={backToFilming} />
           ) : (
             <>
               {/* Titlul: cat ai, nu cat iti lipseste */}
+              {/* Numărătoarea merge în sus, fără numitor — vezi comentariul
+                  de sus. Caruselele se numără separat: sunt alt fel de
+                  postare, nu un reel mai slab. */}
               <h1 className="text-[26px] font-semibold leading-tight">
-                Ai {reels.length} {reels.length === 1 ? "reel" : "reeluri"}.
+                Ai {reels > 0 ? `${reels} ${reels === 1 ? "reel" : "reeluri"}` : ""}
+                {reels > 0 && albums > 0 ? " și " : ""}
+                {albums > 0 ? `${albums} ${albums === 1 ? "carusel" : "carusele"}` : ""}.
               </h1>
               <p className="text-white/55 text-[14px] mt-1.5 leading-relaxed">
                 Din {clips.length} {clips.length === 1 ? "moment filmat" : "momente filmate"}.
@@ -104,7 +114,7 @@ function Pachet() {
               </p>
 
               <div className="grid grid-cols-2 gap-3.5 mt-6">
-                {reels.map((st) => (
+                {ready.map((st) => (
                   <PackageCard key={st.output.id} status={st} onClick={() => open(st)} />
                 ))}
               </div>
@@ -141,10 +151,12 @@ function Pachet() {
 
 function PackageCard({ status, onClick }: { status: OutputStatus; onClick: () => void }) {
   const { output, complete, filmed, total } = status;
+  // Forma spune ce e: caruselul e 4:5, reelul 9:16. Fără etichetă.
+  const isAlbum = output.kind === "carousel";
   return (
     <button type="button" onClick={onClick} className="text-left active:opacity-80 transition">
       <div className="relative">
-        <OutputPoster poster={status.poster} />
+        <OutputPoster poster={status.poster} aspect={isAlbum ? "4 / 5" : "9 / 16"} />
         {!complete && (
           // Nu "3/5" pe cartonas — doar semnalul ca e mai scurt decat a fost
           // gandit. Detaliul util (ce anume sa filmeze) e in bara de jos.
@@ -156,8 +168,12 @@ function PackageCard({ status, onClick }: { status: OutputStatus; onClick: () =>
       <div className="mt-2">
         <div className="text-[13.5px] font-medium leading-tight truncate">{output.name}</div>
         <div className="text-[11.5px] text-white/45 mt-0.5 inline-flex items-center gap-1">
-          <Film className="w-3 h-3" strokeWidth={1.8} />
-          {complete ? `${total} momente` : `${filmed} din ${total} filmate`}
+          {isAlbum
+            ? <Images className="w-3 h-3" strokeWidth={1.8} />
+            : <Film className="w-3 h-3" strokeWidth={1.8} />}
+          {complete
+            ? `${total} ${isAlbum ? (total === 1 ? "imagine" : "imagini") : "momente"}`
+            : `${filmed} din ${total} filmate`}
         </div>
       </div>
     </button>

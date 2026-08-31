@@ -21,7 +21,14 @@ import type { PlannedClip } from "@/lib/output-plan";
 const W = 324;
 const H = 576;
 
-export function OutputPoster({ poster }: { poster?: PlannedClip }) {
+export function OutputPoster({
+  poster,
+  aspect = "9 / 16",
+}: {
+  poster?: PlannedClip;
+  /** Forma cartonașului: 9:16 la reel, 4:5 la carusel. */
+  aspect?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawn, setDrawn] = useState(false);
 
@@ -74,7 +81,10 @@ export function OutputPoster({ poster }: { poster?: PlannedClip }) {
   }, [poster]);
 
   return (
-    <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-neutral-800">
+    <div
+      style={{ aspectRatio: aspect }}
+      className="relative w-full rounded-xl overflow-hidden bg-neutral-800"
+    >
       <canvas
         ref={canvasRef}
         width={W}

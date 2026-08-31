@@ -22,6 +22,7 @@ import { Route as FilmRouteImport } from './routes/film'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditingRouteImport } from './routes/editing'
 import { Route as EditRouteImport } from './routes/edit'
+import { Route as CaruselRouteImport } from './routes/carusel'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReelIdRouteImport } from './routes/reel.$id'
 import { Route as IdeasFormatRouteImport } from './routes/ideas.$format'
@@ -92,6 +93,11 @@ const EditRoute = EditRouteImport.update({
   path: '/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaruselRoute = CaruselRouteImport.update({
+  id: '/carusel',
+  path: '/carusel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -115,6 +121,7 @@ const CategoryIdRoute = CategoryIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/carusel': typeof CaruselRoute
   '/edit': typeof EditRoute
   '/editing': typeof EditingRoute
   '/explore': typeof ExploreRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/carusel': typeof CaruselRoute
   '/edit': typeof EditRoute
   '/editing': typeof EditingRoute
   '/explore': typeof ExploreRoute
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/carusel': typeof CaruselRoute
   '/edit': typeof EditRoute
   '/editing': typeof EditingRoute
   '/explore': typeof ExploreRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/carusel'
     | '/edit'
     | '/editing'
     | '/explore'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/carusel'
     | '/edit'
     | '/editing'
     | '/explore'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/carusel'
     | '/edit'
     | '/editing'
     | '/explore'
@@ -233,6 +245,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CaruselRoute: typeof CaruselRoute
   EditRoute: typeof EditRoute
   EditingRoute: typeof EditingRoute
   ExploreRoute: typeof ExploreRoute
@@ -344,6 +357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/carusel': {
+      id: '/carusel'
+      path: '/carusel'
+      fullPath: '/carusel'
+      preLoaderRoute: typeof CaruselRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -377,6 +397,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CaruselRoute: CaruselRoute,
   EditRoute: EditRoute,
   EditingRoute: EditingRoute,
   ExploreRoute: ExploreRoute,
