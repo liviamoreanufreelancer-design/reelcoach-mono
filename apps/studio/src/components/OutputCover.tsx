@@ -126,10 +126,24 @@ export default function OutputCover({
       // invalidă, iar browserul raportează degeaba o eroare de încărcare.
       const cleanup = () => { video.removeAttribute("src"); video.load(); };
 
+      /**
+       * `settled` = am terminat cu clipul ăsta, orice ar veni după.
+       *
+       * Fără el, eliberarea se raporta ca eșec: `cleanup()` face
+       * `video.load()` fără sursă, ceea ce declanșează un eveniment `error`,
+       * iar ascultătorul îl lua drept „filmarea nu s-a încărcat" — DUPĂ ce
+       * cadrul fusese deja desenat. Pe ecran: apărea imaginea, apoi dispărea
+       * sub pictograma de eroare, la o fracțiune de secundă.
+       *
+       * Același lucru la plasa de 12 secunde: după eliberare `readyState`
+       * scade la 0, deci verificarea de acolo cădea și ea pe eșec.
+       */
       let settled = false;
+      let guard = 0;
       const paintOnce = () => {
         if (settled || cancelled) return;
         settled = true;
+        window.clearTimeout(guard);
         draw(video);
         cleanup();
       };
@@ -144,7 +158,7 @@ export default function OutputCover({
 
       video.addEventListener("loadeddata", onReady, { once: true });
       video.addEventListener("error", () => {
-        if (cancelled) return;
+        if (settled || cancelled) return;
         console.warn("[cover] filmarea nu s-a incarcat:", src, video.error?.message);
         setState("failed");
       }, { once: true });
@@ -154,9 +168,9 @@ export default function OutputCover({
       video.src = src;
       // 12s, nu 4: un clip de câțiva MB pe o conexiune lentă depășea limita
       // veche și cădea pe „gol" — arătând ca și cum n-ar exista material.
-      const guard = window.setTimeout(() => {
+      guard = window.setTimeout(() => {
+        if (settled || cancelled) return;
         if (video.readyState >= 2) { paintOnce(); return; }
-        if (cancelled) return;
         console.warn("[cover] filmarea nu s-a incarcat in 12s:", src);
         setState("failed");
       }, 12000);
