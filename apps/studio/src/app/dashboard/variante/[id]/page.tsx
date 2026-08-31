@@ -1,5 +1,5 @@
 /**
- * /dashboard/reeluri/[id] — editarea unei variante de reel.
+ * /dashboard/variante/[id] — editarea unei variante de reel.
  *
  * Varianta e de sine stătătoare: cadrele ei și filmările lor de probă sunt
  * urcate aici, nu împrumutate dintr-un șablon. Se construiește întâi, se
@@ -31,7 +31,7 @@ export default async function ReelDesignPage({
   return (
     <main className="mx-auto max-w-[860px] px-5 py-8">
       <Link
-        href="/dashboard/reeluri"
+        href="/dashboard/variante"
         className="text-[13px] text-[#5B34FF] hover:underline"
       >
         ← Bibliotecă

@@ -24,7 +24,7 @@ type Item = { href: string; label: string; hint: string; Icon: typeof Film };
 
 const DELIVERABILE: Item[] = [
   { href: "/dashboard", label: "Sesiuni", hint: "Serviciile din app", Icon: Layers },
-  { href: "/dashboard/reeluri", label: "Reeluri", hint: "Variantele construite", Icon: Film },
+  { href: "/dashboard/variante", label: "Variante", hint: "Reeluri, carusele, povești", Icon: Film },
 ];
 
 const RESURSE: Item[] = [

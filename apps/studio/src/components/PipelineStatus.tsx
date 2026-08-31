@@ -50,7 +50,7 @@ export default function PipelineStatus({
       todoLabel: "fără instrucțiuni",
     },
     { href: "/dashboard/media", label: media === 1 ? "material" : "materiale", count: media },
-    { href: "/dashboard/reeluri", label: reels === 1 ? "reel" : "reeluri", count: reels },
+    { href: "/dashboard/variante", label: reels === 1 ? "variantă" : "variante", count: reels },
     { href: "/dashboard", label: sessions === 1 ? "sesiune" : "sesiuni", count: sessions },
   ];
 
@@ -103,10 +103,10 @@ function nextStep(s: {
   sessions: number;
 }): string {
   if (s.moments === 0) return "Începe cu momentele: ce se filmează, descris o dată pentru toate serviciile.";
-  if (s.media === 0) return "Urcă niște materiale — filmările de probă peste care se construiesc reelurile.";
-  if (s.reels === 0) return "Construiește primul reel din materialele urcate.";
+  if (s.media === 0) return "Urcă niște materiale — filmările și pozele peste care se construiesc variantele.";
+  if (s.reels === 0) return "Construiește prima variantă din materialele urcate.";
   if (s.momentsWithoutHook > 0)
     return `${s.momentsWithoutHook} ${s.momentsWithoutHook === 1 ? "moment n-are" : "momente n-au"} instrucțiuni de filmare — stilista le va vedea goale pe telefon.`;
-  if (s.sessions === 0) return "Creează prima sesiune și importă în ea reelurile construite.";
-  return "Totul e legat. Următorul reel adaugă varietate: aceleași momente, altă abordare.";
+  if (s.sessions === 0) return "Creează prima sesiune și importă în ea variantele construite.";
+  return "Totul e legat. Următoarea variantă adaugă varietate: aceleași momente, altă abordare.";
 }

@@ -453,8 +453,8 @@ export async function createReelDesign(formData: FormData) {
   }).select("id").single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/dashboard/reeluri");
-  redirect(`/dashboard/reeluri/${data.id}`);
+  revalidatePath("/dashboard/variante");
+  redirect(`/dashboard/variante/${data.id}`);
 }
 
 export async function updateReelDesign(
@@ -477,8 +477,8 @@ export async function updateReelDesign(
   // O exceptie dintr-o server action ajunge in UI ca "An error occurred in the
   // Server Components render", cu mesajul ascuns in productie.
   if (error) return { ok: false as const, error: error.message };
-  revalidatePath(`/dashboard/reeluri/${designId}`);
-  revalidatePath("/dashboard/reeluri");
+  revalidatePath(`/dashboard/variante/${designId}`);
+  revalidatePath("/dashboard/variante");
   return { ok: true as const };
 }
 
@@ -510,16 +510,16 @@ export async function duplicateReelDesign(designId: string) {
   }).select("id").single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/dashboard/reeluri");
-  redirect(`/dashboard/reeluri/${data.id}`);
+  revalidatePath("/dashboard/variante");
+  redirect(`/dashboard/variante/${data.id}`);
 }
 
 export async function deleteReelDesign(designId: string) {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("reel_designs").delete().eq("id", designId);
   if (error) throw new Error(error.message);
-  revalidatePath("/dashboard/reeluri");
-  redirect("/dashboard/reeluri");
+  revalidatePath("/dashboard/variante");
+  redirect("/dashboard/variante");
 }
 
 // ════════════════════════════════════════════════════════════════════
