@@ -494,58 +494,6 @@ function Film() {
   // ---------- Intro: Pregătește filmarea (checklist + tip) ----------
 
 
-  /**
-   * ---------- Verificarea pozei ----------
-   *
-   * Peste tot, cu poza pe tot ecranul. Momentul nu se poate reface — părul
-   * udat nu se usucă la loc — deci asta e singura ocazie de a vedea dacă a
-   * ieșit. Două butoane, egale ca greutate: nici „păstrează" nu e implicit,
-   * nici „mai fac una" nu e o retragere.
-   */
-  if (pendingPhoto) {
-    return (
-      <PhoneShell>
-        <img
-          src={pendingPhoto.url}
-          alt="Poza tocmai făcută"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
-
-        <div className="absolute inset-x-0 top-0 px-5 pt-[calc(env(safe-area-inset-top)+16px)]">
-          <p className="text-[11px] tracking-[0.28em] uppercase text-white/70">
-            E bună?
-          </p>
-          <p className="text-white text-[15px] leading-snug mt-1.5 max-w-[300px]">
-            {scene?.hook || "Verifică poza"}
-          </p>
-        </div>
-
-        <div className="absolute inset-x-0 bottom-0 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
-          <p className="text-white/60 text-[12px] leading-relaxed mb-3">
-            Momentul ăsta nu se mai poate reface — uită-te acum, nu mai târziu.
-          </p>
-          <div className="flex gap-2.5">
-            <button
-              type="button"
-              onClick={retakePhoto}
-              className="flex-1 h-14 rounded-full text-[15px] font-medium text-white bg-white/15 backdrop-blur-md border border-white/20 active:scale-[0.98] transition"
-            >
-              Mai fac una
-            </button>
-            <button
-              type="button"
-              onClick={() => { void keepPhoto(); }}
-              className="flex-1 h-14 rounded-full text-[15px] font-semibold text-neutral-950 bg-white active:scale-[0.98] transition"
-            >
-              O păstrez
-            </button>
-          </div>
-        </div>
-      </PhoneShell>
-    );
-  }
-
   // ---------- Film: scene-by-scene ----------
   return (
     <PhoneShell>
@@ -871,6 +819,55 @@ function Film() {
 
         </div>
       </div>
+      {/**
+        * ---------- Verificarea pozei ----------
+        *
+        * PESTE ecranul camerei, nu in locul lui. Daca ar inlocui ecranul,
+        * elementul <video> s-ar desfiinta, iar la intoarcere s-ar crea altul
+        * gol — fluxul camerei ramane atasat de cel vechi si `start()` nu se
+        * mai cheama, fiindca starea e inca "ready". Camera nu s-ar mai
+        * deschide. Asa, ramane pornita dedesubt si "Mai fac una" e instant:
+        * fara reinitializare, fara ecran negru intre incercari.
+        */}
+      {pendingPhoto && (
+        <div className="absolute inset-0 z-50">
+          <img
+            src={pendingPhoto.url}
+            alt="Poza tocmai făcută"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
+
+          <div className="absolute inset-x-0 top-0 px-5 pt-[calc(env(safe-area-inset-top)+16px)]">
+            <p className="text-[11px] tracking-[0.28em] uppercase text-white/70">E bună?</p>
+            <p className="text-white text-[15px] leading-snug mt-1.5 max-w-[300px]">
+              {scene?.hook || "Verifică poza"}
+            </p>
+          </div>
+
+          <div className="absolute inset-x-0 bottom-0 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+            <p className="text-white/60 text-[12px] leading-relaxed mb-3">
+              Momentul ăsta nu se mai poate reface — uită-te acum, nu mai târziu.
+            </p>
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={retakePhoto}
+                className="flex-1 h-14 rounded-full text-[15px] font-medium text-white bg-white/15 backdrop-blur-md border border-white/20 active:scale-[0.98] transition"
+              >
+                Mai fac una
+              </button>
+              <button
+                type="button"
+                onClick={() => { void keepPhoto(); }}
+                className="flex-1 h-14 rounded-full text-[15px] font-semibold text-neutral-950 bg-white active:scale-[0.98] transition"
+              >
+                O păstrez
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PhoneShell>
   );
 }
@@ -1367,6 +1364,7 @@ function PreShotScreen({
           onClose={() => setShowInfo(false)}
         />
       )}
+
     </PhoneShell>
   );
 }
