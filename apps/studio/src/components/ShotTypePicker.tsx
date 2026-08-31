@@ -18,6 +18,7 @@ import { useMemo, useState, useTransition } from "react";
 import { X, Plus, Check, Camera, Video, Images } from "lucide-react";
 import { createShotType } from "@/lib/template-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { VERTICALS, inVertical, type Vertical } from "@/lib/verticals";
 import type { ShotType } from "@/lib/db-types";
 
 const KIND_ICON = { video: Video, photo: Images, both: Camera } as const;
@@ -39,27 +40,16 @@ export default function ShotTypePicker({
   onCreated: (t: ShotType) => void;
 }) {
   const [q, setQ] = useState("");
+  /** Filtrul pe verticală. Partajatele apar în ambele. */
+  const [vertical, setVertical] = useState<Vertical | "all">("all");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const byFamily = useMemo(() => {
+  const shown = useMemo(() => {
+    const base = inVertical(types, vertical);
     const needle = q.trim().toLowerCase();
-    const list = needle
-      ? types.filter((t) => t.name.toLowerCase().includes(needle))
-      : types;
-    const m = new Map<string, ShotType[]>();
-    for (const t of list) {
-      const key = t.family || "altele";
-      const arr = m.get(key) ?? [];
-      arr.push(t);
-      m.set(key, arr);
-    }
-    // „comun" primul: cadrele care apar în toate serviciile sunt și cele
-    // căutate cel mai des.
-    return Array.from(m.entries()).sort(([a], [b]) =>
-      a === "comun" ? -1 : b === "comun" ? 1 : a.localeCompare(b),
-    );
-  }, [types, q]);
+    return needle ? base.filter((t) => t.name.toLowerCase().includes(needle)) : base;
+  }, [types, q, vertical]);
 
   if (!open) return null;
 
@@ -68,7 +58,9 @@ export default function ShotTypePicker({
     if (!name) return;
     setError(null);
     startTransition(async () => {
-      const res = await createShotType(name);
+      // Verticala filtrată devine verticala momentului nou: dacă cauți în
+      // „Machiaj" și nu găsești, ce creezi e evident de machiaj.
+      const res = await createShotType(name, vertical === "all" ? "ambele" : vertical);
       if (!res.ok) { setError(res.error); return; }
       const sb = getSupabaseBrowserClient();
       const { data } = await sb.from("shot_types").select("*").eq("id", res.id).maybeSingle();
@@ -83,23 +75,40 @@ export default function ShotTypePicker({
     >
       <div className="card w-full max-w-[560px] max-h-[80vh] flex flex-col overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E7E3F5]">
-          <p className="eyebrow flex-1">Ce cadru e ăsta</p>
+          <p className="eyebrow flex-1">Ce moment e ăsta</p>
           <button onClick={onClose} aria-label="Închide" className="w-8 h-8 rounded-full bg-white/[0.06] grid place-items-center text-[#6B6B6B]">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="px-5 py-3 border-b border-[#E7E3F5]">
+          {/* Verticala întâi: taie lista la jumătate înainte să cauți. */}
+          <div className="inline-flex gap-0.5 p-0.5 bg-[#F6F4FE] rounded-lg mb-2.5">
+            {[{ id: "all" as const, label: "Toate" }, ...VERTICALS.filter((v) => v.id !== "ambele")].map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setVertical(v.id as Vertical | "all")}
+                className={`px-3 py-1.5 rounded-md text-[12px] transition ${
+                  vertical === v.id
+                    ? "bg-white text-[#1F1F1F] font-medium shadow-sm"
+                    : "text-[#6B6B6B] hover:text-[#1F1F1F]"
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
           <input
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Caută sau scrie un tip nou…"
+            placeholder="Caută sau scrie un moment nou…"
             className="input !mb-0 text-[13px]"
           />
           <p className="text-[11px] text-[#9A9A9A] mt-1.5 leading-snug">
-            Instrucțiunile de filmare se scriu o singură dată, pe tip — și ajung
-            în orice șablon care cere cadrul.
+            Instrucțiunile se scriu o singură dată, în Momente — și ajung în
+            orice sesiune care cere momentul.
           </p>
         </div>
 
@@ -110,46 +119,39 @@ export default function ShotTypePicker({
         )}
 
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
-          {byFamily.length === 0 ? (
+          {shown.length === 0 ? (
             <p className="text-[13px] text-[#6B6B6B] py-4 text-center">
-              Niciun tip cu numele ăsta.
+              Niciun moment aici.
             </p>
           ) : (
-            byFamily.map(([family, list]) => (
-              <section key={family}>
-                <h3 className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A] mb-2">
-                  {family}
-                </h3>
-                <div className="flex flex-col gap-1">
-                  {list.map((t) => {
-                    const Icon = KIND_ICON[t.capture_kind] ?? Video;
-                    const already = used.has(t.id);
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => onPick(t)}
-                        className="flex items-center gap-2.5 rounded-lg border border-[#E7E3F5] bg-white px-3 py-2 hover:border-[#5B34FF] transition text-left"
+            <div className="flex flex-col gap-1">
+              {shown.map((t) => {
+                const Icon = KIND_ICON[t.capture_kind] ?? Video;
+                const already = used.has(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => onPick(t)}
+                    className="flex items-center gap-2.5 rounded-lg border border-[#E7E3F5] bg-white px-3 py-2 hover:border-[#5B34FF] transition text-left"
+                  >
+                    <Icon className="w-4 h-4 text-[#9A9A9A] shrink-0" strokeWidth={1.8} />
+                    <span className="flex-1 min-w-0 text-[13px] truncate">{t.name}</span>
+                    {!t.hook && (
+                      <span
+                        title="N-are încă instrucțiuni scrise în catalog"
+                        className="text-[10.5px] text-amber-600 shrink-0"
                       >
-                        <Icon className="w-4 h-4 text-[#9A9A9A] shrink-0" strokeWidth={1.8} />
-                        <span className="flex-1 min-w-0 text-[13px] truncate">{t.name}</span>
-                        {!t.hook && (
-                          <span
-                            title="N-are încă instrucțiuni scrise în catalog"
-                            className="text-[10.5px] text-amber-600 shrink-0"
-                          >
-                            fără instrucțiuni
-                          </span>
-                        )}
-                        {already && (
-                          <Check className="w-3.5 h-3.5 text-[#5B34FF] shrink-0" strokeWidth={2.4} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))
+                        fără instrucțiuni
+                      </span>
+                    )}
+                    {already && (
+                      <Check className="w-3.5 h-3.5 text-[#5B34FF] shrink-0" strokeWidth={2.4} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -162,7 +164,7 @@ export default function ShotTypePicker({
               className="btn-champagne w-full inline-flex items-center justify-center gap-2 disabled:opacity-40"
             >
               <Plus className="w-4 h-4" />
-              {pending ? "Se creează…" : `Tip nou: „${q.trim()}"`}
+              {pending ? "Se creează…" : `Moment nou: „${q.trim()}"`}
             </button>
           </div>
         )}
