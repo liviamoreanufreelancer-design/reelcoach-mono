@@ -39,6 +39,12 @@ export interface PlannedClip {
   motionBlur?: boolean;
   /** Textul partenerei pentru acest moment în această postare. */
   textLayers?: TextLayer[];
+  /** Efectul ales pe slot; cade pe cel al momentului dacă lipsește. */
+  effectId?: string;
+  /** Reglajele efectului ales. Absente = implicitele lui din registry. */
+  fxParams?: Record<string, number | string | boolean>;
+  /** Reglajele tranziției care iese din acest moment. */
+  transitionParams?: Record<string, number | string | boolean>;
 }
 
 /**
@@ -81,6 +87,11 @@ export function planOutput(
       playbackSpeed: slot.speed ?? found.scene.playbackSpeed,
       motionBlur: slot.motionBlur ?? found.scene.motionBlur,
       textLayers: (slot.textLayers as TextLayer[] | undefined) ?? found.scene.textLayers,
+      // Efectul e o decizie de compoziție (ține de postare), nu o proprietate
+      // a materialului filmat — deci slotul bate momentul, ca la filtru.
+      effectId: slot.effect ?? found.scene.effectId,
+      fxParams: slot.effect ? slot.fxParams?.[slot.effect] : undefined,
+      transitionParams: slot.transition ? slot.fxParams?.[slot.transition] : undefined,
     });
   }
   return planned;
@@ -104,6 +115,7 @@ export function planAllScenes(scenario: Scenario, clips: StoredClip[]): PlannedC
       playbackSpeed: scene?.playbackSpeed,
       motionBlur: scene?.motionBlur,
       textLayers: scene?.textLayers,
+      effectId: scene?.effectId,
     };
   });
 }

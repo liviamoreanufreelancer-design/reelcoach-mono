@@ -406,13 +406,18 @@ function Edit() {
             pl.filterId ? (FILTERS[pl.filterId as keyof typeof FILTERS] ?? undefined) : undefined,
           ),
           transitionTypes: planned.map((pl) => pl.transitionType),
+          // Reglajele efectelor, în aceeași ordine. Fără ele, un Zoom Through
+          // rula pe implicitele lui, nu pe punctul ales de parteneră — adică
+          // exact ce reglase ea nu ajungea niciodată pe telefon.
+          transitionParams: planned.map((pl) => pl.transitionParams),
+          effectParams: planned.map((pl) => pl.fxParams),
           playbackSpeeds: planned.map((pl) => pl.playbackSpeed),
           motionBlurs: planned.map((pl) => pl.motionBlur),
           // Premium per-shot effects (sparkle/leak/bokeh/dust). Each clip
           // carries the effect chosen by its shot pattern; the master
           // toggle in state lets the user kill them all.
           effectsEnabled: state.effectsEnabled,
-          effectIds: planned.map((pl) => pl.scene?.effectId),
+          effectIds: planned.map((pl) => pl.effectId),
         },
         (p) =>
           setProgress({

@@ -268,6 +268,10 @@ export interface OutputSlot {
   speed?: number;
   motionBlur?: boolean;
   textLayers?: TextLayer[];
+  /** Efectul ales pe acest moment, in aceasta postare. */
+  effect?: string;
+  /** Reglajele efectelor, pe id. Vezi fx/registry.ts din core. */
+  fxParams?: Record<string, Record<string, number | string | boolean>>;
 }
 
 /**

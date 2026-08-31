@@ -94,6 +94,10 @@ export interface DbOutputSlot {
   speed?: number;
   motionBlur?: boolean;
   textLayers?: TextLayer[];
+  /** Efectul ales pe acest moment, in aceasta postare (registry-ul din core). */
+  effect?: string;
+  /** Reglajele efectelor, pe id: { zoomThrough: { focusX: 0.3 } }. */
+  fxParams?: Record<string, Record<string, number | string | boolean>>;
 }
 
 /**
