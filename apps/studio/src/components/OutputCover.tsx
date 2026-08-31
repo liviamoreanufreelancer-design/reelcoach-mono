@@ -31,11 +31,20 @@ export default function OutputCover({
   output,
   shots,
   aspect,
+  slotIndex,
 }: {
   output: Composition;
   shots: ShotLike[];
   /** 9/16 pentru reel și story, 4/5 pentru carusel. */
   aspect: number;
+  /**
+   * Ce cadru se desenează. Absent = coperta (cover_slot, altfel primul).
+   *
+   * Previzualizarea de postare are nevoie de FIECARE cadru, nu doar de
+   * copertă — altfel n-ar arăta un carusel, ar arăta aceeași imagine de
+   * patru ori.
+   */
+  slotIndex?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -45,7 +54,10 @@ export default function OutputCover({
   const H = Math.round(W / aspect);
 
   // Momentul care dă coperta, plus stilul cu care se desenează.
-  const slot = output.slots.find((s) => s.slot === output.cover_slot) ?? output.slots[0];
+  const slot =
+    slotIndex != null
+      ? output.slots[slotIndex]
+      : output.slots.find((s) => s.slot === output.cover_slot) ?? output.slots[0];
   const shot = slot ? shots.find((s) => s.slot_key === slot.slot) : undefined;
   const filterId = slot?.filter ?? output.filter ?? "none";
   const layers = (slot?.textLayers as TextLayer[] | undefined) ?? [];

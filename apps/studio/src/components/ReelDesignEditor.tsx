@@ -36,13 +36,14 @@ import { framesAsShots, isLegacyFrameKey } from "@/lib/design-frames";
 import type { ReelDesignRow, OutputSlot, MediaAsset, ShotType } from "@/lib/db-types";
 import MediaPicker from "./MediaPicker";
 import ShotTypePicker from "./ShotTypePicker";
+import CarouselPostPreview from "./CarouselPostPreview";
 import OutputSceneEditor from "./OutputSceneEditor";
 import OutputReelPreview from "./OutputReelPreview";
 
 /** Cuvintele se schimbă cu felul rezultatului — nu doar controalele. */
 const WORDS = {
   reel:     { one: "moment", many: "momente", list: "Momentele reelului",   render: "Vezi tot reelul" },
-  carousel: { one: "imagine", many: "imagini", list: "Imaginile caruselului", render: "Vezi caruselul" },
+  carousel: { one: "imagine", many: "imagini", list: "Imaginile caruselului", render: "Vezi postarea" },
   stories:  { one: "poveste", many: "povești", list: "Poveștile",           render: "" },
 } as const;
 
@@ -425,7 +426,39 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
           </>
         )}
 
-        {slots.length > 0 && !isMontage && (
+        {/* Caruselul are și el două vederi, dar a doua nu e o randare: e
+            POSTAREA. Un carusel se judecă pe cum stau pozele una lângă alta
+            și pe cum citește textul deasupra lor — nimic din astea nu se vede
+            uitându-te la un cadru odată. Poveștile n-au a doua vedere:
+            fiecare e un fișier separat, deci cadrul E rezultatul. */}
+        {slots.length > 0 && kind === "carousel" && (
+          <div className="flex gap-1 p-0.5 bg-[#F6F4FE] rounded-lg self-start">
+            <button
+              type="button"
+              onClick={() => setShowRender(false)}
+              className={`px-4 py-1.5 rounded-md text-[12px] transition ${
+                !showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
+              }`}
+            >
+              Editare
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowRender(true)}
+              className={`px-4 py-1.5 rounded-md text-[12px] transition ${
+                showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
+              }`}
+            >
+              {words.render}
+            </button>
+          </div>
+        )}
+
+        {slots.length > 0 && kind === "carousel" && showRender && (
+          <CarouselPostPreview output={live} shots={shots} caption={design.caption} />
+        )}
+
+        {slots.length > 0 && !isMontage && !(kind === "carousel" && showRender) && (
           <OutputSceneEditor
             output={live}
             shots={shots}
