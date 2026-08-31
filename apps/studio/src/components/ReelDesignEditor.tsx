@@ -33,6 +33,7 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { FILTERS } from "@/lib/options";
 import { framesAsShots, isLegacyFrameKey } from "@/lib/design-frames";
+import { PHOTO_ASPECT, VIDEO_ASPECT, isImageUrl } from "@/lib/media-display";
 import type { ReelDesignRow, OutputSlot, MediaAsset, ShotType } from "@/lib/db-types";
 import MediaPicker from "./MediaPicker";
 import ShotTypePicker from "./ShotTypePicker";
@@ -194,9 +195,9 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onPick={onPicked}
-        // Caruselul cere poze; reelul și poveștile, filmări. Un filtru pe care
-        // oricum l-ai apăsa e o apăsare irosită.
-        prefer={kind === "carousel" ? "image" : "video"}
+        // Caruselul cere poze, reelul filmări. Poveștile pot fi și una, și
+        // alta — deci acolo nu presupunem nimic și le arătăm pe toate.
+        prefer={kind === "carousel" ? "image" : kind === "stories" ? "all" : "video"}
       />
 
       <div className="flex items-center gap-2 px-5 py-4 border-b border-[#E7E3F5]">
@@ -328,8 +329,12 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                       onClick={(e) => { e.stopPropagation(); pickVideo(i); }}
                       title={
                         s.demoUrl
-                          ? `Schimbă ${kind === "carousel" ? "poza" : "filmarea"} de probă`
-                          : `Alege ${kind === "carousel" ? "o poză" : "o filmare"} din Materiale`
+                          ? "Schimbă materialul de probă"
+                          : kind === "carousel"
+                            ? "Alege o poză din Materiale"
+                            : kind === "stories"
+                              ? "Alege o filmare sau o poză din Materiale"
+                              : "Alege o filmare din Materiale"
                       }
                       className={`shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition ${
                         s.demoUrl
@@ -340,9 +345,13 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                       {s.demoUrl
                         ? <Check className="w-3.5 h-3.5" strokeWidth={2.4} />
                         : <Upload className="w-3.5 h-3.5" />}
-                      {kind === "carousel"
-                        ? (s.demoUrl ? "poză" : "alege poză")
-                        : (s.demoUrl ? "filmare" : "alege filmare")}
+                      {s.demoUrl
+                        ? (isImageUrl(s.demoUrl) ? "poză" : "filmare")
+                        : kind === "carousel"
+                          ? "alege poză"
+                          : kind === "stories"
+                            ? "alege material"
+                            : "alege filmare"}
                     </button>
 
                     <button
@@ -466,10 +475,11 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
             onChangeSlots={writeSlots}
             disabled={false}
             onRequestVideo={() => pickVideo(Math.min(activeIdx, slots.length - 1))}
-            // La carusel, controalele de mișcare dispar: durata, viteza,
-            // tranziția și motion blur n-au ce descrie pe o imagine fixă.
-            // Poveștile rămân filmări, deci le păstrează.
-            stills={kind === "carousel"}
+            // Caruselul e mereu imagini, în 4:5. Poveștile sunt 9:16 și pot
+            // fi ORICE — o imagine sau o filmare, hotărât per moment, după
+            // materialul ales. De asta nu se forțează nimic acolo.
+            forceStills={kind === "carousel"}
+            aspect={kind === "carousel" ? PHOTO_ASPECT : VIDEO_ASPECT}
           />
         )}
 

@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from "react";
 import { ImageOff } from "lucide-react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
 import type { Composition, ShotLike } from "@/lib/db-types";
+import { isImageUrl } from "@/lib/media-display";
 
 /** Mic — e un cartonaș, nu un preview. Ține și memoria jos la 9 bucăți. */
 const W = 270;
@@ -66,9 +67,9 @@ export default function OutputCover({
   // JPEG nu se decodează într-un `<video>`, deci îl trimitem pe calea de
   // imagine — altfel coperta caruselului ar rămâne mereu goală.
   const raw = shot?.sample_video_url ?? null;
-  const looksLikeImage = !!raw && /\.(jpe?g|png|webp|gif|avif|heic)(\?|$)/i.test(raw);
-  const src = looksLikeImage ? null : raw;
-  const img = (looksLikeImage ? raw : null) ?? shot?.example_image_url ?? null;
+  const asImage = isImageUrl(raw);
+  const src = asImage ? null : raw;
+  const img = (asImage ? raw : null) ?? shot?.example_image_url ?? null;
 
   // Nu atingem rețeaua până nu e vizibil cartonașul.
   useEffect(() => {

@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
 import { TRANSITIONS, TRANSITION_PARAMS, EFFECT_PARAMS, EFFECTS } from "@/lib/options";
-import { PHOTO_ASPECT } from "@/lib/media-display";
+import { PHOTO_ASPECT, VIDEO_ASPECT, isImageUrl } from "@/lib/media-display";
 import FxParams, { type FxValues } from "./FxParams";
 import type { Composition, OutputSlot, ShotLike, TransitionId } from "@/lib/db-types";
 
@@ -37,8 +37,7 @@ import type { Composition, OutputSlot, ShotLike, TransitionId } from "@/lib/db-t
  * Poza se așază în cadru prin `drawCover`: umple formatul și taie ce iese, la
  * fel ca la export. Deci ce vezi aici e ce se postează.
  */
-const REEL = { w: 540, h: 960, css: "9 / 16" };
-const CARD = { w: 648, h: 810, css: `${PHOTO_ASPECT}` };
+
 const SPEEDS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const TEXT_FONTS = [
@@ -58,7 +57,8 @@ export default function OutputSceneEditor({
   onChangeSlots,
   disabled,
   onRequestVideo,
-  stills = false,
+  forceStills = false,
+  aspect = VIDEO_ASPECT,
 }: {
   output: Composition;
   shots: ShotLike[];
@@ -72,14 +72,15 @@ export default function OutputSceneEditor({
    */
   onRequestVideo?: () => void;
   /**
-   * Imagini fixe (carusel), nu filmare.
+   * Caruselul e mereu imagini, indiferent ce s-a ales.
    *
-   * Durata, viteza, tranziția și motion blur descriu MIȘCARE — pe o imagine
-   * fixă n-au ce descrie. Lăsate acolo, ar fi controale care par să facă ceva
-   * și nu fac nimic: exact ce am scos din pasul de filmare al sesiunii.
-   * Rămân filtrul și textul, care se aplică la fel pe o poză.
+   * La POVEȘTI nu se forțează: decizia e per moment. Aceeași poveste poate
+   * avea o imagine 9:16 și o filmare, una după alta — deci se citește din
+   * materialul ales, nu din felul variantei.
    */
-  stills?: boolean;
+  forceStills?: boolean;
+  /** 9:16 la reeluri și povești, 4:5 la carusel. */
+  aspect?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -91,7 +92,7 @@ export default function OutputSceneEditor({
    * un `<img>` separat, iar bucla desenează din care e potrivit.
    */
   const imgRef = useRef<HTMLImageElement>(null);
-  const frame = stills ? CARD : REEL;
+
   const stageRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -105,6 +106,19 @@ export default function OutputSceneEditor({
 
   const slot: OutputSlot | undefined = output.slots[idx];
   const shot = shots.find((s) => s.slot_key === slot?.slot);
+
+  /**
+   * Imagine sau filmare — citit din MATERIAL, nu din felul variantei.
+   *
+   * Durata, viteza, tranziția și motion blur descriu mișcare: pe o imagine
+   * fixă n-au ce descrie, iar lăsate acolo ar fi controale care par să facă
+   * ceva și nu fac nimic — exact ce am scos din pasul de filmare al sesiunii.
+   */
+  const stills = forceStills || isImageUrl(shot?.sample_video_url);
+  const frame =
+    aspect === PHOTO_ASPECT
+      ? { w: 648, h: 810, css: `${PHOTO_ASPECT}` }
+      : { w: 540, h: 960, css: `${VIDEO_ASPECT}` };
   const layers: TextLayer[] = (slot?.textLayers as TextLayer[] | undefined) ?? [];
 
   // Stilul efectiv: excepția momentului bate implicitul postării.
@@ -405,7 +419,7 @@ export default function OutputSceneEditor({
                     <Upload className="w-5 h-5" strokeWidth={1.8} />
                   </span>
                   <span className="text-[12px] font-medium">
-                    {stills ? "Alege poza" : "Alege filmarea"}
+                    {forceStills ? "Alege poza" : "Alege materialul"}
                   </span>
                 </button>
               ) : (

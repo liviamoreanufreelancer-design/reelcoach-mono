@@ -10,6 +10,24 @@ import { MEDIA_MAX_WIDTH, type MediaAsset } from "./db-types";
  */
 export const PHOTO_ASPECT = 4 / 5;
 
+/** Formatul vertical: reeluri și povești. */
+export const VIDEO_ASPECT = 9 / 16;
+
+/**
+ * Materialul unui moment e imagine sau filmare?
+ *
+ * Se salvează amândouă în același câmp — e „materialul momentului", nu
+ * neapărat un video. Diferența se citește din extensie, și contează în trei
+ * locuri: ce element îl încarcă (`<img>` vs `<video>`), ce controale au sens
+ * (durata și viteza n-au ce descrie pe o imagine) și cum se desenează.
+ *
+ * La POVEȘTI decizia e per moment, nu per variantă: aceeași poveste poate
+ * avea o imagine 9:16 și o filmare, una după alta.
+ */
+export function isImageUrl(url: string | null | undefined): boolean {
+  return !!url && /\.(jpe?g|png|webp|gif|avif|heic)(\?|$)/i.test(url);
+}
+
 /**
  * Avertismentul de mărime e DOAR pentru filmări.
  *
