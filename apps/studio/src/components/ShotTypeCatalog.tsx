@@ -44,6 +44,14 @@ export default function ShotTypeCatalog({ initial }: { initial: ShotType[] }) {
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  /**
+   * În ce folder ești. UNUL singur, nu amândouă stivuite.
+   *
+   * Cu ambele pe ecran, 30 de rânduri (19 de păr + 11 de machiaj, partajatele
+   * de două ori) devin un singur sul lung — adică exact ce urma să repare
+   * împărțirea. Un folder înseamnă că ești ÎN el.
+   */
+  const [folder, setFolder] = useState<Vertical>("par");
 
   const missing = types.filter((t) => !t.hook).length;
 
@@ -53,6 +61,7 @@ export default function ShotTypeCatalog({ initial }: { initial: ShotType[] }) {
     { id: "par", label: "Păr", list: inVertical(types, "par") },
     { id: "machiaj", label: "Machiaj", list: inVertical(types, "machiaj") },
   ];
+  const current = folders.find((f) => f.id === folder) ?? folders[0];
 
   const patch = (id: string, p: Partial<ShotType>) => {
     setTypes((cur) => cur.map((t) => (t.id === id ? { ...t, ...p } : t)));
@@ -79,56 +88,61 @@ export default function ShotTypeCatalog({ initial }: { initial: ShotType[] }) {
         </p>
       )}
 
-      <div className="flex flex-col gap-8">
-        {folders.map((folder) => (
-          <section key={folder.id}>
-            <div className="flex items-baseline gap-2.5 mb-3">
-              <h2 className="text-[10px] tracking-[0.22em] uppercase text-[#5B34FF]/85 font-bold">
-                {folder.label}
-              </h2>
-              <span className="text-[11.5px] text-[#9A9A9A]">
-                {folder.list.length} {folder.list.length === 1 ? "moment" : "momente"}
-              </span>
-            </div>
-
-            {folder.list.length === 0 ? (
-              <p className="text-[12.5px] text-[#6B6B6B] py-2">
-                Niciun moment aici încă.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                {folder.list.map((t) => (
-                  <TypeRow
-                    // Cheia poartă folderul: același moment apare în amândouă.
-                    key={`${folder.id}:${t.id}`}
-                    type={t}
-                    shared={verticalOf(t) === "ambele"}
-                    open={openId === `${folder.id}:${t.id}`}
-                    onToggle={() =>
-                      setOpenId(openId === `${folder.id}:${t.id}` ? null : `${folder.id}:${t.id}`)
-                    }
-                    onPatch={(p) => patch(t.id, p)}
-                    onDelete={() => {
-                      if (!confirm(`Ștergi „${t.name}"? Reelurile care îl folosesc rămân fără instrucțiuni.`)) return;
-                      startTransition(async () => {
-                        const res = await deleteShotType(t.id);
-                        if (!res.ok) { setError(res.error); return; }
-                        setTypes((cur) => cur.filter((x) => x.id !== t.id));
-                      });
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+      {/* Comutatorul de foldere. Numărul pe fiecare răspunde singur la
+          „am destule momente de machiaj?". */}
+      <div className="inline-flex gap-0.5 p-0.5 bg-[#F6F4FE] rounded-lg mb-4">
+        {folders.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => { setFolder(f.id); setOpenId(null); }}
+            aria-pressed={folder === f.id}
+            className={`px-4 py-2 rounded-md text-[13px] transition inline-flex items-center gap-2 ${
+              folder === f.id
+                ? "bg-white text-[#1F1F1F] font-medium shadow-sm"
+                : "text-[#6B6B6B] hover:text-[#1F1F1F]"
+            }`}
+          >
+            {f.label}
+            <span className={`tabular-nums text-[11.5px] ${folder === f.id ? "text-[#9A9A9A]" : "text-[#B8B8C8]"}`}>
+              {f.list.length}
+            </span>
+          </button>
         ))}
       </div>
+
+      {current.list.length === 0 ? (
+        <p className="text-[13px] text-[#6B6B6B] py-6 text-center">
+          Niciun moment în folderul ăsta încă.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {current.list.map((t) => (
+            <TypeRow
+              key={t.id}
+              type={t}
+              shared={verticalOf(t) === "ambele"}
+              open={openId === t.id}
+              onToggle={() => setOpenId(openId === t.id ? null : t.id)}
+              onPatch={(p) => patch(t.id, p)}
+              onDelete={() => {
+                if (!confirm(`Ștergi „${t.name}"? Reelurile care îl folosesc rămân fără instrucțiuni.`)) return;
+                startTransition(async () => {
+                  const res = await deleteShotType(t.id);
+                  if (!res.ok) { setError(res.error); return; }
+                  setTypes((cur) => cur.filter((x) => x.id !== t.id));
+                });
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="flex gap-2 mt-4">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="Moment nou…"
+          placeholder={`Moment nou în ${current.label}…`}
           className="input !mb-0 flex-1"
         />
         <button
@@ -138,20 +152,20 @@ export default function ShotTypeCatalog({ initial }: { initial: ShotType[] }) {
             const name = newName.trim();
             setNewName("");
             startTransition(async () => {
-              // Fără verticală aleasă, momentul nou intră în „ambele": se
-              // vede în ambele foldere, deci nu se poate pierde.
-              const res = await createShotType(name, "ambele");
+              // Intră în folderul deschis: dacă ești în „Machiaj" și adaugi
+              // ceva, e evident de machiaj. Se poate muta din „Unde apare".
+              const res = await createShotType(name, folder);
               if (!res.ok) { setError(res.error); return; }
               setTypes((cur) => [
                 ...cur,
                 {
-                  id: res.id, name, family: "ambele", hook: null, instructions: [],
+                  id: res.id, name, family: folder, hook: null, instructions: [],
                   phone_hold: null, shot_distance: null, phone_movement: null,
                   light_sources: [], capture_kind: "video", example_image_url: null,
                   sort_order: (cur[cur.length - 1]?.sort_order ?? 0) + 10,
                 },
               ]);
-              setOpenId(`par:${res.id}`);
+              setOpenId(res.id);
             });
           }}
           className="btn-champagne shrink-0 inline-flex items-center gap-1.5 disabled:opacity-40"
