@@ -20,7 +20,7 @@
  * milisecunde și are avantajul că nu poate minți — schimbi filtrul, se schimbă.
  */
 import { useEffect, useRef, useState } from "react";
-import { ImageOff } from "lucide-react";
+import { ImageOff, AlertTriangle } from "lucide-react";
 import { renderPreviewFrame, FILTERS, type TextLayer } from "@reelcoach/core";
 import type { Composition, ShotLike } from "@/lib/db-types";
 import { isImageUrl } from "@/lib/media-display";
@@ -50,7 +50,14 @@ export default function OutputCover({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [seen, setSeen] = useState(false);
-  const [state, setState] = useState<"loading" | "drawn" | "empty">("loading");
+  /**
+   * `empty` = n-are material. `failed` = are, dar n-a putut fi încărcat.
+   *
+   * Erau același lucru, iar asta ascundea diferența care contează: „mai am de
+   * pus o poză aici" și „poza există dar nu se încarcă" cer lucruri complet
+   * diferite de la parteneră.
+   */
+  const [state, setState] = useState<"loading" | "drawn" | "empty" | "failed">("loading");
 
   const H = Math.round(W / aspect);
 
@@ -136,15 +143,23 @@ export default function OutputCover({
       };
 
       video.addEventListener("loadeddata", onReady, { once: true });
-      video.addEventListener("error", () => { if (!cancelled) setState("empty"); }, { once: true });
+      video.addEventListener("error", () => {
+        if (cancelled) return;
+        console.warn("[cover] filmarea nu s-a incarcat:", src, video.error?.message);
+        setState("failed");
+      }, { once: true });
       // Plasă de siguranță: dacă `seeked` nu vine (durată necunoscută, fișier
       // fără index de căutare), desenăm cadrul pe care îl avem. Mai bine un
       // cadru de la început decât un cerc care se învârte la nesfârșit.
       video.src = src;
+      // 12s, nu 4: un clip de câțiva MB pe o conexiune lentă depășea limita
+      // veche și cădea pe „gol" — arătând ca și cum n-ar exista material.
       const guard = window.setTimeout(() => {
-        if (video.readyState >= 2) paintOnce();
-        else if (!cancelled) setState("empty");
-      }, 4000);
+        if (video.readyState >= 2) { paintOnce(); return; }
+        if (cancelled) return;
+        console.warn("[cover] filmarea nu s-a incarcat in 12s:", src);
+        setState("failed");
+      }, 12000);
 
       return () => {
         cancelled = true;
@@ -155,12 +170,18 @@ export default function OutputCover({
 
     const el = new Image();
     el.onload = () => draw(el);
-    el.onerror = () => { if (!cancelled) setState("empty"); };
+    el.onerror = () => {
+      if (cancelled) return;
+      console.warn("[cover] poza nu s-a incarcat:", img);
+      setState("failed");
+    };
     el.src = img as string;
     return () => { cancelled = true; };
     // Redesenăm când se schimbă sursa sau stilul — altfel coperta ar minți.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seen, src, img, filterId, JSON.stringify(layers), shot?.effect, W, H]);
+    // `slotIndex` explicit în dependențe: două momente pot avea același
+    // material, iar atunci `src` n-ar semnala schimbarea.
+  }, [seen, slotIndex, src, img, filterId, JSON.stringify(layers), shot?.effect, W, H]);
 
   return (
     <div
@@ -177,11 +198,23 @@ export default function OutputCover({
         }`}
       />
       {state !== "drawn" && (
-        <div className="absolute inset-0 grid place-items-center">
+        <div className="absolute inset-0 grid place-items-center px-2 text-center">
           {state === "loading" ? (
             <span className="w-4 h-4 rounded-full border-2 border-[#C9C0E8] border-t-transparent animate-spin" />
+          ) : state === "failed" ? (
+            <span className="flex flex-col items-center gap-1">
+              <AlertTriangle className="w-5 h-5 text-amber-500" strokeWidth={1.8} />
+              <span className="text-[9.5px] text-amber-700 leading-tight">
+                nu s-a încărcat
+              </span>
+            </span>
           ) : (
-            <ImageOff className="w-5 h-5 text-[#C0B9D8]" strokeWidth={1.6} />
+            <span className="flex flex-col items-center gap-1">
+              <ImageOff className="w-5 h-5 text-[#C0B9D8]" strokeWidth={1.6} />
+              <span className="text-[9.5px] text-[#B8B8C8] leading-tight">
+                fără material
+              </span>
+            </span>
           )}
         </div>
       )}
