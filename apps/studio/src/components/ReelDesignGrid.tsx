@@ -31,7 +31,9 @@ export default function ReelDesignGrid({ designs }: { designs: ReelDesignRow[] }
             className="group shrink-0"
           >
             <div className="rounded-[10px] overflow-hidden border-2 border-transparent group-hover:border-[#D8D0F5] transition">
-              <OutputCover output={d} shots={shots} aspect={9 / 16} />
+              {/* Caruselul e format de postare-imagine; reelul și poveștile
+                  sunt verticale. Forma spune ce e, fără etichetă. */}
+              <OutputCover output={d} shots={shots} aspect={d.kind === "carousel" ? 4 / 5 : 9 / 16} />
             </div>
             <div className="mt-2 px-0.5">
               <div className="text-[12.5px] font-medium text-[#1F1F1F] leading-tight truncate">
@@ -39,7 +41,12 @@ export default function ReelDesignGrid({ designs }: { designs: ReelDesignRow[] }
               </div>
               <div className="text-[10.5px] text-[#9A9A9A] mt-0.5 inline-flex items-center gap-1">
                 <Film className="w-3 h-3" strokeWidth={1.8} />
-                {n} {n === 1 ? "cadru" : "cadre"}
+                {n}{" "}
+                {d.kind === "stories"
+                  ? n === 1 ? "poveste" : "povești"
+                  : d.kind === "carousel"
+                    ? n === 1 ? "imagine" : "imagini"
+                    : n === 1 ? "moment" : "momente"}
               </div>
             </div>
           </Link>

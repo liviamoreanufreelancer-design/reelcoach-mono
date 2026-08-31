@@ -432,17 +432,21 @@ export async function createReelDesign(formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   const reelType = String(formData.get("reel_type") ?? "").trim();
+  const kindRaw = String(formData.get("kind") ?? "reel").trim();
+  const kind: OutputKind =
+    kindRaw === "carousel" || kindRaw === "stories" ? kindRaw : "reel";
 
   if (!name) throw new Error("Numele e obligatoriu");
   if (!reelType) throw new Error("Tipul e obligatoriu");
 
   const { data: last } = await supabase
-    .from("reel_designs").select("sort_order").eq("reel_type", reelType)
+    .from("reel_designs").select("sort_order").eq("reel_type", reelType).eq("kind", kind)
     .order("sort_order", { ascending: false }).limit(1).maybeSingle();
 
   const { data, error } = await supabase.from("reel_designs").insert({
     name,
     reel_type: reelType,
+    kind,
     slots: [],
     sort_order: ((last?.sort_order as number | undefined) ?? -1) + 1,
     created_by: user.id,
@@ -494,6 +498,7 @@ export async function duplicateReelDesign(designId: string) {
   const { data, error } = await supabase.from("reel_designs").insert({
     name: `${src.name} (copie)`,
     reel_type: src.reel_type,
+    kind: src.kind ?? "reel",
     category_id: src.category_id,
     slots: src.slots,
     caption: src.caption,

@@ -33,12 +33,24 @@ export default async function BibliotecaPage() {
   // nu scrie „glow up" o dată și „glowup" a doua oară.
   const knownTypes = Array.from(new Set(designs.map((d) => d.reel_type))).sort();
 
-  const byType = new Map<string, ReelDesignRow[]>();
+  // Gruparea e pe FEL întâi, pe tip după: un reel și o poveste sunt lucruri
+  // diferite, nu două formate ale aceluiași lucru. Telefonul alege din bazine
+  // separate — 3 reeluri, 1 carusel, câteva povești — deci și partenera
+  // trebuie să vadă dacă un bazin e gol.
+  const KIND_LABEL: Record<string, string> = {
+    reel: "Reeluri", carousel: "Carusele", stories: "Povești",
+  };
+  const grouped = new Map<string, Map<string, ReelDesignRow[]>>();
   for (const d of designs) {
+    const kind = d.kind ?? "reel";
+    const byType = grouped.get(kind) ?? new Map<string, ReelDesignRow[]>();
     const list = byType.get(d.reel_type) ?? [];
     list.push(d);
     byType.set(d.reel_type, list);
+    grouped.set(kind, byType);
   }
+  const order = ["reel", "carousel", "stories"];
+  const sections = order.filter((k) => grouped.has(k));
 
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-8">
@@ -61,16 +73,25 @@ export default async function BibliotecaPage() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-9">
-          {Array.from(byType.entries()).map(([type, list]) => (
-            <section key={type}>
-              <div className="flex items-baseline gap-2.5 mb-3.5">
-                <h2 className="text-[15px] font-semibold text-[#1F1F1F]">{type}</h2>
-                <span className="text-[12px] text-[#9A9A9A]">
-                  {list.length} {list.length === 1 ? "variantă" : "variante"}
-                </span>
+        <div className="flex flex-col gap-10">
+          {sections.map((kind) => (
+            <section key={kind}>
+              <h2 className="text-[10px] tracking-[0.22em] uppercase text-[#5B34FF]/85 font-bold mb-4">
+                {KIND_LABEL[kind] ?? kind}
+              </h2>
+              <div className="flex flex-col gap-7">
+                {Array.from(grouped.get(kind)!.entries()).map(([type, list]) => (
+                  <div key={type}>
+                    <div className="flex items-baseline gap-2.5 mb-3.5">
+                      <h3 className="text-[14px] font-semibold text-[#1F1F1F]">{type}</h3>
+                      <span className="text-[12px] text-[#9A9A9A]">
+                        {list.length} {list.length === 1 ? "variantă" : "variante"}
+                      </span>
+                    </div>
+                    <ReelDesignGrid designs={list} />
+                  </div>
+                ))}
               </div>
-              <ReelDesignGrid designs={list} />
             </section>
           ))}
         </div>

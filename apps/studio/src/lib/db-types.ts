@@ -117,6 +117,11 @@ export type Composition = Pick<
 export interface ReelDesignRow {
   id: string;
   name: string;
+  /**
+   * Ce fel de rezultat e (migrația 022). Poveștile nu sunt un reel mai scurt:
+   * sunt mai multe fișiere, câte unul per moment, fără montaj între ele.
+   */
+  kind: OutputKind;
   /** Tipul al carui varianta este. Text liber — taxonomia inca se descopera. */
   reel_type: string;
   category_id: string | null;

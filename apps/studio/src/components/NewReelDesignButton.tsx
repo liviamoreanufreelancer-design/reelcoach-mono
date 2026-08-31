@@ -1,6 +1,6 @@
 "use client";
 /**
- * „Variantă nouă" — nume și tip. Atât.
+ * „Variantă nouă" — ce fel de rezultat, nume, tip.
  *
  * Tipul e text liber cu sugestii din ce există deja (`datalist`). Un select
  * fix ar îngheța acum o taxonomie pe care partenera încă o descoperă; sugestiile
@@ -13,6 +13,13 @@
 import { useRef, useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { createReelDesign } from "@/lib/template-actions";
+import type { OutputKind } from "@/lib/db-types";
+
+const KINDS: { id: OutputKind; label: string; hint: string }[] = [
+  { id: "reel", label: "Reel", hint: "un montaj" },
+  { id: "carousel", label: "Carusel", hint: "imagini" },
+  { id: "stories", label: "Povești", hint: "câte un fișier per moment" },
+];
 
 export default function NewReelDesignButton({
   knownTypes,
@@ -22,6 +29,7 @@ export default function NewReelDesignButton({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [kind, setKind] = useState<OutputKind>("reel");
 
   const open = () => {
     setError(null);
@@ -73,6 +81,38 @@ export default function NewReelDesignButton({
 
           <form action={onSubmit} className="flex flex-col gap-4">
             <div>
+              <label className="label">Ce fel de rezultat</label>
+              {/* Alegerea vine PRIMA: schimbă ce se poate construi mai jos.
+                  Poveștile n-au tranziții și nu se randează — sunt momente
+                  brute, câte un fișier fiecare. */}
+              <div className="flex gap-1.5">
+                {KINDS.map((k) => (
+                  <label
+                    key={k.id}
+                    className={`flex-1 cursor-pointer rounded-lg border px-3 py-2 text-center transition ${
+                      kind === k.id
+                        ? "bg-[#5B34FF] border-[#5B34FF] text-white"
+                        : "bg-white border-[#E7E3F5] text-[#1F1F1F] hover:border-[#D8D0F5]"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="kind"
+                      value={k.id}
+                      checked={kind === k.id}
+                      onChange={() => setKind(k.id)}
+                      className="sr-only"
+                    />
+                    <span className="block text-[13px] font-medium">{k.label}</span>
+                    <span className={`block text-[10.5px] mt-0.5 leading-snug ${kind === k.id ? "text-white/70" : "text-[#9A9A9A]"}`}>
+                      {k.hint}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <label htmlFor="name" className="label">Nume</label>
               <input
                 id="name"
@@ -87,7 +127,7 @@ export default function NewReelDesignButton({
 
             <div>
               <label htmlFor="reel_type" className="label">
-                Tip de reel{" "}
+                Tipul{" "}
                 <span className="text-[#9A9A9A] normal-case tracking-normal">
                   (al cărui variantă e)
                 </span>

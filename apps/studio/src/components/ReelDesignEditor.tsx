@@ -39,7 +39,26 @@ import ShotTypePicker from "./ShotTypePicker";
 import OutputSceneEditor from "./OutputSceneEditor";
 import OutputReelPreview from "./OutputReelPreview";
 
+/** Cuvintele se schimbă cu felul rezultatului — nu doar controalele. */
+const WORDS = {
+  reel:     { one: "moment", many: "momente", list: "Momentele reelului",   render: "Vezi tot reelul" },
+  carousel: { one: "imagine", many: "imagini", list: "Imaginile caruselului", render: "Vezi caruselul" },
+  stories:  { one: "poveste", many: "povești", list: "Poveștile",           render: "" },
+} as const;
+
 export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) {
+  const kind = design.kind ?? "reel";
+  /**
+   * O poveste NU e un reel mai scurt.
+   *
+   * Un reel e un fișier montat din mai multe momente; o variantă de povești e
+   * mai multe fișiere, câte unul per moment, postate una după alta. Deci n-are
+   * tranziții (n-au între ce să fie) și n-are randare (momentul brut E
+   * rezultatul). Fiecare rând de mai jos e un output separat, nu o bucată
+   * dintr-unul.
+   */
+  const isMontage = kind === "reel";
+  const words = WORDS[kind] ?? WORDS.reel;
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>(design.filter ?? "");
@@ -234,7 +253,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
         <div>
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-[10px] tracking-[0.18em] uppercase text-[#9A9A9A]">
-              Cadrele variantei
+              {words.list}
             </span>
             <span className="text-[11px] text-[#9A9A9A] tabular-nums">
               {pending ? "salvez…" : totalSec > 0 ? `~${totalSec.toFixed(1)}s` : ""}
@@ -243,9 +262,8 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
 
           {slots.length === 0 ? (
             <p className="text-[12px] text-[#6B6B6B] py-2 leading-relaxed">
-              Niciun cadru încă. Adaugă primul, dă-i un nume („before") și urcă
-              filmarea de probă — butonul apare pe rândul lui și peste
-              previzualizare.
+              Niciunul încă. Adaugă primul, alege ce moment e, și pune-i o
+              filmare de probă din Materiale.
             </p>
           ) : (
             <div className="flex flex-col gap-1.5">
@@ -353,12 +371,12 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
             onClick={addFrame}
             className="mt-2 w-full py-2 rounded-lg text-[12.5px] font-medium bg-white border border-dashed border-[#D8D0F5] text-[#5B34FF] hover:bg-[#F6F4FE] transition inline-flex items-center justify-center gap-1.5"
           >
-            <Plus className="w-4 h-4" /> Adaugă cadru
+            <Plus className="w-4 h-4" /> Adaugă {words.one}
           </button>
         </div>
 
         {/* Acelasi editor ca la rezultate — o singura implementare */}
-        {slots.length > 0 && (
+        {slots.length > 0 && isMontage && (
           <>
             <div className="flex gap-1 p-0.5 bg-[#F6F4FE] rounded-lg self-start">
               <button
@@ -378,7 +396,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                   showRender ? "bg-white text-[#1F1F1F] font-medium shadow-sm" : "text-[#6B6B6B]"
                 }`}
               >
-                Vezi tot reelul
+                {words.render}
               </button>
             </div>
 
@@ -397,6 +415,17 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
               />
             )}
           </>
+        )}
+
+        {slots.length > 0 && !isMontage && (
+          <OutputSceneEditor
+            output={live}
+            shots={shots}
+            idx={Math.min(activeIdx, slots.length - 1)}
+            onChangeSlots={writeSlots}
+            disabled={false}
+            onRequestVideo={() => pickVideo(Math.min(activeIdx, slots.length - 1))}
+          />
         )}
 
         <div className="pt-1 border-t border-[#E7E3F5] flex flex-col gap-4">
