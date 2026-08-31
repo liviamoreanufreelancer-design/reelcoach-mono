@@ -59,6 +59,7 @@ export default function OutputSceneEditor({
   onRequestVideo,
   forceStills = false,
   aspect = VIDEO_ASPECT,
+  montage = true,
 }: {
   output: Composition;
   shots: ShotLike[];
@@ -81,6 +82,15 @@ export default function OutputSceneEditor({
   forceStills?: boolean;
   /** 9:16 la reeluri și povești, 4:5 la carusel. */
   aspect?: number;
+  /**
+   * Rezultatul e un MONTAJ (reel) sau bucăți separate (povești, carusel).
+   *
+   * Tranziția și motion blur descriu trecerea dintre două momente. La o
+   * poveste nu există „următorul" — fiecare e un fișier propriu, postat
+   * separat — deci n-au între ce să fie. Durata și viteza rămân: alea
+   * modelează momentul în sine, nu legătura cu ce urmează.
+   */
+  montage?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -487,7 +497,7 @@ export default function OutputSceneEditor({
           </div>
           )}
 
-          {!stills && (<>
+          {!stills && montage && (<>
           {/* Tranzitia sta pe MOMENT: partenera o variaza intentionat de la un
               moment la altul (fade, slide, zoom, whipPan in acelasi reel).
               Filtrul sta pe postare — un reel are o singura nota de culoare. */}

@@ -38,6 +38,7 @@ import type { ReelDesignRow, OutputSlot, MediaAsset, ShotType } from "@/lib/db-t
 import MediaPicker from "./MediaPicker";
 import ShotTypePicker from "./ShotTypePicker";
 import CarouselPostPreview from "./CarouselPostPreview";
+import StoryPostPreview from "./StoryPostPreview";
 import OutputSceneEditor from "./OutputSceneEditor";
 import OutputReelPreview from "./OutputReelPreview";
 
@@ -45,7 +46,7 @@ import OutputReelPreview from "./OutputReelPreview";
 const WORDS = {
   reel:     { one: "moment", many: "momente", list: "Momentele reelului",   render: "Vezi tot reelul" },
   carousel: { one: "imagine", many: "imagini", list: "Imaginile caruselului", render: "Vezi postarea" },
-  stories:  { one: "poveste", many: "povești", list: "Poveștile",           render: "" },
+  stories:  { one: "poveste", many: "povești", list: "Poveștile",           render: "Vezi poveștile" },
 } as const;
 
 export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) {
@@ -440,7 +441,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
             și pe cum citește textul deasupra lor — nimic din astea nu se vede
             uitându-te la un cadru odată. Poveștile n-au a doua vedere:
             fiecare e un fișier separat, deci cadrul E rezultatul. */}
-        {slots.length > 0 && kind === "carousel" && (
+        {slots.length > 0 && !isMontage && (
           <div className="flex gap-1 p-0.5 bg-[#F6F4FE] rounded-lg self-start">
             <button
               type="button"
@@ -463,11 +464,13 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
           </div>
         )}
 
-        {slots.length > 0 && kind === "carousel" && showRender && (
-          <CarouselPostPreview output={live} shots={shots} caption={design.caption} />
+        {slots.length > 0 && !isMontage && showRender && (
+          kind === "carousel"
+            ? <CarouselPostPreview output={live} shots={shots} caption={design.caption} />
+            : <StoryPostPreview output={live} shots={shots} />
         )}
 
-        {slots.length > 0 && !isMontage && !(kind === "carousel" && showRender) && (
+        {slots.length > 0 && !isMontage && !showRender && (
           <OutputSceneEditor
             output={live}
             shots={shots}
@@ -480,6 +483,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
             // materialul ales. De asta nu se forțează nimic acolo.
             forceStills={kind === "carousel"}
             aspect={kind === "carousel" ? PHOTO_ASPECT : VIDEO_ASPECT}
+            montage={false}
           />
         )}
 
@@ -503,6 +507,10 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
             </select>
           </div>
 
+          {/* Poveștile n-au descriere: nu există un text sub postare, tot ce
+              se citește e scris PE imagine. Un câmp aici ar fi muncă scrisă
+              care nu ajunge nicăieri. */}
+          {kind !== "stories" && (
           <div>
             <label className="label">
               Descriere pentru Instagram / TikTok{" "}
@@ -520,6 +528,7 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
               className="input resize-none leading-relaxed"
             />
           </div>
+          )}
         </div>
       </div>
     </div>
