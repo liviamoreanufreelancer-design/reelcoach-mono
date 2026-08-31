@@ -72,6 +72,17 @@ function Film() {
   const [captured, setCaptured] = useState<Set<number>>(new Set());
   /** Momentele care au deja POZA. Separat de `captured` (filmarile). */
   const [photoCaptured, setPhotoCaptured] = useState<Set<number>>(new Set());
+  /**
+   * Poza făcută, încă nesalvată: se vede pe ecran, iar stilista o păstrează
+   * sau face alta. Momentul nu se poate reface, deci verificarea nu e opțională.
+   */
+  const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; url: string } | null>(null);
+  // Dacă ecranul se închide altfel decât prin cele două butoane (buton fizic
+  // de înapoi), handle-ul imaginii ar rămâne agățat. Blob-ul e ținut în
+  // memorie până e eliberat.
+  useEffect(() => () => {
+    if (pendingPhoto) URL.revokeObjectURL(pendingPhoto.url);
+  }, [pendingPhoto]);
   const [showGuide, setShowGuide] = useState(true);
   /** 3-2-1 countdown before recording. null = inactive. */
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -314,14 +325,35 @@ function Film() {
       return;
     }
 
+    /**
+     * Poza NU se salvează încă — se arată, și stilista decide.
+     *
+     * Momentul nu se poate reface: părul udat nu se usucă la loc, culoarea
+     * aplicată nu se scoate. Dacă poza a ieșit mișcată sau cu clienta cu ochii
+     * închiși, aflatul cu trei ore mai târziu nu mai ajută la nimic.
+     *
+     * Două secunde de verificare acum sunt singura ocazie. La filmare nu e la
+     * fel: acolo se vede pe ecran în timp real ce intră în cadru.
+     */
+    light();
+    setPendingPhoto({ blob, url: URL.createObjectURL(blob) });
+  };
+
+  /** Poza păstrată — abia acum se scrie pe disc. */
+  const keepPhoto = async () => {
+    const p = pendingPhoto;
+    if (!p) return;
+    setPendingPhoto(null);
+    URL.revokeObjectURL(p.url);
     try {
       await savePhoto({
         scenarioId,
         sceneIdx: idx,
-        blob,
+        blob: p.blob,
         mimeType: "image/jpeg",
         createdAt: Date.now(),
       });
+      // Bifa DOAR după ce salvarea a reușit — aceeași regulă ca la filmare.
       setPhotoCaptured((s) => new Set(s).add(idx));
       playSuccess();
       light();
@@ -335,6 +367,14 @@ function Film() {
         action: { label: "Încearcă din nou", onClick: () => { void takePhoto(); } },
       });
     }
+  };
+
+  /** Poza refuzată — se aruncă și se revine la cameră. */
+  const retakePhoto = () => {
+    if (!pendingPhoto) return;
+    URL.revokeObjectURL(pendingPhoto.url);
+    setPendingPhoto(null);
+    playTap();
   };
 
   const handleFallbackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -453,6 +493,58 @@ function Film() {
 
   // ---------- Intro: Pregătește filmarea (checklist + tip) ----------
 
+
+  /**
+   * ---------- Verificarea pozei ----------
+   *
+   * Peste tot, cu poza pe tot ecranul. Momentul nu se poate reface — părul
+   * udat nu se usucă la loc — deci asta e singura ocazie de a vedea dacă a
+   * ieșit. Două butoane, egale ca greutate: nici „păstrează" nu e implicit,
+   * nici „mai fac una" nu e o retragere.
+   */
+  if (pendingPhoto) {
+    return (
+      <PhoneShell>
+        <img
+          src={pendingPhoto.url}
+          alt="Poza tocmai făcută"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
+
+        <div className="absolute inset-x-0 top-0 px-5 pt-[calc(env(safe-area-inset-top)+16px)]">
+          <p className="text-[11px] tracking-[0.28em] uppercase text-white/70">
+            E bună?
+          </p>
+          <p className="text-white text-[15px] leading-snug mt-1.5 max-w-[300px]">
+            {scene?.hook || "Verifică poza"}
+          </p>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+          <p className="text-white/60 text-[12px] leading-relaxed mb-3">
+            Momentul ăsta nu se mai poate reface — uită-te acum, nu mai târziu.
+          </p>
+          <div className="flex gap-2.5">
+            <button
+              type="button"
+              onClick={retakePhoto}
+              className="flex-1 h-14 rounded-full text-[15px] font-medium text-white bg-white/15 backdrop-blur-md border border-white/20 active:scale-[0.98] transition"
+            >
+              Mai fac una
+            </button>
+            <button
+              type="button"
+              onClick={() => { void keepPhoto(); }}
+              className="flex-1 h-14 rounded-full text-[15px] font-semibold text-neutral-950 bg-white active:scale-[0.98] transition"
+            >
+              O păstrez
+            </button>
+          </div>
+        </div>
+      </PhoneShell>
+    );
+  }
 
   // ---------- Film: scene-by-scene ----------
   return (
