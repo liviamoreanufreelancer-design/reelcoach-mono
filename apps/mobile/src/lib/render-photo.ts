@@ -26,8 +26,10 @@ import { getPhoto, type StoredPhoto } from "./clip-store";
  * din filmare. Iese mai slab (un cadru extras din video e mai moale decât o
  * poză), dar iese: mai bine un carusel imperfect decât niciunul.
  */
-const W = 1080;
-const H = 1350;
+/** Postare-imagine: 4:5, portretul de Instagram și Facebook. */
+export const PHOTO_SIZE = { w: 1080, h: 1350 };
+/** Poveste: 9:16, ecranul întreg. */
+export const STORY_SIZE = { w: 1080, h: 1920 };
 
 /** Cât așteptăm după un cadru de video înainte să renunțăm la el. */
 const SEEK_TIMEOUT_MS = 4000;
@@ -45,10 +47,14 @@ export interface RenderedPhoto {
  * textul arată identic cu ce a văzut partenera. „Preview = export" ține și
  * aici, doar că exportul e un PNG, nu un MP4.
  */
-export async function renderPhoto(planned: PlannedClip, scenarioId: string): Promise<RenderedPhoto> {
+export async function renderPhoto(
+  planned: PlannedClip,
+  scenarioId: string,
+  size: { w: number; h: number } = PHOTO_SIZE,
+): Promise<RenderedPhoto> {
   const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = size.w;
+  canvas.height = size.h;
 
   const source = await loadSource(planned, scenarioId);
   try {

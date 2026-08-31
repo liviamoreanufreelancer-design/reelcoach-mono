@@ -15,6 +15,7 @@ import { Route as SettingsBrandEditRouteImport } from './routes/settings-brand-e
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ProfessionRouteImport } from './routes/profession'
+import { Route as PovestiRouteImport } from './routes/povesti'
 import { Route as PachetRouteImport } from './routes/pachet'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MyReelsRouteImport } from './routes/my-reels'
@@ -56,6 +57,11 @@ const SavedRoute = SavedRouteImport.update({
 const ProfessionRoute = ProfessionRouteImport.update({
   id: '/profession',
   path: '/profession',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PovestiRoute = PovestiRouteImport.update({
+  id: '/povesti',
+  path: '/povesti',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PachetRoute = PachetRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/pachet': typeof PachetRoute
+  '/povesti': typeof PovestiRoute
   '/profession': typeof ProfessionRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/pachet': typeof PachetRoute
+  '/povesti': typeof PovestiRoute
   '/profession': typeof ProfessionRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/my-reels': typeof MyReelsRoute
   '/onboarding': typeof OnboardingRoute
   '/pachet': typeof PachetRoute
+  '/povesti': typeof PovestiRoute
   '/profession': typeof ProfessionRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/my-reels'
     | '/onboarding'
     | '/pachet'
+    | '/povesti'
     | '/profession'
     | '/saved'
     | '/settings'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/my-reels'
     | '/onboarding'
     | '/pachet'
+    | '/povesti'
     | '/profession'
     | '/saved'
     | '/settings'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/my-reels'
     | '/onboarding'
     | '/pachet'
+    | '/povesti'
     | '/profession'
     | '/saved'
     | '/settings'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   MyReelsRoute: typeof MyReelsRoute
   OnboardingRoute: typeof OnboardingRoute
   PachetRoute: typeof PachetRoute
+  PovestiRoute: typeof PovestiRoute
   ProfessionRoute: typeof ProfessionRoute
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/profession'
       fullPath: '/profession'
       preLoaderRoute: typeof ProfessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/povesti': {
+      id: '/povesti'
+      path: '/povesti'
+      fullPath: '/povesti'
+      preLoaderRoute: typeof PovestiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pachet': {
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   MyReelsRoute: MyReelsRoute,
   OnboardingRoute: OnboardingRoute,
   PachetRoute: PachetRoute,
+  PovestiRoute: PovestiRoute,
   ProfessionRoute: ProfessionRoute,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,

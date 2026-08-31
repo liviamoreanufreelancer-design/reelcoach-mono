@@ -1,4 +1,5 @@
 import type { CaptureKind, OutputKind, OutputSlot } from "./db-types";
+import { isImageUrl } from "./media-display";
 
 /**
  * Ce momente CER rezultatele — calculat, nu citit.
@@ -29,10 +30,18 @@ export function planShots(
   const out = new Map<string, PlannedShot>();
 
   for (const o of outputs) {
-    // Reelurile și poveștile cer mișcare; caruselul cere imagine.
-    const wantsPhoto = o.kind === "carousel";
     for (const slot of Array.isArray(o.slots) ? o.slots : []) {
       if (!slot?.slot) continue;
+      /**
+       * Caruselul cere mereu imagine. La POVEȘTI decizia e per moment: dacă
+       * partenera a proiectat momentul ăla cu o poză, stilista trebuie să
+       * facă o poză — altfel ar filma un video pentru o poveste gândită ca
+       * imagine, iar rezultatul n-ar semăna cu ce a construit ea.
+       *
+       * Se citește din materialul de probă: tipul lui E decizia.
+       */
+      const wantsPhoto =
+        o.kind === "carousel" || (o.kind === "stories" && isImageUrl(slot.demoUrl));
       const sec = slot.sec ?? 2;
       const cur = out.get(slot.slot);
 

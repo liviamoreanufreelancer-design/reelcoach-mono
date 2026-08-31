@@ -25,7 +25,7 @@
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Film, Images, Camera } from "lucide-react";
+import { ArrowLeft, Film, Images, Layers, Camera } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { OutputPoster } from "@/components/OutputPoster";
 import { getSelectedScenario, getSelectedIdeaId } from "@/lib/selected-idea";
@@ -48,14 +48,29 @@ function Pachet() {
     listClips(scenarioId).then(setClips);
   }, [scenarioId]);
 
-  const all: OutputStatus[] = clips ? summarizeOutputs(scenario, clips) : [];
-  // Poveștile n-au încă export propriu; până atunci nu le arătăm, ca să nu
-  // promitem un cartonaș care nu duce nicăieri.
-  const ready = all.filter((s) => s.output.kind !== "stories");
+  // Toate trei felurile au acum unde duce. Nimic nu se mai ascunde.
+  const ready: OutputStatus[] = clips ? summarizeOutputs(scenario, clips) : [];
   const next = bestNextMoment(scenario, ready);
 
   const reels = ready.filter((s) => s.output.kind === "reel").length;
-  const albums = ready.length - reels;
+  const albums = ready.filter((s) => s.output.kind === "carousel").length;
+  const series = ready.filter((s) => s.output.kind === "stories").length;
+
+  /**
+   * „Ai 3 reeluri, 1 carusel și 5 povești."
+   *
+   * Numărate separat, fiindcă sunt lucruri diferite — un carusel nu e un reel
+   * mai slab. Și numărate ÎN SUS, fără numitor: vezi comentariul de sus.
+   */
+  const parts = [
+    reels > 0 ? `${reels} ${reels === 1 ? "reel" : "reeluri"}` : null,
+    albums > 0 ? `${albums} ${albums === 1 ? "carusel" : "carusele"}` : null,
+    series > 0 ? `${series} ${series === 1 ? "serie de povești" : "serii de povești"}` : null,
+  ].filter(Boolean) as string[];
+  const summary =
+    parts.length <= 1
+      ? parts[0] ?? ""
+      : `${parts.slice(0, -1).join(", ")} și ${parts[parts.length - 1]}`;
 
   const open = (st: OutputStatus) => {
     light();
@@ -63,6 +78,7 @@ function Pachet() {
     // Fiecare fel are altă cale de ieșire: reel-ul se randează în timp real,
     // caruselul se desenează într-o clipă. Nu e același ecran.
     if (st.output.kind === "carousel") nav({ to: "/carusel", search: { output: st.output.id } });
+    else if (st.output.kind === "stories") nav({ to: "/povesti", search: { output: st.output.id } });
     else nav({ to: "/edit", search: { output: st.output.id } });
   };
 
@@ -103,11 +119,7 @@ function Pachet() {
               {/* Numărătoarea merge în sus, fără numitor — vezi comentariul
                   de sus. Caruselele se numără separat: sunt alt fel de
                   postare, nu un reel mai slab. */}
-              <h1 className="text-[26px] font-semibold leading-tight">
-                Ai {reels > 0 ? `${reels} ${reels === 1 ? "reel" : "reeluri"}` : ""}
-                {reels > 0 && albums > 0 ? " și " : ""}
-                {albums > 0 ? `${albums} ${albums === 1 ? "carusel" : "carusele"}` : ""}.
-              </h1>
+              <h1 className="text-[26px] font-semibold leading-tight">Ai {summary}.</h1>
               <p className="text-white/55 text-[14px] mt-1.5 leading-relaxed">
                 Din {clips.length} {clips.length === 1 ? "moment filmat" : "momente filmate"}.
                 Alege unul și îl exportă.
@@ -153,6 +165,7 @@ function PackageCard({ status, onClick }: { status: OutputStatus; onClick: () =>
   const { output, complete, filmed, total } = status;
   // Forma spune ce e: caruselul e 4:5, reelul 9:16. Fără etichetă.
   const isAlbum = output.kind === "carousel";
+  const isSeries = output.kind === "stories";
   return (
     <button type="button" onClick={onClick} className="text-left active:opacity-80 transition">
       <div className="relative">
@@ -170,9 +183,11 @@ function PackageCard({ status, onClick }: { status: OutputStatus; onClick: () =>
         <div className="text-[11.5px] text-white/45 mt-0.5 inline-flex items-center gap-1">
           {isAlbum
             ? <Images className="w-3 h-3" strokeWidth={1.8} />
-            : <Film className="w-3 h-3" strokeWidth={1.8} />}
+            : isSeries
+              ? <Layers className="w-3 h-3" strokeWidth={1.8} />
+              : <Film className="w-3 h-3" strokeWidth={1.8} />}
           {complete
-            ? `${total} ${isAlbum ? (total === 1 ? "imagine" : "imagini") : "momente"}`
+            ? `${total} ${isAlbum ? (total === 1 ? "imagine" : "imagini") : isSeries ? (total === 1 ? "poveste" : "povești") : "momente"}`
             : `${filmed} din ${total} filmate`}
         </div>
       </div>
