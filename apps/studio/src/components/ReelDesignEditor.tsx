@@ -193,7 +193,9 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onPick={onPicked}
-        prefer="video"
+        // Caruselul cere poze; reelul și poveștile, filmări. Un filtru pe care
+        // oricum l-ai apăsa e o apăsare irosită.
+        prefer={kind === "carousel" ? "image" : "video"}
       />
 
       <div className="flex items-center gap-2 px-5 py-4 border-b border-[#E7E3F5]">
@@ -323,7 +325,11 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); pickVideo(i); }}
-                      title={s.demoUrl ? "Schimbă filmarea de probă" : "Alege o filmare din bibliotecă"}
+                      title={
+                        s.demoUrl
+                          ? `Schimbă ${kind === "carousel" ? "poza" : "filmarea"} de probă`
+                          : `Alege ${kind === "carousel" ? "o poză" : "o filmare"} din Materiale`
+                      }
                       className={`shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition ${
                         s.demoUrl
                           ? "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
@@ -333,7 +339,9 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
                       {s.demoUrl
                         ? <Check className="w-3.5 h-3.5" strokeWidth={2.4} />
                         : <Upload className="w-3.5 h-3.5" />}
-                      {s.demoUrl ? "filmare" : "alege filmare"}
+                      {kind === "carousel"
+                        ? (s.demoUrl ? "poză" : "alege poză")
+                        : (s.demoUrl ? "filmare" : "alege filmare")}
                     </button>
 
                     <button
@@ -425,6 +433,10 @@ export default function ReelDesignEditor({ design }: { design: ReelDesignRow }) 
             onChangeSlots={writeSlots}
             disabled={false}
             onRequestVideo={() => pickVideo(Math.min(activeIdx, slots.length - 1))}
+            // La carusel, controalele de mișcare dispar: durata, viteza,
+            // tranziția și motion blur n-au ce descrie pe o imagine fixă.
+            // Poveștile rămân filmări, deci le păstrează.
+            stills={kind === "carousel"}
           />
         )}
 

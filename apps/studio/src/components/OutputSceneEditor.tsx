@@ -41,6 +41,7 @@ export default function OutputSceneEditor({
   onChangeSlots,
   disabled,
   onRequestVideo,
+  stills = false,
 }: {
   output: Composition;
   shots: ShotLike[];
@@ -53,6 +54,15 @@ export default function OutputSceneEditor({
    * parteneri. Absent la postari, unde filmarea vine de pe moment.
    */
   onRequestVideo?: () => void;
+  /**
+   * Imagini fixe (carusel), nu filmare.
+   *
+   * Durata, viteza, tranziția și motion blur descriu MIȘCARE — pe o imagine
+   * fixă n-au ce descrie. Lăsate acolo, ar fi controale care par să facă ceva
+   * și nu fac nimic: exact ce am scos din pasul de filmare al sesiunii.
+   * Rămân filtrul și textul, care se aplică la fel pe o poză.
+   */
+  stills?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -338,7 +348,9 @@ export default function OutputSceneEditor({
                   <span className="w-11 h-11 rounded-full bg-[#EDE8FF] grid place-items-center group-hover:bg-[#DFD6FF] transition">
                     <Upload className="w-5 h-5" strokeWidth={1.8} />
                   </span>
-                  <span className="text-[12px] font-medium">Alege filmarea</span>
+                  <span className="text-[12px] font-medium">
+                    {stills ? "Alege poza" : "Alege filmarea"}
+                  </span>
                 </button>
               ) : (
                 <span className="text-[#9A9A9A] text-[11px]">
@@ -369,7 +381,8 @@ export default function OutputSceneEditor({
       {/* DREAPTA: momentele + setările momentului selectat */}
       <div className="flex flex-col gap-4 min-w-0">
         <fieldset disabled={disabled} className="flex flex-col gap-4 disabled:opacity-60">
-          {/* Durata în ACEASTĂ postare + viteză */}
+          {/* Durata în ACEASTĂ postare + viteză — doar la mișcare */}
+          {!stills && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">
@@ -401,7 +414,9 @@ export default function OutputSceneEditor({
               </select>
             </div>
           </div>
+          )}
 
+          {!stills && (<>
           {/* Tranzitia sta pe MOMENT: partenera o variaza intentionat de la un
               moment la altul (fade, slide, zoom, whipPan in acelasi reel).
               Filtrul sta pe postare — un reel are o singura nota de culoare. */}
@@ -462,6 +477,7 @@ export default function OutputSceneEditor({
             />
             <span className="text-[13px] text-[#1F1F1F]">Motion blur</span>
           </label>
+          </>)}
 
           {/* Text pe acest moment, în această postare */}
           <div className="rounded-xl bg-[#F6F4FE] border border-[#EDE8FF] p-3.5">
