@@ -101,6 +101,36 @@ const LIGHT_POS_LABEL: Record<string, string> = { front: "Față", left: "Stâng
 type HowShootItem = { icon: string; label: string; detail: string };
 
 /**
+ * Migrația 024 — momentul citește din tipul de cadru, cu suprascrieri.
+ *
+ * Regula, într-o propoziție: valoarea momentului câștigă dacă există, altfel
+ * se moștenește din tip. `null` pe moment nu înseamnă „gol", înseamnă
+ * „la fel ca tipul" — de asta nu se poate folosi `??` direct pe rând.
+ *
+ * Fără pasul ăsta, catalogul rămâne un loc de unde se COPIAZĂ, iar o corectură
+ * a partenerei trebuie repetată în fiecare scenariu care folosește tipul.
+ */
+function withShotType(row: DbShotRow): DbShotRow {
+  const t = row.shot_type;
+  if (!t) return row;
+  return {
+    ...row,
+    hook: row.hook ?? t.hook,
+    instructions: row.instructions && row.instructions.length > 0 ? row.instructions : t.instructions,
+    phone_hold: row.phone_hold ?? t.phone_hold,
+    shot_distance: row.shot_distance ?? t.shot_distance,
+    phone_movement: row.phone_movement ?? t.phone_movement,
+    light_sources:
+      row.light_sources && row.light_sources.length > 0 ? row.light_sources : t.light_sources,
+    example_image_url: row.example_image_url ?? t.example_image_url,
+    // `capture_kind` are NOT NULL cu implicit 'video' pe shots, deci nu se poate
+    // deosebi „nesetat" de „video". Tipul câștigă doar când momentul e pe implicit:
+    // un before se capturează la fel indiferent ce variantă îl cere.
+    capture_kind: row.capture_kind === "video" && t.capture_kind ? t.capture_kind : row.capture_kind,
+  };
+}
+
+/**
  * Construiește lista de instrucțiuni de filmare din variabilele structurate
  * (migrația 008) pe care partenera le setează în Studio. Dacă scena nu are
  * variabile 008, întoarce null și se folosește vechiul how_shoot.
@@ -135,7 +165,8 @@ function buildHowShootFrom008(row: DbShotRow): HowShootItem[] | null {
   return items.length > 0 ? items : null;
 }
 
-function dbShotToShot(row: DbShotRow): Shot {
+function dbShotToShot(rawRow: DbShotRow): Shot {
+  const row = withShotType(rawRow);
   return {
     id: row.id,
     // pattern is now free-form text. The mobile resolveShot() will fall back

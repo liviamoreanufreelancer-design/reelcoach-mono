@@ -119,6 +119,25 @@ export interface DbOutputRow {
   sort_order: number;
 }
 
+/**
+ * Migrația 021 + 024 — catalogul de tipuri de cadru. Ce se filmează o dată se
+ * descrie o dată: o corectură aici se vede în toate scenariile care folosesc
+ * tipul, fără ca partenera să le atingă.
+ */
+export interface DbShotTypeRow {
+  id: string;
+  name: string;
+  family: string | null;
+  hook: string | null;
+  instructions: string[] | null;
+  phone_hold: "hand" | "tripod" | null;
+  shot_distance: "palm" | "arm" | "step" | "two_steps" | null;
+  phone_movement: "fixed" | "follow" | "pan" | "zoom" | null;
+  light_sources: LightSource[] | null;
+  capture_kind: CaptureKind | null;
+  example_image_url: string | null;
+}
+
 export interface DbShotRow {
   id: string;
   template_id: string;
@@ -136,6 +155,13 @@ export interface DbShotRow {
   capture_kind: CaptureKind;
   /** Migrația 012: identitatea stabilă a momentului în sesiune. */
   slot_key: string | null;
+  /**
+   * Migrația 024: tipul de cadru din catalog. Variabilele de filmare se CITESC
+   * din el; coloanele de mai jos sunt suprascrieri — null înseamnă „moștenește".
+   */
+  shot_type_id: string | null;
+  /** Join cu shot_types pe shot_type_id. Sursa variabilelor, când există. */
+  shot_type: DbShotTypeRow | null;
   recording_duration: number;
   final_usage_duration: number;
   countdown: number;

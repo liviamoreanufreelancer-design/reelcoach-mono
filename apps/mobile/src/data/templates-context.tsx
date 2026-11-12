@@ -199,7 +199,10 @@ async function fetchPublishedTemplates(): Promise<ReelTemplate[]> {
       .order("published_at", { ascending: false }),
     supabase
       .from("shots")
-      .select("*, diagram:diagrams(image_url)")
+      // Migrația 024: tipul de cadru vine odată cu momentul. Variabilele de filmare
+      // se citesc din el (vezi `withShotType`), deci o corectură în catalog ajunge
+      // în toate scenariile fără ca partenera să le atingă.
+      .select("*, diagram:diagrams(image_url), shot_type:shot_types(id, name, family, hook, instructions, phone_hold, shot_distance, phone_movement, light_sources, capture_kind, example_image_url)")
       .order("sort_order", { ascending: true }),
     supabase
       .from("outputs")
