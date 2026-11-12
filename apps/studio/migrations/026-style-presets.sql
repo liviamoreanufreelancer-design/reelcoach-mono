@@ -59,7 +59,7 @@ COMMENT ON TABLE public.style_presets IS
 -- Un singur implicit. Fara asta, "stilul implicit" devine ambiguu si randarea
 -- ar depinde de ordinea rândurilor.
 CREATE UNIQUE INDEX IF NOT EXISTS style_presets_single_default
-  ON public.style_presets ((true))
+  ON public.style_presets (is_default)
   WHERE is_default;
 
 ALTER TABLE public.style_presets ENABLE ROW LEVEL SECURITY;
@@ -83,6 +83,14 @@ ALTER TABLE public.outputs
 COMMENT ON COLUMN public.outputs.style_preset_id IS
   'Stilul de casă folosit. outputs.filter / outputs.transition rămân ca excepții punctuale.';
 
-ALTER TABLE public.output_patterns
-  ADD CONSTRAINT output_patterns_style_preset_fk
-  FOREIGN KEY (style_preset_id) REFERENCES public.style_presets(id) ON DELETE SET NULL;
+-- ADD CONSTRAINT nu are IF NOT EXISTS, deci migratia ar cadea la o a doua rulare.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'output_patterns_style_preset_fk'
+  ) THEN
+    ALTER TABLE public.output_patterns
+      ADD CONSTRAINT output_patterns_style_preset_fk
+      FOREIGN KEY (style_preset_id) REFERENCES public.style_presets(id) ON DELETE SET NULL;
+  END IF;
+END $$;

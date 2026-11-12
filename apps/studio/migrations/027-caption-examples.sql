@@ -64,9 +64,16 @@ COMMENT ON TABLE public.caption_examples IS
 COMMENT ON COLUMN public.caption_examples.source IS
   'written = scris de parteneră; kept = generat și păstrat nemodificat de stilistă (semnal de uz).';
 
-ALTER TABLE public.caption_examples
-  ADD CONSTRAINT caption_examples_source_chk
-  CHECK (source IN ('written', 'kept'));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'caption_examples_source_chk'
+  ) THEN
+    ALTER TABLE public.caption_examples
+      ADD CONSTRAINT caption_examples_source_chk
+      CHECK (source IN ('written', 'kept'));
+  END IF;
+END $$;
 
 -- Cererea de generare citeste exemplele active ale unui sablon la fiecare reel.
 CREATE INDEX IF NOT EXISTS caption_examples_pattern_idx
