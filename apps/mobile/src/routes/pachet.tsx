@@ -103,7 +103,7 @@ function Pachet() {
           <button
             type="button"
             onClick={() => nav({ to: "/" })}
-            className="w-9 h-9 -ml-1 grid place-items-center rounded-full bg-white/10 mb-5"
+            className="w-9 h-9 -ml-1 grid place-items-center rounded-full bg-white/10 mb-5 active:bg-white/20 transition ease-rc duration-200"
             aria-label="Înapoi"
           >
             <ArrowLeft className="w-[18px] h-[18px]" />
@@ -126,8 +126,14 @@ function Pachet() {
               </p>
 
               <div className="grid grid-cols-2 gap-3.5 mt-6">
-                {ready.map((st) => (
-                  <PackageCard key={st.output.id} status={st} onClick={() => open(st)} />
+                {ready.map((st, i) => (
+                  <div
+                    key={st.output.id}
+                    className="animate-in fade-in slide-in-from-bottom-2 duration-300 ease-rc"
+                    style={{ animationDelay: `${Math.min(i, 5) * 40}ms` }}
+                  >
+                    <PackageCard status={st} onClick={() => open(st)} />
+                  </div>
                 ))}
               </div>
 
@@ -136,18 +142,18 @@ function Pachet() {
                 <button
                   type="button"
                   onClick={backToFilming}
-                  className="w-full mt-5 text-left rounded-2xl bg-white/[0.07] border border-white/10 px-4 py-3.5 active:bg-white/10 transition"
+                  className="w-full mt-7 pt-4 border-t border-white/[0.09] text-left active:opacity-60 transition ease-rc duration-200"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 shrink-0 grid place-items-center rounded-full bg-white/10">
-                      <Camera className="w-[17px] h-[17px]" strokeWidth={1.8} />
-                    </span>
+                  <div className="flex items-center gap-3.5">
+                    <Camera className="w-[18px] h-[18px] shrink-0 text-white/35" strokeWidth={1.6} />
                     <span className="flex-1 min-w-0">
                       <span className="block text-[14px] font-medium leading-snug">
                         Mai filmează {next.title.toLowerCase()}
                       </span>
-                      <span className="block text-[12.5px] text-white/50 mt-0.5">
-                        → încă {next.unlocks} {next.unlocks === 1 ? "reel" : "reeluri"}
+                      {/* Singurul lucru colorat de pe ecran: castigul. Tokenul marcii,
+                          nu o culoare noua. O linie de scos daca nu-ti place. */}
+                      <span className="block text-[12.5px] mt-0.5" style={{ color: "var(--yellow)" }}>
+                        încă {next.unlocks} {next.unlocks === 1 ? "reel" : "reeluri"}
                       </span>
                     </span>
                   </div>
@@ -167,7 +173,7 @@ function PackageCard({ status, onClick }: { status: OutputStatus; onClick: () =>
   const isAlbum = output.kind === "carousel";
   const isSeries = output.kind === "stories";
   return (
-    <button type="button" onClick={onClick} className="text-left active:opacity-80 transition">
+    <button type="button" onClick={onClick} className="text-left active:opacity-80 transition ease-rc duration-200">
       <div className="relative">
         <OutputPoster poster={status.poster} aspect={isAlbum ? "4 / 5" : "9 / 16"} />
         {!complete && (
@@ -205,7 +211,7 @@ function NothingYet({ onFilm }: { onFilm: () => void }) {
       <button
         type="button"
         onClick={onFilm}
-        className="mt-6 px-6 py-3 rounded-full bg-white text-neutral-950 text-[14px] font-medium"
+        className="mt-6 px-6 py-3 rounded-full bg-white text-neutral-950 text-[14px] font-medium active:scale-[0.97] transition ease-rc duration-200"
       >
         Începe filmarea
       </button>

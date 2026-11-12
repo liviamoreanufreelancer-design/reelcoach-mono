@@ -46,6 +46,10 @@
   --font-display: "League Spartan", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-editorial: "League Spartan", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* O singura curba de mișcare in tot appul. Appurile ieftine sar intre stari;
+     cele scumpe aluneca. Curba porneste repede si se opreste moale, ca in iOS. */
+  --ease-rc: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 :root {
