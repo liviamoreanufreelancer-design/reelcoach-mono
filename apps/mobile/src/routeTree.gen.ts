@@ -14,7 +14,6 @@ import { Route as SettingsSubscriptionRouteImport } from './routes/settings-subs
 import { Route as SettingsBrandEditRouteImport } from './routes/settings-brand-edit'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
-import { Route as PromisiuneRouteImport } from './routes/promisiune'
 import { Route as ProfessionRouteImport } from './routes/profession'
 import { Route as PovestiRouteImport } from './routes/povesti'
 import { Route as PachetRouteImport } from './routes/pachet'
@@ -53,11 +52,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PromisiuneRoute = PromisiuneRouteImport.update({
-  id: '/promisiune',
-  path: '/promisiune',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfessionRoute = ProfessionRouteImport.update({
@@ -143,7 +137,6 @@ export interface FileRoutesByFullPath {
   '/pachet': typeof PachetRoute
   '/povesti': typeof PovestiRoute
   '/profession': typeof ProfessionRoute
-  '/promisiune': typeof PromisiuneRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/settings-brand-edit': typeof SettingsBrandEditRoute
@@ -165,7 +158,6 @@ export interface FileRoutesByTo {
   '/pachet': typeof PachetRoute
   '/povesti': typeof PovestiRoute
   '/profession': typeof ProfessionRoute
-  '/promisiune': typeof PromisiuneRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/settings-brand-edit': typeof SettingsBrandEditRoute
@@ -188,7 +180,6 @@ export interface FileRoutesById {
   '/pachet': typeof PachetRoute
   '/povesti': typeof PovestiRoute
   '/profession': typeof ProfessionRoute
-  '/promisiune': typeof PromisiuneRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/settings-brand-edit': typeof SettingsBrandEditRoute
@@ -212,7 +203,6 @@ export interface FileRouteTypes {
     | '/pachet'
     | '/povesti'
     | '/profession'
-    | '/promisiune'
     | '/saved'
     | '/settings'
     | '/settings-brand-edit'
@@ -234,7 +224,6 @@ export interface FileRouteTypes {
     | '/pachet'
     | '/povesti'
     | '/profession'
-    | '/promisiune'
     | '/saved'
     | '/settings'
     | '/settings-brand-edit'
@@ -256,7 +245,6 @@ export interface FileRouteTypes {
     | '/pachet'
     | '/povesti'
     | '/profession'
-    | '/promisiune'
     | '/saved'
     | '/settings'
     | '/settings-brand-edit'
@@ -279,7 +267,6 @@ export interface RootRouteChildren {
   PachetRoute: typeof PachetRoute
   PovestiRoute: typeof PovestiRoute
   ProfessionRoute: typeof ProfessionRoute
-  PromisiuneRoute: typeof PromisiuneRoute
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
   SettingsBrandEditRoute: typeof SettingsBrandEditRoute
@@ -325,13 +312,6 @@ declare module '@tanstack/react-router' {
       path: '/saved'
       fullPath: '/saved'
       preLoaderRoute: typeof SavedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/promisiune': {
-      id: '/promisiune'
-      path: '/promisiune'
-      fullPath: '/promisiune'
-      preLoaderRoute: typeof PromisiuneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profession': {
@@ -447,7 +427,6 @@ const rootRouteChildren: RootRouteChildren = {
   PachetRoute: PachetRoute,
   PovestiRoute: PovestiRoute,
   ProfessionRoute: ProfessionRoute,
-  PromisiuneRoute: PromisiuneRoute,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,
   SettingsBrandEditRoute: SettingsBrandEditRoute,

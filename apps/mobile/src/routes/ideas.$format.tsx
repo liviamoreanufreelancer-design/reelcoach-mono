@@ -67,7 +67,7 @@ function Ideas() {
 
   const pick = (s: Scenario) => {
     setSelectedIdeaId(s.id);
-    nav({ to: "/promisiune" });
+    nav({ to: "/film" });
   };
 
   return (

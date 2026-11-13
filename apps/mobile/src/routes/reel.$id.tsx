@@ -117,7 +117,7 @@ function ReelPreview() {
     playSelect();
     setSelectedIdeaId(template.id);
     markStoryboardSeen(template.id);
-    nav({ to: "/promisiune" });
+    nav({ to: "/film" });
   };
 
   const shareTemplate = async () => {

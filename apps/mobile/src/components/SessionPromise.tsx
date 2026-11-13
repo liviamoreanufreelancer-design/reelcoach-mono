@@ -18,9 +18,13 @@
  * ~30s per moment acoperă și așezatul telefonului, nu doar secundele filmate.
  * O estimare optimistă care se dovedește falsă costă mai mult decât una vagă.
  */
+import { useState } from "react";
 import { Film, Clock, Camera } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import type { Scenario } from "@/data/scenarios";
+import { getSessionMode, setSessionMode, type SessionMode } from "@/lib/session-mode";
+import { playTap } from "@/lib/ui-sound";
+import { light } from "@/lib/haptic";
 
 /** Secunde de om per moment: așezat telefonul, filmat, verificat. */
 const SECONDS_PER_MOMENT = 30;
@@ -35,6 +39,16 @@ export function SessionPromise({
   onBack: () => void;
 }) {
   const moments = scenario.scenes.length;
+  // Modul stă AICI, pe ecranul de dinaintea filmării: ăsta e momentul în care
+  // știe cât timp are azi, cu clienta pe scaun. În setări ar fi uitat.
+  const [mode, setMode] = useState<SessionMode>(() => getSessionMode());
+  const pickMode = (m: SessionMode) => {
+    if (m === mode) return;
+    light();
+    playTap();
+    setMode(m);
+    setSessionMode(m);
+  };
   const reels = (scenario.outputs ?? []).filter((o) => o.kind === "reel");
   const minutes = Math.max(1, Math.round((moments * SECONDS_PER_MOMENT) / 60));
 
@@ -117,10 +131,33 @@ export function SessionPromise({
             </p>
           </div>
 
+          {/* Ghidat / Rapid. Numele nu sugerează nivel, ci ce zi are — altfel
+              „Rapid" ar deveni laudă și „Ghidat" recunoașterea unei slăbiciuni,
+              iar alegerea ar încerca să spună ceva despre ea. */}
+          <div
+            className="shrink-0 flex gap-1 p-1 border border-white/10 rounded-full mb-2.5"
+            role="group"
+            aria-label="Mod de filmare"
+          >
+            {(["ghidat", "rapid"] as SessionMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => pickMode(m)}
+                aria-pressed={mode === m}
+                className={`flex-1 h-10 rounded-full text-[13.5px] font-medium transition ease-rc duration-200 ${
+                  mode === m ? "bg-white/15 text-white" : "text-white/45"
+                }`}
+              >
+                {m === "ghidat" ? "Ghidat" : "Rapid"}
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
             onClick={onStart}
-            className="shrink-0 w-full h-14 rounded-full bg-white text-neutral-950 text-[15px] font-semibold active:scale-[0.985] transition"
+            className="shrink-0 w-full h-14 rounded-full bg-white text-neutral-950 text-[15px] font-semibold active:scale-[0.985] transition ease-rc duration-200"
           >
             Începem
           </button>
