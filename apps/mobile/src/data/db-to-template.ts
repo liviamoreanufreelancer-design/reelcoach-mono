@@ -186,6 +186,9 @@ function dbShotToShot(rawRow: DbShotRow): Shot {
     effect: row.effect as EffectId,
     mustSee: row.must_see ?? undefined,
     howShoot: buildHowShootFrom008(row) ?? row.how_shoot ?? undefined,
+    // Rezolvată deja prin `withShotType`: dacă momentul n-are valoare proprie,
+    // vine din tipul de cadru. O corectură în catalog ajunge pe ecran.
+    shotDistance: row.shot_distance ?? undefined,
     playbackSpeed: row.playback_speed ?? undefined,
     motionBlur: row.motion_blur ?? undefined,
     exampleImageUrl: row.example_image_url ?? undefined,

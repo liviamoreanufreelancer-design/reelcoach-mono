@@ -152,6 +152,12 @@ export interface Shot {
    * pre-shot screen.
    */
   howShoot?: { icon: string; label: string; detail: string }[];
+  /**
+   * Migrația 008/021 — distanța de filmare, ca VALOARE, nu doar ca etichetă în
+   * `howShoot`. Eticheta e text de citit; valoarea desenează chenarul de pe
+   * cameră, iar stilista nu citește nimic în timpul filmării.
+   */
+  shotDistance?: "palm" | "arm" | "step" | "two_steps";
   /** Font/preset caption setat in Studio per scena (default reel-ului). */
   captionPreset?: string;
   /**
@@ -168,7 +174,7 @@ export interface Shot {
 }
 
 export interface ResolvedShot
-  extends Required<Omit<Shot, "hook" | "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl" | "textLayers" | "captureKind" | "slotKey">> {
+  extends Required<Omit<Shot, "hook" | "overlayText" | "mustShow" | "handsBusy" | "effect" | "mustSee" | "howShoot" | "playbackSpeed" | "motionBlur" | "exampleImageUrl" | "diagramUrl" | "captionPreset" | "sampleVideoUrl" | "textLayers" | "captureKind" | "slotKey" | "shotDistance">> {
   overlayText: string;
   mustShow: string[];
   handsBusy: boolean;
@@ -189,6 +195,8 @@ export interface ResolvedShot
   captureKind?: CaptureKind;
   /** Identitatea stabila a momentului. */
   slotKey?: string;
+  /** Cat de aproape (vezi Shot.shotDistance). Deseneaza chenarul de pe camera. */
+  shotDistance?: Shot["shotDistance"];
   /** Straturi de text libere multi-strat (din Studio). */
   textLayers?: TextLayer[];
 }

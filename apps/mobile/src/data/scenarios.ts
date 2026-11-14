@@ -184,6 +184,8 @@ export interface Scene {
   textLayers?: TextLayer[];
   /** Ce se captureaza aici: filmare, poza, sau amandoua. Mirrors Shot.captureKind. */
   captureKind?: "video" | "photo" | "both";
+  /** Cat de aproape. Deseneaza chenarul de pe camera. Mirrors Shot.shotDistance. */
+  shotDistance?: "palm" | "arm" | "step" | "two_steps";
   /** Identitatea stabila a momentului in sesiune. Mirrors Shot.slotKey. */
   slotKey?: string;
 }

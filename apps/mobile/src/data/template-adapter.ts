@@ -78,6 +78,7 @@ export function templateToScenario(t: ReelTemplate): Scenario {
       // overlayText in renderOverlay/renderPreviewFrame — vezi drawTextLayers.
       textLayers: shot.textLayers,
       captureKind: shot.captureKind,
+      shotDistance: shot.shotDistance,
       slotKey: shot.slotKey,
     };
   });

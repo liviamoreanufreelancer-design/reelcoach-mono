@@ -23,6 +23,22 @@ import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavFor
 import { light } from "@/lib/haptic";
 import { toast } from "sonner";
 
+/**
+ * Cat din latimea cadrului trebuie sa umple subiectul, per distanta ceruta.
+ *
+ * Valorile vin din ce inseamna distantele in practica, nu din geometrie: "la o
+ * palma" e un detaliu care umple aproape tot, "la doi pasi" prinde tot locul de
+ * lucru. Implicitul e `arm` — prim-plan — fiindca asa se filmeaza majoritatea
+ * momentelor, si fiindca un moment fara distanta declarata nu trebuie sa
+ * primeasca un chenar absurd.
+ */
+const FRAME_FILL: Record<"palm" | "arm" | "step" | "two_steps", number> = {
+  palm: 88,
+  arm: 72,
+  step: 54,
+  two_steps: 40,
+};
+
 export const Route = createFileRoute("/film")({
   validateSearch: (search: Record<string, unknown>): { scene?: number; single?: boolean } => ({
     scene: typeof search.scene === "number" ? search.scene
@@ -548,11 +564,23 @@ function Film() {
               <line x1="0" y1="66.66" x2="100" y2="66.66" />
             </g>
           </svg>
-          {/* corner brackets */}
-          <div className="absolute top-28 left-4 w-6 h-6 border-l-2 border-t-2 border-[#5B34FF]/70 rounded-tl" />
-          <div className="absolute top-28 right-4 w-6 h-6 border-r-2 border-t-2 border-[#5B34FF]/70 rounded-tr" />
-          <div className="absolute bottom-44 left-4 w-6 h-6 border-l-2 border-b-2 border-[#5B34FF]/70 rounded-bl" />
-          <div className="absolute bottom-44 right-4 w-6 h-6 border-r-2 border-b-2 border-[#5B34FF]/70 rounded-br" />
+          {/* Chenarul de incadrare. Colturile se DIMENSIONEAZA din distanta ceruta
+              de momentul curent, deci spun cat de mare trebuie sa fie subiectul
+              in cadru. Pana acum stateau la poziții fixe: aratau bine, dar nu
+              spuneau nimic — acelasi chenar la un prim-plan de folii si la un
+              cadru larg cu tot locul de lucru.
+
+              Nu masoara nimic si nu cere plugin nativ. Ea potriveste subiectul
+              cu chenarul, ceea ce se verifica dintr-o privire. */}
+          <div
+            className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-rc"
+            style={{ width: `${FRAME_FILL[scene.shotDistance ?? "arm"]}%`, aspectRatio: "3 / 4" }}
+          >
+            <span className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-[#5B34FF]/70 rounded-tl" />
+            <span className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-[#5B34FF]/70 rounded-tr" />
+            <span className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-[#5B34FF]/70 rounded-bl" />
+            <span className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#5B34FF]/70 rounded-br" />
+          </div>
           {/* persistent scene badge */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm flex items-center gap-1.5">
             {isRecording && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
