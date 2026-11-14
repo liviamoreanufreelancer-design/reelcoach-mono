@@ -9,94 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TemplatesRouteImport } from './routes/templates'
-import { Route as SettingsSubscriptionRouteImport } from './routes/settings-subscription'
-import { Route as SettingsBrandEditRouteImport } from './routes/settings-brand-edit'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SavedRouteImport } from './routes/saved'
-import { Route as ProfessionRouteImport } from './routes/profession'
-import { Route as PovestiRouteImport } from './routes/povesti'
-import { Route as PachetRouteImport } from './routes/pachet'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as MyReelsRouteImport } from './routes/my-reels'
-import { Route as FilmRouteImport } from './routes/film'
-import { Route as ExploreRouteImport } from './routes/explore'
-import { Route as EditingRouteImport } from './routes/editing'
-import { Route as EditRouteImport } from './routes/edit'
-import { Route as CaruselRouteImport } from './routes/carusel'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ReelIdRouteImport } from './routes/reel.$id'
-import { Route as IdeasFormatRouteImport } from './routes/ideas.$format'
+import { Route as CaruselRouteImport } from './routes/carusel'
+import { Route as EditRouteImport } from './routes/edit'
+import { Route as EditingRouteImport } from './routes/editing'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as FilmRouteImport } from './routes/film'
+import { Route as MyReelsRouteImport } from './routes/my-reels'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PachetRouteImport } from './routes/pachet'
+import { Route as PovestiRouteImport } from './routes/povesti'
+import { Route as ProfessionRouteImport } from './routes/profession'
+import { Route as SavedRouteImport } from './routes/saved'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SettingsBrandEditRouteImport } from './routes/settings-brand-edit'
+import { Route as SettingsSubscriptionRouteImport } from './routes/settings-subscription'
+import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
+import { Route as IdeasFormatRouteImport } from './routes/ideas.$format'
+import { Route as ReelIdRouteImport } from './routes/reel.$id'
 
-const TemplatesRoute = TemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsSubscriptionRoute = SettingsSubscriptionRouteImport.update({
-  id: '/settings-subscription',
-  path: '/settings-subscription',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsBrandEditRoute = SettingsBrandEditRouteImport.update({
-  id: '/settings-brand-edit',
-  path: '/settings-brand-edit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SavedRoute = SavedRouteImport.update({
-  id: '/saved',
-  path: '/saved',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfessionRoute = ProfessionRouteImport.update({
-  id: '/profession',
-  path: '/profession',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PovestiRoute = PovestiRouteImport.update({
-  id: '/povesti',
-  path: '/povesti',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PachetRoute = PachetRouteImport.update({
-  id: '/pachet',
-  path: '/pachet',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyReelsRoute = MyReelsRouteImport.update({
-  id: '/my-reels',
-  path: '/my-reels',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FilmRoute = FilmRouteImport.update({
-  id: '/film',
-  path: '/film',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExploreRoute = ExploreRouteImport.update({
-  id: '/explore',
-  path: '/explore',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EditingRoute = EditingRouteImport.update({
-  id: '/editing',
-  path: '/editing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EditRoute = EditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CaruselRoute = CaruselRouteImport.update({
@@ -104,14 +39,79 @@ const CaruselRoute = CaruselRouteImport.update({
   path: '/carusel',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const EditRoute = EditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReelIdRoute = ReelIdRouteImport.update({
-  id: '/reel/$id',
-  path: '/reel/$id',
+const EditingRoute = EditingRouteImport.update({
+  id: '/editing',
+  path: '/editing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FilmRoute = FilmRouteImport.update({
+  id: '/film',
+  path: '/film',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyReelsRoute = MyReelsRouteImport.update({
+  id: '/my-reels',
+  path: '/my-reels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PachetRoute = PachetRouteImport.update({
+  id: '/pachet',
+  path: '/pachet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PovestiRoute = PovestiRouteImport.update({
+  id: '/povesti',
+  path: '/povesti',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfessionRoute = ProfessionRouteImport.update({
+  id: '/profession',
+  path: '/profession',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsBrandEditRoute = SettingsBrandEditRouteImport.update({
+  id: '/settings-brand-edit',
+  path: '/settings-brand-edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsSubscriptionRoute = SettingsSubscriptionRouteImport.update({
+  id: '/settings-subscription',
+  path: '/settings-subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryIdRoute = CategoryIdRouteImport.update({
+  id: '/category/$id',
+  path: '/category/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IdeasFormatRoute = IdeasFormatRouteImport.update({
@@ -119,9 +119,9 @@ const IdeasFormatRoute = IdeasFormatRouteImport.update({
   path: '/ideas/$format',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CategoryIdRoute = CategoryIdRouteImport.update({
-  id: '/category/$id',
-  path: '/category/$id',
+const ReelIdRoute = ReelIdRouteImport.update({
+  id: '/reel/$id',
+  path: '/reel/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -279,102 +279,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/templates': {
-      id: '/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof TemplatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings-subscription': {
-      id: '/settings-subscription'
-      path: '/settings-subscription'
-      fullPath: '/settings-subscription'
-      preLoaderRoute: typeof SettingsSubscriptionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings-brand-edit': {
-      id: '/settings-brand-edit'
-      path: '/settings-brand-edit'
-      fullPath: '/settings-brand-edit'
-      preLoaderRoute: typeof SettingsBrandEditRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/saved': {
-      id: '/saved'
-      path: '/saved'
-      fullPath: '/saved'
-      preLoaderRoute: typeof SavedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profession': {
-      id: '/profession'
-      path: '/profession'
-      fullPath: '/profession'
-      preLoaderRoute: typeof ProfessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/povesti': {
-      id: '/povesti'
-      path: '/povesti'
-      fullPath: '/povesti'
-      preLoaderRoute: typeof PovestiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pachet': {
-      id: '/pachet'
-      path: '/pachet'
-      fullPath: '/pachet'
-      preLoaderRoute: typeof PachetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-reels': {
-      id: '/my-reels'
-      path: '/my-reels'
-      fullPath: '/my-reels'
-      preLoaderRoute: typeof MyReelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/film': {
-      id: '/film'
-      path: '/film'
-      fullPath: '/film'
-      preLoaderRoute: typeof FilmRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/explore': {
-      id: '/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof ExploreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/editing': {
-      id: '/editing'
-      path: '/editing'
-      fullPath: '/editing'
-      preLoaderRoute: typeof EditingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/edit': {
-      id: '/edit'
-      path: '/edit'
-      fullPath: '/edit'
-      preLoaderRoute: typeof EditRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/carusel': {
@@ -384,18 +293,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaruselRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/edit': {
+      id: '/edit'
+      path: '/edit'
+      fullPath: '/edit'
+      preLoaderRoute: typeof EditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reel/$id': {
-      id: '/reel/$id'
-      path: '/reel/$id'
-      fullPath: '/reel/$id'
-      preLoaderRoute: typeof ReelIdRouteImport
+    '/editing': {
+      id: '/editing'
+      path: '/editing'
+      fullPath: '/editing'
+      preLoaderRoute: typeof EditingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/film': {
+      id: '/film'
+      path: '/film'
+      fullPath: '/film'
+      preLoaderRoute: typeof FilmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-reels': {
+      id: '/my-reels'
+      path: '/my-reels'
+      fullPath: '/my-reels'
+      preLoaderRoute: typeof MyReelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pachet': {
+      id: '/pachet'
+      path: '/pachet'
+      fullPath: '/pachet'
+      preLoaderRoute: typeof PachetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/povesti': {
+      id: '/povesti'
+      path: '/povesti'
+      fullPath: '/povesti'
+      preLoaderRoute: typeof PovestiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profession': {
+      id: '/profession'
+      path: '/profession'
+      fullPath: '/profession'
+      preLoaderRoute: typeof ProfessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings-brand-edit': {
+      id: '/settings-brand-edit'
+      path: '/settings-brand-edit'
+      fullPath: '/settings-brand-edit'
+      preLoaderRoute: typeof SettingsBrandEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings-subscription': {
+      id: '/settings-subscription'
+      path: '/settings-subscription'
+      fullPath: '/settings-subscription'
+      preLoaderRoute: typeof SettingsSubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category/$id': {
+      id: '/category/$id'
+      path: '/category/$id'
+      fullPath: '/category/$id'
+      preLoaderRoute: typeof CategoryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ideas/$format': {
@@ -405,11 +405,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdeasFormatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/category/$id': {
-      id: '/category/$id'
-      path: '/category/$id'
-      fullPath: '/category/$id'
-      preLoaderRoute: typeof CategoryIdRouteImport
+    '/reel/$id': {
+      id: '/reel/$id'
+      path: '/reel/$id'
+      fullPath: '/reel/$id'
+      preLoaderRoute: typeof ReelIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

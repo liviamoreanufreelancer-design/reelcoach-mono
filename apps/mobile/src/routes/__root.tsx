@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
@@ -34,7 +35,10 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// Tipul vine din router, nu scris de mână: de la @tanstack/react-start 1.169
+// `error` e `unknown`, nu `Error` — un lucru aruncat nu e neapărat un Error.
+// Scris de mână, semnătura s-ar desincroniza din nou la următoarea versiune.
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
 
