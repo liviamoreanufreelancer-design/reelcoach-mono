@@ -21,6 +21,7 @@ import { useRecorder } from "@/hooks/useRecorder";
 import { saveClip, listClips, savePhoto, listPhotos } from "@/lib/clip-store";
 import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavForward, playTap, playError } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
+import { findSubject, frameVisionAvailable, type SubjectBox } from "@/lib/frame-vision";
 import { toast } from "sonner";
 
 /**
@@ -93,6 +94,17 @@ function Film() {
    * sau face alta. Momentul nu se poate reface, deci verificarea nu e opțională.
    */
   const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; url: string } | null>(null);
+
+  /**
+   * ZIUA DE TEST pentru ghidajul de distanță: caseta pe care o găsește Vision,
+   * desenată peste cameră. Încă nu decide nimic — vrem să vedem cu ochii dacă
+   * nimerește subiectul, mai ales pe cadrele fără față (folii, mâini).
+   *
+   * Dacă se dovedește corectă, de aici iese pastila „mai aproape / bun";
+   * dacă nu, se scoate și rămâne doar chenarul.
+   */
+  const [subject, setSubject] = useState<SubjectBox | null>(null);
+  const [visionMs, setVisionMs] = useState<number | null>(null);
   // Dacă ecranul se închide altfel decât prin cele două butoane (buton fizic
   // de înapoi), handle-ul imaginii ar rămâne agățat. Blob-ul e ținut în
   // memorie până e eliberat.
@@ -450,6 +462,44 @@ function Film() {
   const sceneDone = isSceneDone(idx);
   const allDone = scenes.every((_, i) => isSceneDone(i));
 
+  /**
+   * Două cadre pe secundă, doar cât camera e vie. În timpul înregistrării NU
+   * rulează: atunci nu mai are ce să corecteze, iar firul e ocupat cu
+   * `MediaRecorder`.
+   *
+   * `alive` oprește scrierile după demontare — fără el, un răspuns întârziat
+   * de la Vision ar seta starea pe un component care nu mai există.
+   */
+  useEffect(() => {
+    if (!frameVisionAvailable() || cam.state !== "ready" || isRecording) {
+      setSubject(null);
+      return;
+    }
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const tick = async () => {
+      const video = cam.videoRef.current;
+      if (!alive || !video) return;
+      const t0 = performance.now();
+      const box = await findSubject(video);
+      if (!alive) return;
+      setSubject(box);
+      setVisionMs(Math.round(performance.now() - t0));
+      // Următorul abia după ce s-a întors precedentul: altfel, dacă analiza
+      // durează mai mult de 500 ms, cererile s-ar aglomera una peste alta.
+      timer = setTimeout(tick, 500);
+    };
+    tick();
+
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cam.state, isRecording, idx]);
+
+
   // ---------- Promisiunea sesiunii: ce primeste, inainte de orice efort ----------
   if (phase === "promise") {
     return (
@@ -581,6 +631,35 @@ function Film() {
             <span className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-[#5B34FF]/70 rounded-bl" />
             <span className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#5B34FF]/70 rounded-br" />
           </div>
+          {/* ZIUA DE TEST: ce a găsit Vision, desenat peste cameră.
+              Verde = față (precis). Portocaliu = subiect proeminent (grosier,
+              pentru cadrele fără om). Procentul e cât umple pe înălțime —
+              exact numărul din care va ieși pastila „mai aproape / bun". */}
+          {subject && (
+            <>
+              <div
+                className="absolute border-2 rounded"
+                style={{
+                  left: `${subject.x * 100}%`,
+                  top: `${subject.y * 100}%`,
+                  width: `${subject.width * 100}%`,
+                  height: `${subject.height * 100}%`,
+                  borderColor: subject.source === "face" ? "#5fbf8a" : "#e0a860",
+                }}
+              />
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/70 text-[11px] tabular-nums">
+                <span style={{ color: subject.source === "face" ? "#5fbf8a" : "#e0a860" }}>
+                  {subject.source === "face" ? "față" : "subiect"}
+                </span>
+                <span className="text-white/80">
+                  {" "}· umple {Math.round(subject.height * 100)}% · țintă{" "}
+                  {FRAME_FILL[scene.shotDistance ?? "arm"]}%
+                  {visionMs !== null ? ` · ${visionMs}ms` : ""}
+                </span>
+              </div>
+            </>
+          )}
+
           {/* persistent scene badge */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm flex items-center gap-1.5">
             {isRecording && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
