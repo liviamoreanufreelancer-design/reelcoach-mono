@@ -23,7 +23,7 @@ import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavFor
 import { light } from "@/lib/haptic";
 import { findSubject, frameVisionAvailable, type SubjectResult } from "@/lib/frame-vision";
 import {
-  nextAdvice, initialAdvice, ADVICE_LABEL, SUBJECT_FILL, FACE_FILL,
+  nextAdvice, initialAdvice, ADVICE_LABEL, ADVICE_ARROW, SUBJECT_FILL, FACE_FILL,
   type AdviceState,
 } from "@/lib/framing-advice";
 import { toast } from "sonner";
@@ -486,9 +486,7 @@ function Film() {
       setAdvice((prev) =>
         nextAdvice(
           prev,
-          r.status === "ok"
-            ? { fillPercent: r.box.height * 100, source: r.box.source }
-            : null,
+          r.status === "ok" ? r.box : null,
           scene.shotDistance ?? "arm",
         ),
       );
@@ -671,7 +669,7 @@ function Film() {
                 color: "#16120c",
               }}
             >
-              {advice.advice === "closer" ? "↑ " : advice.advice === "farther" ? "↓ " : "✓ "}
+              {ADVICE_ARROW[advice.advice]}
               {ADVICE_LABEL[advice.advice]}
             </div>
           )}
@@ -680,14 +678,18 @@ function Film() {
               Se scoate când calibrarea e confirmată pe device. */}
           {vision && (
             <>
-              {vision.status === "ok" && (
+              {/* Caseta NETEZITĂ, nu cea brută: ce se desenează trebuie să fie
+                  exact ce judecă appul. Desenată brută, ar tremura pe ecran în
+                  timp ce verdictul stă liniștit — și n-ai putea spune dacă
+                  netezirea funcționează sau dacă verdictul e doar lent. */}
+              {vision.status === "ok" && advice.box && (
                 <div
-                  className="absolute border rounded opacity-50"
+                  className="absolute border rounded opacity-60 transition-all duration-200"
                   style={{
-                    left: `${vision.box.x * 100}%`,
-                    top: `${vision.box.y * 100}%`,
-                    width: `${vision.box.width * 100}%`,
-                    height: `${vision.box.height * 100}%`,
+                    left: `${advice.box.x * 100}%`,
+                    top: `${advice.box.y * 100}%`,
+                    width: `${advice.box.width * 100}%`,
+                    height: `${advice.box.height * 100}%`,
                     borderColor: vision.box.source === "face" ? "#5fbf8a" : "#e0a860",
                   }}
                 />
