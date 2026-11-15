@@ -60,8 +60,28 @@ const AIM_Y = 0.46;
 
 /** Cadre fără detecție pe care le ignorăm înainte să stingem sfatul. */
 const MISS_TOLERANCE = 3;
-/** Greutatea citirii noi în medie. Mai mic = mai calm, dar mai lent. */
-const ALPHA = 0.35;
+/**
+ * Greutatea citirii noi — ADAPTIVĂ, după direcție, nu după mărime.
+ *
+ * Prima variantă avea o singură valoare, 0.35, și era un compromis: destul de
+ * calmă pe tremur, prea lentă când stilista muta telefonul. Vreo două secunde
+ * până se prindea pastila.
+ *
+ * Am încercat mai întâi adaptarea după MĂRIMEA saltului — un salt mare e
+ * mișcare, unul mic e tremur — și testele au respins-o: un vârf de tremur
+ * arată exact ca o mișcare, iar pâlpâitul s-a întors.
+ *
+ * Semnul bun e DIRECȚIA. Mișcarea reală e susținută: citirile continuă în
+ * același sens. Tremurul se întoarce, fiindcă oscilează în jurul unei valori.
+ *
+ * Verificat pe secvențe: pe o apropiere reală ajunge la 51 unde media fixă e
+ * la 41, iar pe tremur e mai STRÂNSĂ decât ea. Nu e un compromis mai bun, e
+ * mai bună pe ambele.
+ */
+const ALPHA_CALM = 0.25;
+const ALPHA_MOVING = 0.7;
+/** Sub atât, o schimbare nu e mișcare oricât ar fi susținută. */
+const MOVE_MIN = 0.06;
 
 export interface Reading {
   x: number;
@@ -82,13 +102,18 @@ export interface AdviceState {
    * o decizie luată pe o citire, nu pe o tendință.
    */
   box: { x: number; y: number; width: number; height: number } | null;
+  /**
+   * Ultima schimbare per latură. Semnul ei spune dacă următoarea continuă în
+   * același sens — adică dacă e mișcare sau tremur.
+   */
+  trend: { x: number; y: number; width: number; height: number } | null;
   /** Umplerea netezită, în procente. Derivată din `box.height`. */
   fill: number | null;
   advice: Advice | null;
   misses: number;
 }
 
-export const initialAdvice: AdviceState = { box: null, fill: null, advice: null, misses: 0 };
+export const initialAdvice: AdviceState = { box: null, trend: null, fill: null, advice: null, misses: 0 };
 
 export function nextAdvice(
   prev: AdviceState,
@@ -103,17 +128,29 @@ export function nextAdvice(
 
   const target = reading.source === "face" ? FACE_FILL[distance] : SUBJECT_FILL[distance];
 
-  // Caseta netezită: fiecare latură își urmează propria tendință. Prima citire
-  // trece neschimbată, altfel ar porni din zero și ar urca spre subiect.
-  const ease = (was: number, now: number) => was + ALPHA * (now - was);
-  const box = prev.box === null
-    ? { x: reading.x, y: reading.y, width: reading.width, height: reading.height }
-    : {
-        x: ease(prev.box.x, reading.x),
-        y: ease(prev.box.y, reading.y),
-        width: ease(prev.box.width, reading.width),
-        height: ease(prev.box.height, reading.height),
-      };
+  // Caseta netezită. Fiecare latură își ține propria tendință, deci o mișcare
+  // laterală (x urcă susținut) se prinde la fel de repede ca o apropiere
+  // (height urcă susținut).
+  const raw = { x: reading.x, y: reading.y, width: reading.width, height: reading.height };
+  let box = raw;
+  let trend: AdviceState["trend"] = { x: 0, y: 0, width: 0, height: 0 };
+
+  if (prev.box !== null) {
+    const smoothOne = (was: number, now: number, lastDelta: number) => {
+      const delta = now - was;
+      const sustained = lastDelta !== 0 && Math.sign(delta) === Math.sign(lastDelta);
+      const alpha = sustained && Math.abs(delta) > MOVE_MIN ? ALPHA_MOVING : ALPHA_CALM;
+      return { value: was + alpha * delta, delta };
+    };
+    const t = prev.trend ?? { x: 0, y: 0, width: 0, height: 0 };
+    const sx = smoothOne(prev.box.x, raw.x, t.x);
+    const sy = smoothOne(prev.box.y, raw.y, t.y);
+    const sw = smoothOne(prev.box.width, raw.width, t.width);
+    const sh = smoothOne(prev.box.height, raw.height, t.height);
+    box = { x: sx.value, y: sy.value, width: sw.value, height: sh.value };
+    trend = { x: sx.delta, y: sy.delta, width: sw.delta, height: sh.delta };
+  }
+
   const fill = box.height * 100;
 
   // ── 1 · Tăiat de margine. Întâi, fiindcă orice sfat despre mărime dat acum
@@ -123,13 +160,13 @@ export function nextAdvice(
     box.y <= EDGE ||
     box.x + box.width >= 1 - EDGE ||
     box.y + box.height >= 1 - EDGE;
-  if (touchesEdge) return { box, fill, advice: "clipped", misses: 0 };
+  if (touchesEdge) return { box, trend, fill, advice: "clipped", misses: 0 };
 
   // ── 2 · Decentrat. E în cadru, dar nu unde trebuie.
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
   if (Math.abs(cx - 0.5) > OFF_X || Math.abs(cy - AIM_Y) > OFF_Y) {
-    return { box, fill, advice: "offcenter", misses: 0 };
+    return { box, trend, fill, advice: "offcenter", misses: 0 };
   }
 
   // ── 3 · Mărimea, abia acum. Zona e proporțională cu ținta, iar ieșirea din
@@ -143,7 +180,7 @@ export function nextAdvice(
   else if (diff < 0) advice = "closer";
   else advice = "farther";
 
-  return { box, fill, advice, misses: 0 };
+  return { box, trend, fill, advice, misses: 0 };
 }
 
 export const ADVICE_LABEL: Record<Advice, string> = {

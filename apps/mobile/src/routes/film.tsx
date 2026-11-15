@@ -491,9 +491,18 @@ function Film() {
         ),
       );
       setVisionMs(Math.round(performance.now() - t0));
-      // Următorul abia după ce s-a întors precedentul: altfel, dacă analiza
-      // durează mai mult de 500 ms, cererile s-ar aglomera una peste alta.
-      timer = setTimeout(tick, 500);
+      /**
+       * Ritmul se AUTOREGLEAZĂ după cât a durat analiza, în loc de o valoare
+       * fixă ghicită: pauza e cât analiza, deci pluginul nu ocupă niciodată
+       * mai mult de jumătate din timp.
+       *
+       * Pe un telefon rapid asta dă vreo patru citiri pe secundă — de două ori
+       * mai des decât cele 500 ms fixe, și de asta depindea cât de repede se
+       * schimbă pastila. Pe unul încărcat se rărește singur, în loc să
+       * aglomereze cereri una peste alta.
+       */
+      const spent = performance.now() - t0;
+      timer = setTimeout(tick, Math.min(800, Math.max(220, spent)));
     };
     tick();
 
