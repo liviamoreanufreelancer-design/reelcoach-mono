@@ -21,7 +21,7 @@ import { useRecorder } from "@/hooks/useRecorder";
 import { saveClip, listClips, savePhoto, listPhotos } from "@/lib/clip-store";
 import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavForward, playTap, playError } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
-import { findSubject, frameVisionAvailable, type SubjectBox } from "@/lib/frame-vision";
+import { findSubject, frameVisionAvailable, type SubjectResult } from "@/lib/frame-vision";
 import { toast } from "sonner";
 
 /**
@@ -103,7 +103,7 @@ function Film() {
    * Dacă se dovedește corectă, de aici iese pastila „mai aproape / bun";
    * dacă nu, se scoate și rămâne doar chenarul.
    */
-  const [subject, setSubject] = useState<SubjectBox | null>(null);
+  const [vision, setVision] = useState<SubjectResult | null>(null);
   const [visionMs, setVisionMs] = useState<number | null>(null);
   // Dacă ecranul se închide altfel decât prin cele două butoane (buton fizic
   // de înapoi), handle-ul imaginii ar rămâne agățat. Blob-ul e ținut în
@@ -459,7 +459,7 @@ function Film() {
    */
   useEffect(() => {
     if (!frameVisionAvailable() || cam.state !== "ready" || isRecording) {
-      setSubject(null);
+      setVision(null);
       return;
     }
     let alive = true;
@@ -469,9 +469,9 @@ function Film() {
       const video = cam.videoRef.current;
       if (!alive || !video) return;
       const t0 = performance.now();
-      const box = await findSubject(video);
+      const r = await findSubject(video);
       if (!alive) return;
-      setSubject(box);
+      setVision(r);
       setVisionMs(Math.round(performance.now() - t0));
       // Următorul abia după ce s-a întors precedentul: altfel, dacă analiza
       // durează mai mult de 500 ms, cererile s-ar aglomera una peste alta.
@@ -628,31 +628,44 @@ function Film() {
             <span className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-[#5B34FF]/70 rounded-bl" />
             <span className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#5B34FF]/70 rounded-br" />
           </div>
-          {/* ZIUA DE TEST: ce a găsit Vision, desenat peste cameră.
-              Verde = față (precis). Portocaliu = subiect proeminent (grosier,
-              pentru cadrele fără om). Procentul e cât umple pe înălțime —
-              exact numărul din care va ieși pastila „mai aproape / bun". */}
-          {subject && (
+          {/* ZIUA DE TEST. Arată întotdeauna o STARE, nu doar rezultatul —
+              prima versiune afișa ceva doar când găsea, deci „pluginul nu e
+              înregistrat" arăta identic cu „nu găsesc subiectul". */}
+          {vision && (
             <>
-              <div
-                className="absolute border-2 rounded"
-                style={{
-                  left: `${subject.x * 100}%`,
-                  top: `${subject.y * 100}%`,
-                  width: `${subject.width * 100}%`,
-                  height: `${subject.height * 100}%`,
-                  borderColor: subject.source === "face" ? "#5fbf8a" : "#e0a860",
-                }}
-              />
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/70 text-[11px] tabular-nums">
-                <span style={{ color: subject.source === "face" ? "#5fbf8a" : "#e0a860" }}>
-                  {subject.source === "face" ? "față" : "subiect"}
-                </span>
-                <span className="text-white/80">
-                  {" "}· umple {Math.round(subject.height * 100)}% · țintă{" "}
-                  {FRAME_FILL[scene.shotDistance ?? "arm"]}%
-                  {visionMs !== null ? ` · ${visionMs}ms` : ""}
-                </span>
+              {vision.status === "ok" && (
+                <div
+                  className="absolute border-2 rounded transition-all duration-200"
+                  style={{
+                    left: `${vision.box.x * 100}%`,
+                    top: `${vision.box.y * 100}%`,
+                    width: `${vision.box.width * 100}%`,
+                    height: `${vision.box.height * 100}%`,
+                    borderColor: vision.box.source === "face" ? "#5fbf8a" : "#e0a860",
+                  }}
+                />
+              )}
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 max-w-[90%] px-3 py-1 rounded-full bg-black/75 text-[11px] tabular-nums text-center">
+                {vision.status === "ok" ? (
+                  <>
+                    <span style={{ color: vision.box.source === "face" ? "#5fbf8a" : "#e0a860" }}>
+                      {vision.box.source === "face" ? "față" : "subiect"}
+                    </span>
+                    <span className="text-white/85">
+                      {" "}· umple {Math.round(vision.box.height * 100)}% · țintă{" "}
+                      {FRAME_FILL[scene.shotDistance ?? "arm"]}%
+                      {visionMs !== null ? ` · ${visionMs}ms` : ""}
+                    </span>
+                  </>
+                ) : vision.status === "none" ? (
+                  <span className="text-white/70">
+                    nu găsesc subiectul{visionMs !== null ? ` · ${visionMs}ms` : ""}
+                  </span>
+                ) : vision.status === "unavailable" ? (
+                  <span className="text-amber-300">Vision indisponibil (nu e nativ)</span>
+                ) : (
+                  <span className="text-rose-300">eroare: {vision.message}</span>
+                )}
               </div>
             </>
           )}

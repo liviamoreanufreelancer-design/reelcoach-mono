@@ -75,27 +75,39 @@ function grabFrame(video: HTMLVideoElement): string | null {
 }
 
 /**
- * Caută subiectul în cadrul curent. `null` când nu găsește nimic sau când
- * pluginul nu există — appul ascunde pastila atunci, fiindcă un sfat greșit
- * costă mai mult decât niciun sfat.
+ * Rezultatul căutării, cu MOTIVUL când n-a ieșit nimic.
+ *
+ * Prima versiune întorcea doar `SubjectBox | null`, și a fost o greșeală care
+ * m-a costat o rundă: pluginul nu era înregistrat în Capacitor, fiecare apel
+ * arunca, iar `catch` înghițea totul și întorcea `null`. Pe ecran: nimic. În
+ * consolă: nimic. Indistingibil de „n-a găsit subiectul".
+ *
+ * Un eșec tăcut într-o funcție de diagnostic e mai rău decât o eroare.
  */
-export async function findSubject(video: HTMLVideoElement): Promise<SubjectBox | null> {
-  if (!frameVisionAvailable()) return null;
+export type SubjectResult =
+  | { status: "ok"; box: SubjectBox }
+  | { status: "none" }
+  | { status: "unavailable" }
+  | { status: "error"; message: string };
+
+export async function findSubject(video: HTMLVideoElement): Promise<SubjectResult> {
+  if (!frameVisionAvailable()) return { status: "unavailable" };
   const image = grabFrame(video);
-  if (!image) return null;
+  if (!image) return { status: "error", message: "cadru gol" };
   try {
     const r = await FrameVision.analyzeFrame({ image });
-    if (!r.found || r.height == null) return null;
+    if (!r.found || r.height == null) return { status: "none" };
     return {
-      x: r.x ?? 0,
-      y: r.y ?? 0,
-      width: r.width ?? 0,
-      height: r.height,
-      source: r.source ?? "salient",
+      status: "ok",
+      box: {
+        x: r.x ?? 0,
+        y: r.y ?? 0,
+        width: r.width ?? 0,
+        height: r.height,
+        source: r.source ?? "salient",
+      },
     };
-  } catch {
-    // Pluginul lipsește sau a eșuat. Tăcere, nu eroare: ghidajul e un plus,
-    // nu o condiție ca filmarea să funcționeze.
-    return null;
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? e.message : String(e) };
   }
 }
