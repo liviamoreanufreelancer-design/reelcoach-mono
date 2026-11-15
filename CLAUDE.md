@@ -426,6 +426,33 @@ Alte măsuri (fără cod):
   Nu e feature, e rescriere spre nativ — WKWebView nu suportă analiză CV la
   framerate utilizabil. Există deja ca produs separat (FrameCoach, ShotCoach),
   deci e greu destul cât să susțină o companie întreagă.
+  **EXCEPȚIE CONSTRUITĂ ȘI VALIDATĂ (15.11.2026) — ghidajul de încadrare.**
+  Decizia rămâne corectă pentru ce respingea: analiză CV **în JavaScript**, la
+  framerate video. Ce s-a construit e mai îngust pe toate axele: Vision nativ
+  (`ios/App/App/FrameVision.swift`), la ~4 citiri/secundă, cu camera **rămasă
+  în WebView**. Pluginul nu ia camera — primește un cadru de 192 px și întoarce
+  o casetă. `MediaRecorder`, blob-urile și `renderReelInBrowser` nu știu că
+  există, deci se poate scoate fără să atingă exportul.
+  Ce a forțat-o: chenarul de încadrare singur **nu se înțelege**. Liv l-a
+  proiectat și nu s-a prins din el ce trebuie făcut — dacă autorul nu-l
+  citește, o stilistă la mijlocul programării n-are nicio șansă. Ținta nu e
+  destulă; trebuie spus dacă a nimerit-o.
+  Verdictul (`lib/framing-advice.ts`) e o scară de priorități — tăiat,
+  decentrat, prea mic/mare, bun — nu o comparație de mărime. Mărimea singură
+  dădea „bun" pe jumătate de față.
+  **Ținta pentru fețe e separată de cea pentru subiect** (`FACE_FILL` vs
+  `SUBJECT_FILL`): caseta unei fețe umple vreo treime din cadru acolo unde
+  subiectul umple trei sferturi. Confundate, appul cere „mai aproape" la
+  infinit pe o încadrare perfectă. Valorile pentru fețe sunt încă prima
+  estimare pe cele mai multe distanțe — `SHOW_VISION_DEBUG` în `film.tsx`
+  aprinde numerele necesare calibrării.
+  **Capcană de platformă, costată în trei runde:** Capacitor 8 nu descoperă
+  pluginurile prin scanare, citește `packageClassList` din
+  `capacitor.config.json` — generat din pachetele npm, deci un plugin local nu
+  apare niciodată. Se înregistrează din `ViewController.capacitorDidLoad()`, cu
+  `registerPluginInstance`, **NU** `registerPluginType`: aceasta din urmă începe
+  cu `if autoRegisterPlugins { return }` și e un no-op tăcut în configurația
+  implicită.
 - **NU sistem de diagrame** pentru instrucțiuni de filmare. Problema nu e
   confirmată, e cel mai scump mod de a o rezolva, și creează obligație de conținut
   permanentă pe parteneră. Alternativa aprobată: demonstrații video refolosibile.

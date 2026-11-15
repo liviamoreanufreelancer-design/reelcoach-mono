@@ -37,6 +37,16 @@ import { toast } from "sonner";
  * momentelor, si fiindca un moment fara distanta declarata nu trebuie sa
  * primeasca un chenar absurd.
  */
+/**
+ * Diagnosticul de la Vision: caseta plus numerele brut / mediu / ţintă.
+ *
+ * Oprit pentru stilistă — ea are nevoie de un cuvânt, nu de patru numere. Dar
+ * lăsat pe un comutator, nu șters: calibrarea țintelor se reia la fiecare tip
+ * de cadru nou testat, iar numerele sunt singurul mod de a o face. Ținta pentru
+ * fețe e încă prima estimare pe cele mai multe distanțe.
+ */
+const SHOW_VISION_DEBUG = false;
+
 const FRAME_FILL: Record<"palm" | "arm" | "step" | "two_steps", number> = {
   palm: 88,
   arm: 72,
@@ -685,7 +695,7 @@ function Film() {
 
           {/* Diagnostic, cât ținem ziua de test: caseta brută plus numerele.
               Se scoate când calibrarea e confirmată pe device. */}
-          {vision && (
+          {SHOW_VISION_DEBUG && vision && (
             <>
               {/* Caseta NETEZITĂ, nu cea brută: ce se desenează trebuie să fie
                   exact ce judecă appul. Desenată brută, ar tremura pe ecran în
