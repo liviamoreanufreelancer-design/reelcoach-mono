@@ -22,6 +22,10 @@ import { saveClip, listClips, savePhoto, listPhotos } from "@/lib/clip-store";
 import { playCountdown, playRecordStart, playRecordStop, playSuccess, playNavForward, playTap, playError } from "@/lib/ui-sound";
 import { light } from "@/lib/haptic";
 import { findSubject, frameVisionAvailable, type SubjectResult } from "@/lib/frame-vision";
+import {
+  nextAdvice, initialAdvice, ADVICE_LABEL, SUBJECT_FILL, FACE_FILL,
+  type AdviceState,
+} from "@/lib/framing-advice";
 import { toast } from "sonner";
 
 /**
@@ -104,6 +108,12 @@ function Film() {
    * dacă nu, se scoate și rămâne doar chenarul.
    */
   const [vision, setVision] = useState<SubjectResult | null>(null);
+  /**
+   * Verdictul, netezit. Caseta de la Vision tremură — fiecare cadru e analizat
+   * independent — dar sfatul nu are voie să pâlpâie. Media alunecătoare, zona
+   * moartă și histereza stau în `framing-advice`, verificate separat.
+   */
+  const [advice, setAdvice] = useState<AdviceState>(initialAdvice);
   const [visionMs, setVisionMs] = useState<number | null>(null);
   // Dacă ecranul se închide altfel decât prin cele două butoane (buton fizic
   // de înapoi), handle-ul imaginii ar rămâne agățat. Blob-ul e ținut în
@@ -460,6 +470,7 @@ function Film() {
   useEffect(() => {
     if (!frameVisionAvailable() || cam.state !== "ready" || isRecording) {
       setVision(null);
+      setAdvice(initialAdvice);
       return;
     }
     let alive = true;
@@ -472,6 +483,15 @@ function Film() {
       const r = await findSubject(video);
       if (!alive) return;
       setVision(r);
+      setAdvice((prev) =>
+        nextAdvice(
+          prev,
+          r.status === "ok"
+            ? { fillPercent: r.box.height * 100, source: r.box.source }
+            : null,
+          scene.shotDistance ?? "arm",
+        ),
+      );
       setVisionMs(Math.round(performance.now() - t0));
       // Următorul abia după ce s-a întors precedentul: altfel, dacă analiza
       // durează mai mult de 500 ms, cererile s-ar aglomera una peste alta.
@@ -623,19 +643,46 @@ function Film() {
             className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-rc"
             style={{ width: `${FRAME_FILL[scene.shotDistance ?? "arm"]}%`, aspectRatio: "3 / 4" }}
           >
-            <span className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-[#5B34FF]/70 rounded-tl" />
-            <span className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-[#5B34FF]/70 rounded-tr" />
-            <span className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-[#5B34FF]/70 rounded-bl" />
-            <span className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#5B34FF]/70 rounded-br" />
+            {/* Colțurile confirmă verdictul: verde când e bun. Culoarea e a
+                doua cale spre aceeași informație, pentru cine nu se uită la
+                pastilă — iar tranziția e lentă ca să nu clipească. */}
+            {(() => {
+              const ok = advice.advice === "good";
+              const c = ok ? "border-[#a9c3a8]" : "border-[#5B34FF]/70";
+              const t = "transition-colors duration-500";
+              return (
+                <>
+                  <span className={`absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 rounded-tl ${c} ${t}`} />
+                  <span className={`absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 rounded-tr ${c} ${t}`} />
+                  <span className={`absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 rounded-bl ${c} ${t}`} />
+                  <span className={`absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 rounded-br ${c} ${t}`} />
+                </>
+              );
+            })()}
           </div>
-          {/* ZIUA DE TEST. Arată întotdeauna o STARE, nu doar rezultatul —
-              prima versiune afișa ceva doar când găsea, deci „pluginul nu e
-              înregistrat" arăta identic cu „nu găsesc subiectul". */}
+          {/* PASTILA — produsul. Un cuvânt, nu un număr.
+              Caseta de dedesubt tremură și e în regulă: verdictul vine din
+              media alunecătoare, nu din cadrul curent. */}
+          {advice.advice && (
+            <div
+              className="absolute top-12 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[13px] font-bold transition-colors duration-300"
+              style={{
+                background: advice.advice === "good" ? "#a9c3a8" : "#e8c79c",
+                color: "#16120c",
+              }}
+            >
+              {advice.advice === "closer" ? "↑ " : advice.advice === "farther" ? "↓ " : "✓ "}
+              {ADVICE_LABEL[advice.advice]}
+            </div>
+          )}
+
+          {/* Diagnostic, cât ținem ziua de test: caseta brută plus numerele.
+              Se scoate când calibrarea e confirmată pe device. */}
           {vision && (
             <>
               {vision.status === "ok" && (
                 <div
-                  className="absolute border-2 rounded transition-all duration-200"
+                  className="absolute border rounded opacity-50"
                   style={{
                     left: `${vision.box.x * 100}%`,
                     top: `${vision.box.y * 100}%`,
@@ -645,24 +692,21 @@ function Film() {
                   }}
                 />
               )}
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 max-w-[90%] px-3 py-1 rounded-full bg-black/75 text-[11px] tabular-nums text-center">
+              <div className="absolute top-24 left-1/2 -translate-x-1/2 max-w-[92%] px-2.5 py-1 rounded-full bg-black/70 text-[10px] tabular-nums text-center text-white/75">
                 {vision.status === "ok" ? (
                   <>
-                    <span style={{ color: vision.box.source === "face" ? "#5fbf8a" : "#e0a860" }}>
-                      {vision.box.source === "face" ? "față" : "subiect"}
-                    </span>
-                    <span className="text-white/85">
-                      {" "}· umple {Math.round(vision.box.height * 100)}% · țintă{" "}
-                      {FRAME_FILL[scene.shotDistance ?? "arm"]}%
-                      {visionMs !== null ? ` · ${visionMs}ms` : ""}
-                    </span>
+                    {vision.box.source === "face" ? "față" : "subiect"} · brut{" "}
+                    {Math.round(vision.box.height * 100)}% · mediu{" "}
+                    {advice.fill !== null ? Math.round(advice.fill) : "–"}% · țintă{" "}
+                    {vision.box.source === "face"
+                      ? FACE_FILL[scene.shotDistance ?? "arm"]
+                      : SUBJECT_FILL[scene.shotDistance ?? "arm"]}
+                    %{visionMs !== null ? ` · ${visionMs}ms` : ""}
                   </>
                 ) : vision.status === "none" ? (
-                  <span className="text-white/70">
-                    nu găsesc subiectul{visionMs !== null ? ` · ${visionMs}ms` : ""}
-                  </span>
+                  <>nu găsesc subiectul{visionMs !== null ? ` · ${visionMs}ms` : ""}</>
                 ) : vision.status === "unavailable" ? (
-                  <span className="text-amber-300">Vision indisponibil (nu e nativ)</span>
+                  <span className="text-amber-300">Vision indisponibil</span>
                 ) : (
                   <span className="text-rose-300">eroare: {vision.message}</span>
                 )}
