@@ -256,6 +256,11 @@ export function resolveShot(shot: Shot): ResolvedShot {
     textLayers: shot.textLayers,
     captureKind: shot.captureKind,
     slotKey: shot.slotKey,
+    // Distanța desenează chenarul de pe cameră. Fără rândul ăsta se pierde
+    // exact aici — ca `playbackSpeed` mai sus — fiindcă funcția reconstruiește
+    // momentul câmp cu câmp, nu prin răspândire. Orice câmp nou pe `Shot`
+    // trebuie adăugat și aici, altfel dispare tăcut, fără nicio eroare.
+    shotDistance: shot.shotDistance,
   };
 }
 
