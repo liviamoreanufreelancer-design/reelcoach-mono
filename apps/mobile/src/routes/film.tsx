@@ -119,7 +119,6 @@ function Film() {
    * user taps "Sunt gata" on the preshot screen), we auto-trigger the
    * countdown without requiring a record-button tap.
    */
-  const pendingAutoStartRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const nav = useNavigate();
   const scene = scenes[idx];
@@ -178,19 +177,7 @@ function Film() {
   }, [phase]);
 
   // Auto-start countdown when camera becomes ready after "Sunt gata".
-  // pendingAutoStartRef is set in the PreShot onReady handler — the user
   // expects the 3-2-1 to begin immediately, without an extra record tap.
-  useEffect(() => {
-    if (phase !== "film") return;
-    if (cam.state !== "ready") return;
-    if (!pendingAutoStartRef.current) return;
-    if (rec.state === "recording") return;
-    if (countdown !== null) return;
-    pendingAutoStartRef.current = false;
-    setShowGuide(false);
-    setCountdown(3);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, cam.state, rec.state, countdown]);
 
   // Timer driven by recorder state
   useEffect(() => {
@@ -534,10 +521,13 @@ function Film() {
       onReady={() => {
         light();
         playTap();
-        // Tell the camera-ready watcher to auto-trigger the 3-2-1
-        // countdown as soon as the camera is live, without requiring
-        // an extra tap on the record button.
-        pendingAutoStartRef.current = true;
+        // Duce la camera VIE, nu pornește filmarea.
+        //
+        // Pornea singură, ca să scutească o atingere. Dar „pregătit" pe
+        // ecranul de dinainte înseamnă „am citit ce filmez", nu „telefonul e
+        // așezat și încadrat" — iar între cele două e tot ce decide dacă
+        // cadrul iese bun. Stilista are nevoie de un moment cu camera în fața
+        // ei, cu chenarul pe ecran, înainte să curgă secundele.
         setPhase("film");
       }}
     />;
@@ -578,25 +568,32 @@ function Film() {
       {countdown !== null && countdown > 0 && (
         <button
           onClick={cancelCountdown}
-          className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/85 backdrop-blur-lg"
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/35"
           aria-label="Anulează countdown"
         >
-          <span className="text-[10px] tracking-[0.5em] uppercase text-[#5B34FF] font-semibold">
-            Pregătește-te
+          {/* Numărătoarea NU mai acoperă camera.
+              Era un strat alb opac cu blur: trei secunde în care ecranul arăta
+              orice, numai cadrul nu. Deci chiar și cu pornire manuală,
+              încadrarea se pierdea exact în momentul în care conta — nu putea
+              ține telefonul pe subiect, fiindcă nu-l vedea.
+              Acum e o umbră subțire: cifra se citește, iar chenarul și camera
+              rămân vizibile dedesubt. */}
+          <span className="text-[10px] tracking-[0.5em] uppercase text-white/80 font-semibold drop-shadow">
+            Ține cadrul
           </span>
           <span
             key={countdown}
-            className="text-9xl font-bold text-[#5B34FF] animate-fade-in mt-2"
-            style={{ fontVariantNumeric: "tabular-nums" }}
+            className="text-9xl font-bold text-white animate-fade-in mt-2"
+            style={{ fontVariantNumeric: "tabular-nums", textShadow: "0 2px 24px rgba(0,0,0,.6)" }}
           >
             {countdown}
           </span>
-          <span className="mt-4 text-[11px] tracking-widest uppercase text-[#6B6B6B]">
+          <span className="mt-4 text-[11px] tracking-widest uppercase text-white/60">
             Atinge ca să anulezi
           </span>
         </button>
       )}
-      {showGuide && !isRecording && (
+      {showGuide && !isRecording && countdown === null && (
         <div className="absolute inset-0 opacity-25 pointer-events-none">
           <CinematicBg src={scene.bg} blur overlay={0.0} kenBurns={false} />
         </div>
